@@ -28,9 +28,14 @@ Show details of a \code{dna_network_onemode} object.
 Print a one-mode network matrix and its attributes.
 }
 \seealso{
-\link{as.matrix.dna_network_onemode}, \link{dna_network},
-  \link{print.dna_network_onemode}
+Other {rDNA networks}: 
+\code{\link{as.matrix.dna_network_onemode}()},
+\code{\link{as.matrix.dna_network_twomode}()},
+\code{\link{autoplot.dna_network}},
+\code{\link{dna_network}()},
+\code{\link{print.dna_network_twomode}()}
 }
 \author{
 Philip Leifeld
 }
+\concept{{rDNA networks}}

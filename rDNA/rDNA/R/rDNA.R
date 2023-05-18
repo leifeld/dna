@@ -1,4 +1,4 @@
-# Startup ----------------------------------------------------------------------
+# Package startup --------------------------------------------------------------
 
 dnaEnvironment <- new.env(hash = TRUE, parent = emptyenv())
 
@@ -42,6 +42,8 @@ dnaEnvironment <- new.env(hash = TRUE, parent = emptyenv())
 #' \dontrun{
 #' dna_init()
 #' }
+#'
+#' @family {rDNA package startup}
 #'
 #' @export
 #' @importFrom rJava .jinit .jnew .jarray
@@ -95,6 +97,8 @@ dna_init <- function(jarfile = dna_jar(), memory = 1024, returnString = FALSE) {
 #'   version, including full path.
 #'
 #' @author Philip Leifeld
+#'
+#' @family {rDNA package startup}
 #'
 #' @importFrom utils download.file unzip packageVersion
 #' @export
@@ -227,6 +231,8 @@ dna_jar <- function() {
 #'
 #' @author Johannes B. Gruber, Philip Leifeld
 #'
+#' @family {rDNA package startup}
+#'
 #' @export
 dna_sample <- function(overwrite = FALSE) {
   if (file.exists(paste0(getwd(), "/sample.dna")) & overwrite == FALSE) {
@@ -240,73 +246,8 @@ dna_sample <- function(overwrite = FALSE) {
   return(paste0(getwd(), "/sample.dna"))
 }
 
-#' Query the coders in a database
-#'
-#' Display the coder IDs, names, and colors present in a DNA database.
-#'
-#' Some functions require knowing the coder ID with which changes should be
-#' made. This function queries any database, which does not have to be opened,
-#' for their coder IDs, names, and colors, and returns them as a data frame.
-#'
-#' @param db_url The URL or full path of the database.
-#' @param db_type The type of database. Valid values are \code{"sqlite"},
-#'   \code{postgresql}, and \code{postgresql}.
-#' @param db_name The name of the database at the given URL or path. Can be a
-#'   zero-length character object (\code{""}) for file-based SQLite databases.
-#' @param db_port The connection port for the database connection. No port is
-#'   required (\code{db_port = -1}) for SQLite databases. MySQL databases often
-#'   use port \code{3306}. PostgreSQL databases often use port \code{5432}. If
-#'   \code{db_port = NULL}, one of these default values will be selected based
-#'   on the \code{db_type} argument.
-#' @param db_login The login user name for the database. This is the database
-#'   login user name, not the coder name. Can be a zero-length character object
-#'   (\code{""}) for SQLite databases.
-#' @param db_password The password for the database. This is the database
-#'   password, not the coder password. Can be a zero-length character object
-#'   (\code{""}) for SQLite databases.
-#'
-#' @author Philip Leifeld
-#'
-#' @examples
-#' \dontrun{
-#' dna_init()
-#' dna_sample()
-#' dna_queryCoders("sample.dna")
-#' }
-#'
-#' @export
-#' @importFrom rJava .jcall .jevalArray
-dna_queryCoders <- function(db_url,
-                            db_type = "sqlite",
-                            db_name = "",
-                            db_port = NULL,
-                            db_login = "",
-                            db_password = "") {
-  if (is.null(db_port) && !is.null(db_type)) {
-    if (db_type == "sqlite") {
-      db_port <- as.integer(-1)
-    } else if (db_type == "mysql") {
-      db_port <- as.integer(3306)
-    } else if (db_type == "postgresql") {
-      db_port <- as.integer(5432)
-    }
-  } else {
-    db_port <- as.integer(db_port)
-  }
-  q <- .jcall(dnaEnvironment[["dna"]]$headlessDna,
-              "[Ljava/lang/Object;",
-              "queryCoders",
-              db_type,
-              ifelse(db_type == "sqlite", normalizePath(db_url), db_url),
-              db_name,
-              db_port,
-              db_login,
-              db_password)
-  names(q) <- c("ID", "Name", "Color")
-  q <- lapply(q, .jevalArray)
-  q <- as.data.frame(q, stringsAsFactors = FALSE)
-  return(q)
-}
+
+# Database connections ---------------------------------------------------------
 
 #' Open a database
 #'
@@ -342,6 +283,9 @@ dna_queryCoders <- function(db_url,
 #'   (\code{""}) for SQLite databases.
 #'
 #' @author Philip Leifeld
+#'
+#' @family {rDNA database connections}
+#' @seealso \code{\link{dna_queryCoders}}
 #'
 #' @examples
 #' \dontrun{
@@ -413,32 +357,6 @@ dna_openDatabase <- function(db_url,
               db_password)
 }
 
-#' Print database details
-#'
-#' Print number of documents and statements and active coder.
-#'
-#' For the DNA database that is currently open, print the number of documents
-#' and statements, the URL, statement types (and their statement counts), and
-#' the active coder to the console.
-#'
-#' @author Philip Leifeld
-#'
-#' @examples
-#' \dontrun{
-#' dna_init()
-#' dna_sample()
-#' dna_openDatabase(coderId = 1,
-#'                  coderPassword = "sample",
-#'                  db_url = "sample.dna")
-#' dna_printDetails()
-#' }
-#'
-#' @export
-#' @importFrom rJava .jcall
-dna_printDetails <- function() {
-  .jcall(dnaEnvironment[["dna"]]$headlessDna, "V", "printDatabaseDetails")
-}
-
 #' Close the open DNA database (if any).
 #'
 #' Close the DNA database that is currently active (if any).
@@ -458,68 +376,12 @@ dna_printDetails <- function() {
 #' dna_closeDatabase()
 #' }
 #'
+#' @family {rDNA database connections}
+#'
 #' @export
 #' @importFrom rJava .jcall
 dna_closeDatabase <- function() {
   .jcall(dnaEnvironment[["dna"]]$headlessDna, "V", "closeDatabase")
-}
-
-#' Save a connection profile to a file
-#'
-#' Save connection profile for the current coder and database to disk
-#'
-#' Save the current database URL/path, user name, password, port, database name,
-#' and coder to an encrypted JSON file with the extension \code{.dnc}. This file
-#' is called a connection profile. It serves as a bookmark and saves you from
-#' having to enter and store the full connection details each time you want to
-#' access the database. Please make sure you enter the file name with the
-#' extension. You are asked to provide the coder password of the currently
-#' active coder again, for whom the connection profile is saved. This is just
-#' for security reasons. If you do not provide a coder password (e.g., your
-#' password is a zero-length character object \code{""}), you are asked to enter
-#' the password interactively. If the \pkg{askpass} package is installed, this
-#' package will be used to mask the user input; otherwise the password is
-#' visible in clear text. Installing the \pkg{askpass} package is strongly
-#' recommended.
-#'
-#' @param file The file name of the connection profile to save.
-#' @param coderPassword The clear text coder password. If a zero-length
-#'   character object (\code{""}) is provided, the user will be prompted
-#'   for a password interactively.
-#'
-#' @author Philip Leifeld
-#'
-#' @examples
-#' \dontrun{
-#' dna_init()
-#' dna_sample()
-#' dna_openDatabase(coderId = 1,
-#'                  coderPassword = "sample",
-#'                  db_url = "sample.dna")
-#' dna_saveConnectionProfile(file = "my profile.dnc", coderPassword = "sample")
-#' }
-#'
-#' @export
-#' @importFrom rJava .jcall
-dna_saveConnectionProfile <- function(file, coderPassword = "") {
-  if (is.null(file) || !is.character(file) || length(file) != 1) {
-    stop("Please provide a file name for the connection profile.")
-  }
-  if (is.null(coderPassword) || !is.character(coderPassword) || coderPassword == "") {
-    if (!requireNamespace("askpass", quietly = TRUE)) {
-      coderPassword <- readline("Coder password: ")
-    } else {
-      coderPassword <- askpass::askpass("Coder password: ")
-    }
-  }
-  if (is.null(coderPassword) || length(coderPassword) == 0) {
-    coderPassword <- ""
-  }
-  s <- .jcall(dnaEnvironment[["dna"]]$headlessDna,
-              "Z",
-              "saveConnectionProfile",
-              file,
-              coderPassword)
 }
 
 #' Open a connection profile
@@ -559,6 +421,8 @@ dna_saveConnectionProfile <- function(file, coderPassword = "") {
 #' dna_openConnectionProfile(file = "my profile.dnc", coderPassword = "sample")
 #' }
 #'
+#' @family {rDNA database connections}
+#'
 #' @export
 #' @importFrom rJava .jcall
 dna_openConnectionProfile <- function(file, coderPassword = "") {
@@ -586,6 +450,168 @@ dna_openConnectionProfile <- function(file, coderPassword = "") {
               file,
               coderPassword)
 }
+
+#' Save a connection profile to a file
+#'
+#' Save connection profile for the current coder and database to disk
+#'
+#' Save the current database URL/path, user name, password, port, database name,
+#' and coder to an encrypted JSON file with the extension \code{.dnc}. This file
+#' is called a connection profile. It serves as a bookmark and saves you from
+#' having to enter and store the full connection details each time you want to
+#' access the database. Please make sure you enter the file name with the
+#' extension. You are asked to provide the coder password of the currently
+#' active coder again, for whom the connection profile is saved. This is just
+#' for security reasons. If you do not provide a coder password (e.g., your
+#' password is a zero-length character object \code{""}), you are asked to enter
+#' the password interactively. If the \pkg{askpass} package is installed, this
+#' package will be used to mask the user input; otherwise the password is
+#' visible in clear text. Installing the \pkg{askpass} package is strongly
+#' recommended.
+#'
+#' @param file The file name of the connection profile to save.
+#' @param coderPassword The clear text coder password. If a zero-length
+#'   character object (\code{""}) is provided, the user will be prompted
+#'   for a password interactively.
+#'
+#' @author Philip Leifeld
+#'
+#' @family {rDNA database connections}
+#'
+#' @examples
+#' \dontrun{
+#' dna_init()
+#' dna_sample()
+#' dna_openDatabase(coderId = 1,
+#'                  coderPassword = "sample",
+#'                  db_url = "sample.dna")
+#' dna_saveConnectionProfile(file = "my profile.dnc", coderPassword = "sample")
+#' }
+#'
+#' @export
+#' @importFrom rJava .jcall
+dna_saveConnectionProfile <- function(file, coderPassword = "") {
+  if (is.null(file) || !is.character(file) || length(file) != 1) {
+    stop("Please provide a file name for the connection profile.")
+  }
+  if (is.null(coderPassword) || !is.character(coderPassword) || coderPassword == "") {
+    if (!requireNamespace("askpass", quietly = TRUE)) {
+      coderPassword <- readline("Coder password: ")
+    } else {
+      coderPassword <- askpass::askpass("Coder password: ")
+    }
+  }
+  if (is.null(coderPassword) || length(coderPassword) == 0) {
+    coderPassword <- ""
+  }
+  s <- .jcall(dnaEnvironment[["dna"]]$headlessDna,
+              "Z",
+              "saveConnectionProfile",
+              file,
+              coderPassword)
+}
+
+#' Print database details
+#'
+#' Print number of documents and statements and active coder.
+#'
+#' For the DNA database that is currently open, print the number of documents
+#' and statements, the URL, statement types (and their statement counts), and
+#' the active coder to the console.
+#'
+#' @author Philip Leifeld
+#'
+#' @examples
+#' \dontrun{
+#' dna_init()
+#' dna_sample()
+#' dna_openDatabase(coderId = 1,
+#'                  coderPassword = "sample",
+#'                  db_url = "sample.dna")
+#' dna_printDetails()
+#' }
+#'
+#' @family {rDNA database connections}
+#'
+#' @export
+#' @importFrom rJava .jcall
+dna_printDetails <- function() {
+  .jcall(dnaEnvironment[["dna"]]$headlessDna, "V", "printDatabaseDetails")
+}
+
+
+# Coder management--------------------------------------------------------------
+
+#' Query the coders in a database
+#'
+#' Display the coder IDs, names, and colors present in a DNA database.
+#'
+#' Some functions require knowing the coder ID with which changes should be
+#' made. This function queries any database, which does not have to be opened,
+#' for their coder IDs, names, and colors, and returns them as a data frame.
+#'
+#' @param db_url The URL or full path of the database.
+#' @param db_type The type of database. Valid values are \code{"sqlite"},
+#'   \code{postgresql}, and \code{postgresql}.
+#' @param db_name The name of the database at the given URL or path. Can be a
+#'   zero-length character object (\code{""}) for file-based SQLite databases.
+#' @param db_port The connection port for the database connection. No port is
+#'   required (\code{db_port = -1}) for SQLite databases. MySQL databases often
+#'   use port \code{3306}. PostgreSQL databases often use port \code{5432}. If
+#'   \code{db_port = NULL}, one of these default values will be selected based
+#'   on the \code{db_type} argument.
+#' @param db_login The login user name for the database. This is the database
+#'   login user name, not the coder name. Can be a zero-length character object
+#'   (\code{""}) for SQLite databases.
+#' @param db_password The password for the database. This is the database
+#'   password, not the coder password. Can be a zero-length character object
+#'   (\code{""}) for SQLite databases.
+#'
+#' @author Philip Leifeld
+#'
+#' @examples
+#' \dontrun{
+#' dna_init()
+#' dna_sample()
+#' dna_queryCoders("sample.dna")
+#' }
+#'
+#' @export
+#' @importFrom rJava .jcall .jevalArray
+dna_queryCoders <- function(db_url,
+                            db_type = "sqlite",
+                            db_name = "",
+                            db_port = NULL,
+                            db_login = "",
+                            db_password = "") {
+  if (is.null(db_port) && !is.null(db_type)) {
+    if (db_type == "sqlite") {
+      db_port <- as.integer(-1)
+    } else if (db_type == "mysql") {
+      db_port <- as.integer(3306)
+    } else if (db_type == "postgresql") {
+      db_port <- as.integer(5432)
+    }
+  } else {
+    db_port <- as.integer(db_port)
+  }
+  q <- .jcall(dnaEnvironment[["dna"]]$headlessDna,
+              "[Ljava/lang/Object;",
+              "queryCoders",
+              db_type,
+              ifelse(db_type == "sqlite", normalizePath(db_url), db_url),
+              db_name,
+              db_port,
+              db_login,
+              db_password)
+  names(q) <- c("ID", "Name", "Color")
+  q <- lapply(q, .jevalArray)
+  q <- as.data.frame(q, stringsAsFactors = FALSE)
+  return(q)
+}
+
+
+# Attributes -------------------------------------------------------------------
 
 #' Get the entities and attributes for a variable
 #'
@@ -629,6 +655,8 @@ dna_openConnectionProfile <- function(file, coderPassword = "") {
 #' }
 #'
 #' @author Philip Leifeld
+#'
+#' @family {rDNA attributes}
 #'
 #' @importFrom rJava .jcall
 #' @importFrom rJava J
@@ -725,6 +753,9 @@ dna_getAttributes <- function(statementType = NULL,
   class(dat) <- c("dna_attributes", class(dat))
   return(dat)
 }
+
+
+# Networks ---------------------------------------------------------------------
 
 #' Compute and retrieve a network
 #'
@@ -932,6 +963,8 @@ dna_getAttributes <- function(statementType = NULL,
 #'
 #' @author Philip Leifeld
 #'
+#' @family {rDNA networks}
+#'
 #' @importFrom rJava .jarray
 #' @importFrom rJava .jcall
 #' @importFrom rJava .jnull
@@ -1108,6 +1141,49 @@ dna_network <- function(networkType = "twomode",
   }
 }
 
+#' Convert a \code{dna_network_onemode} object to a matrix
+#'
+#' Convert a \code{dna_network_onemode} object to a matrix.
+#'
+#' Remove the attributes and \code{"dna_network_onemode"} class label from a
+#' \code{dna_network_onemode} object and return it as a numeric matrix.
+#'
+#' @param x The \code{dna_network_onemode} object, as returned by the
+#'   \code{\link{dna_network}} function.
+#' @param ... Additional arguments. Currently not in use.
+#'
+#' @author Philip Leifeld
+#'
+#' @family {rDNA networks}
+#'
+#' @export
+as.matrix.dna_network_onemode <- function(x, ...) {
+  attr(x, "start") <- NULL
+  attr(x, "stop") <- NULL
+  attr(x, "numStatements") <- NULL
+  attr(x, "call") <- NULL
+  attr(x, "class") <- NULL
+  return(x)
+}
+
+#' Convert a \code{dna_network_twomode} object to a matrix
+#'
+#' Convert a \code{dna_network_twomode} object to a matrix.
+#'
+#' Remove the attributes and \code{"dna_network_twomode"} class label from a
+#' \code{dna_network_twomode} object and return it as a numeric matrix.
+#'
+#' @param x The \code{dna_network_twomode} object, as returned by the
+#'   \code{\link{dna_network}} function.
+#' @param ... Additional arguments. Currently not in use.
+#'
+#' @author Philip Leifeld
+#'
+#' @family {rDNA networks}
+#'
+#' @export
+as.matrix.dna_network_twomode <- as.matrix.dna_network_onemode
+
 #' Print a \code{dna_network_onemode} object
 #'
 #' Show details of a \code{dna_network_onemode} object.
@@ -1127,8 +1203,8 @@ dna_network <- function(networkType = "twomode",
 #'
 #' @author Philip Leifeld
 #'
-#' @seealso \link{as.matrix.dna_network_onemode}, \link{dna_network},
-#'   \link{print.dna_network_onemode}
+#' @family {rDNA networks}
+#'
 #' @export
 print.dna_network_onemode <- function(x, trim = 5, attr = TRUE, ...) {
   rn <- rownames(x)
@@ -1180,54 +1256,1001 @@ print.dna_network_onemode <- function(x, trim = 5, attr = TRUE, ...) {
 #'
 #' @author Philip Leifeld
 #'
-#' @seealso \link{as.matrix.dna_network_twomode}, \link{dna_network},
-#'   \link{print.dna_network_onemode}
+#' @family {rDNA networks}
+#'
 #' @export
 print.dna_network_twomode <- print.dna_network_onemode
 
-#' Convert a \code{dna_network_onemode} object to a matrix
+#' Plot networks created using rDNA.
 #'
-#' Convert a \code{dna_network_onemode} object to a matrix.
+#' Plot a network generated using \code{\link{dna_network}}.
 #'
-#' Remove the attributes and \code{"dna_network_onemode"} class label from a
-#' \code{dna_network_onemode} object and return it as a numeric matrix.
+#' These functions plot \code{dna_network_onemode} and
+#' \code{dna_network_onemode} objects generated by the \code{\link{dna_network}}
+#' function. In order to use this function, please install the \code{igraph} and
+#' \code{ggraph} packages. Different layouts for one- and two-mode networks are
+#' available.
 #'
-#' @param x The \code{dna_network_onemode} object, as returned by the
-#'   \code{\link{dna_network}} function.
-#' @param ... Additional arguments. Currently not in use.
+#' @param object A \code{dna_network} object.
+#' @param ... Additional arguments; currently not in use.
+#' @param atts A \code{dna_attributes} object generated by
+#'   \code{\link{dna_getAttributes}}. Provide this object and matching
+#'   attributes when plotting custom node colors, node labels and/or node sizes.
+#' @param layout The type of node layout to use. The following layouts are
+#'   available from the \code{igraph} and \code{ggraph} packages at the time of
+#'   writing:
+#'   \itemize{
+#'    \item \code{"stress"} (the default layout)
+#'    \item \code{"bipartite"} (only for two-mode networks)
+#'    \item \code{"backbone"}
+#'    \item \code{"circle"}
+#'    \item \code{"dh"}
+#'    \item \code{"drl"}
+#'    \item \code{"fr"}
+#'    \item \code{"gem"}
+#'    \item \code{"graphopt"}
+#'    \item \code{"kk"}
+#'    \item \code{"lgl"}
+#'    \item \code{"mds"}
+#'    \item \code{"nicely"}
+#'    \item \code{"randomly"}
+#'    \item \code{"star"}
+#'   }
+#'   See \link[ggraph]{layout_tbl_graph_igraph} for the current list of layouts.
+#' @param edge_size_range Two values indicating the minimum and maximum value
+#'   to scale edge widths.
+#' @param edge_color Provide the name of a color for edge colors. The default
+#'   \code{"NULL"} colors edges in line with the specified
+#'   \code{qualifierAggregation} in \code{\link{dna_network}}.
+#' @param edge_alpha Takes numeric values to control the alpha-transparency of
+#'   edges. Possible values range from \code{0} (fully transparent) to \code{1}
+#'   (fully visible).
+#' @param node_size Takes positive numeric values to control the size of nodes.
+#'   Also accepts numeric values matching an attribute of the \code{atts} object
+#'   (see examples).
+#' @param node_colors Provide the name of a color or use an attribute from the
+#'   \code{atts} object for node colors (see examples). Defaults to
+#'   \code{"black"}.
+#' @param node_label If \code{TRUE}, the row names (in a one-mode network) or
+#'   the row and column names (in a two-mode network) of the network matrix are
+#'   used for node labels. Also accepts character objects matching one of the
+#'   attribute variables of the \code{atts} object (see examples). \code{FALSE}
+#'   turns off node labels.
+#' @param font_size Controls the font size of the node labels.
+#' @param truncate Sets the number of characters to which node labels should be
+#'   truncated.
+#' @param threshold Minimum threshold for which edges should be plotted.
+#' @param giant_component Only plot the giant component (the biggest connected
+#'   cluster) of the network. Defaults to \code{FALSE}.
+#' @param exclude_isolates Exclude isolates (nodes with no connection to other
+#'   nodes) from the plot. Defaults to \code{FALSE}.
+#' @param max_overlaps Value to exclude node labels that overlap with too many
+#'   other node labels (see \code{\link[ggrepel]{geom_label_repel}}. Defaults
+#'   to \code{10}.
+#' @param seed Numeric value passed to \link{set.seed}. Ensures that plots are
+#'   reproducible.
 #'
-#' @author Philip Leifeld
+#' @examples
+#' \dontrun{
+#' dna_init()
+#' dna_sample()
+#' dna_openDatabase("sample.dna", coderId = 1, coderPassword = "sample")
 #'
-#' @seealso \link{print.dna_network_onemode}, \link{dna_network},
-#'   \link{as.matrix.dna_network_twomode}
+#' ## one-mode network examples
+#'
+#' # compute network matrix (subtract + normalization)
+#' nw <- dna_network(networkType = "onemode",
+#'                   qualifierAggregation = "subtract",
+#'                   normalization = "average")
+#'
+#' # plot network
+#' library("ggplot2")
+#' autoplot(nw)
+#'
+#' # plot only positively weighted edges
+#' autoplot(nw, threshold = 0)
+#'
+#' # congruence network
+#' nw <- dna_network(networkType = "onemode",
+#'                   qualifierAggregation = "congruence",
+#'                   excludeValues = list("concept" =
+#'                     c("There should be legislation to regulate emissions.")))
+#' autoplot(nw)
+#'
+#' # use entity colors (here: colors of organizations) from attributes
+#' atts <- dna_getAttributes(variableId = 2)
+#' autoplot(nw, atts = atts, node_colors = "color", layout = "fr")
+#'
+#' # use colors from attributes (after editing some of them)
+#' atts$color[atts$Type == "NGO"] <- "red" # change NGO color to red
+#' atts$color[atts$Type == "Government"] <- "blue" # change government to blue
+#' autoplot(nw, atts = atts, node_colors = "color") # plot with custom colors
+#'
+#' # use an attribute, such as type, to plot node labels
+#' autoplot(nw, atts = atts, node_label = "Type")
+#'
+#' # plot node sizes according to the number of statements of entities;
+#' # first, compute additional matrix to calculate the number of statements
+#' nw_freq <- dna_network(networkType = "twomode",
+#'                        qualifierAggregation = "ignore",
+#'                        normalization = "no")
+#' # then add frequency of statements as an attribute
+#' atts$freq <- rowSums(nw_freq)[match(atts$value, rownames(nw_freq))]
+#' # plot network with node sizes matching statement frequencies
+#' autoplot(nw, atts = atts, node_size = "freq", node_colors = "color")
+#'
+#' # use igraph community detection for identification of network clusters;
+#' # remove negative edge weights
+#' nw[nw < 0] <- 0
+#' # convert dna_network to igraph object
+#' graph <- igraph::graph_from_adjacency_matrix(nw,
+#'                                              mode = "undirected",
+#'                                              weighted = TRUE,
+#'                                              diag = FALSE,
+#'                                              add.colnames = NULL,
+#'                                              add.rownames = NA)
+#' # compute communities using igraph cluster algorithms
+#' # (here: fast and greedy as an illustration))
+#' com <- igraph::cluster_fast_greedy(graph)
+#' # add node community membership as an attribute
+#' atts$membership <- com$membership[match(atts$value, com$names)]
+#' # use community membership as node color
+#' autoplot(nw, atts = atts, node_colors = "membership")
+#' # or plot ellipses using ggforce package
+#' library("ggforce")
+#' autoplot(nw, atts = atts, node_colors = "color") +
+#'   geom_mark_ellipse(aes(x = x,
+#'                         y = y,
+#'                         group = com$membership,
+#'                         fill = com$membership),
+#'                     show.legend = FALSE)
+#'
+#' # add legend to the network plot (here: colors mapped to type attribute)
+#' autoplot(nw, atts = atts, node_colors = "color") +
+#'   scale_color_identity(name = "",
+#'                        labels = c("Government", "NGO", "Business"),
+#'                        guide = "legend") +
+#'   theme(legend.position = "bottom", # change legend position
+#'         legend.text = element_text(size = 10)) # change legend font size
+#'
+#' ## two-mode network examples
+#'
+#' # compute two-mode network and plot it
+#' nw <- dna_network(networkType = "twomode",
+#'                   qualifierAggregation = "combine")
+#' library("ggplot2")
+#' autoplot(nw)
+#'
+#' # use entity colours (here: colors of organizations);
+#' # first, retrieve attributes for first-mode entities (organizations)
+#' atts <- dna_getAttributes(variableId = 2)
+#' # then, retrieve attributes for second-mode entities (concepts)
+#' atts2 <- dna_getAttributes(variableId = 3)
+#' # combine both attribute objects
+#' atts <- rbind(atts, atts2)
+#' # plot the network using the attributes of both variables
+#' autoplot(nw,
+#'          atts = atts,
+#'          node_colors = "color",
+#'          layout = "bipartite",
+#'          max_overlaps = 20)
+#' # edit the colors before plotting
+#' atts$color[atts$Type == "NGO"] <- "red" # change NGO color to red
+#' atts$color[atts$Type == "Government"] <- "blue" # government actors in blue
+#' # plot the network with custom colors
+#' autoplot(nw, atts = atts, node_colors = "color")
+#'
+#' # use an attribute, such as type, to plot node labels
+#' nw <- dna_network(networkType = "twomode",
+#'                   qualifierAggregation = "subtract",
+#'                   normalization = "activity")
+#' autoplot(nw, atts = atts, node_label = "Type")
+#'
+#' # plot node sizes according the number of statements of entities;
+#' # first, compute network matrix for plotting
+#' nw <- dna_network(networkType = "twomode",
+#'                   qualifierAggregation = "subtract",
+#'                   normalization = "activity")
+#' # compute dna_attributes objects
+#' atts <- dna_getAttributes(variableId = 2)
+#' atts2 <- dna_getAttributes(variableId = 3)
+#' # compute additional matrix to calculate the number of statements
+#' nw_freq <- dna_network(networkType = "twomode",
+#'                        qualifierAggregation = "ignore",
+#'                        normalization = "no")
+#' # add frequency of statements as attribute
+#' # compute statement frequencies of first-mode entities
+#' atts$freq <- rowSums(nw_freq)[match(atts$value, rownames(nw_freq))]
+#' # compute statement frequencies of second-mode entities
+#' atts2$freq <- colSums(nw_freq)[match(atts2$value, colnames(nw_freq))]
+#' # combine both attribute objects
+#' atts <- rbind(atts, atts2)
+#' # plot network with node sizes matching statement frequencies
+#' autoplot(nw, atts = atts, node_size = "freq", node_colors = "color")
+#'
+#' # use igraph community detection for identification of network clusters
+#' nw <- dna_network(networkType = "twomode",
+#'                   qualifierAggregation = "subtract",
+#'                   normalization = "activity")
+#' # compute dna_attributes objects and combine them
+#' atts <- dna_getAttributes(variableId = 2)
+#' atts2 <- dna_getAttributes(variableId = 3)
+#' atts <- rbind(atts, atts2)
+#' # remove negative edge weights
+#' nw[nw < 0] <- 0
+#' # convert dna_network to igraph object
+#' graph <- igraph::graph_from_incidence_matrix(nw,
+#'                                              directed = FALSE,
+#'                                              weighted = TRUE,
+#'                                              add.names = NULL)
+#' # compute communities using igraph cluster algorithms
+#' # (here: fast and greedy as an illustration))
+#' com <- igraph::cluster_fast_greedy(graph)
+#' # add node community membership as an attribute
+#' atts$membership <- com$membership[match(atts$value, com$names)]
+#' # use community membership as node color
+#' autoplot(nw, atts = atts, node_colors = "membership")
+#' # or plot ellipses using ggforce
+#' library("ggforce")
+#' autoplot(nw, atts = atts, node_colors = "color") +
+#'   geom_mark_ellipse(aes(x = x,
+#'                     y = y,
+#'                     group = com$membership,
+#'                     fill = com$membership),
+#'                     show.legend = FALSE)
+#' }
+#'
+#' @author Tim Henrichsen
+#'
+#' @family {rDNA networks}
+#'
+#' @importFrom ggplot2 autoplot
+#' @importFrom ggplot2 aes
+#' @importFrom ggplot2 scale_color_identity
+#' @name autoplot.dna_network
+NULL
+
+#' @rdname autoplot.dna_network
 #' @export
-as.matrix.dna_network_onemode <- function(x, ...) {
-  attr(x, "start") <- NULL
-  attr(x, "stop") <- NULL
-  attr(x, "numStatements") <- NULL
-  attr(x, "call") <- NULL
-  attr(x, "class") <- NULL
-  return(x)
+autoplot.dna_network_onemode <- function(object,
+                                         ...,
+                                         atts = NULL,
+                                         layout = "auto",
+                                         edge_size_range = c(0.2, 2),
+                                         edge_color = NULL,
+                                         edge_alpha = 1,
+                                         node_size = 3,
+                                         node_colors = "black",
+                                         node_label = TRUE,
+                                         font_size = 6,
+                                         truncate = 50,
+                                         threshold = NULL,
+                                         giant_component = FALSE,
+                                         exclude_isolates = FALSE,
+                                         max_overlaps = 10,
+                                         seed = 12345) {
+  set.seed(seed)
+
+  if (!grepl("dna_network", class(object)[1])) {
+    stop("Invalid data object. Please compute a dna_network object with the ",
+         "dna_network() function before plotting.")
+  }
+
+  if (!requireNamespace("igraph", quietly = TRUE)) {
+    stop("The autoplot function requires the 'igraph' package to be installed.\n",
+         "To do this, enter 'install.packages(\"igraph\")'.")
+  }
+
+  if (!requireNamespace("ggraph", quietly = TRUE)) {
+    stop("The autoplot function requires the 'ggraph' package to be installed.\n",
+         "To do this, enter 'install.packages(\"ggraph\")'.")
+  }
+
+  if (!is.null(atts) & !"dna_attributes" %in% class(atts)) {
+    stop("Object provided in 'atts' is not a dna_attributes object. Please ",
+         "provide a dna_attributes object using dna_getAttributes() or set atts ",
+         "to NULL if you do not want to use DNA attributes.")
+  }
+
+  if (!is.numeric(truncate)) {
+    truncate <- Inf
+    warning("No numeric value provided for trimming of entities. Truncation ",
+            "will be ignored.")
+  }
+
+  # Convert network matrix to igraph network
+  if ("dna_network_onemode" %in% class(object)) {
+    graph <- igraph::graph_from_adjacency_matrix(object,
+                                                 mode = "undirected",
+                                                 weighted = TRUE,
+                                                 diag = FALSE,
+                                                 add.colnames = NULL,
+                                                 add.rownames = NA)
+    igraph::V(graph)$shape <- "circle"
+  } else if ("dna_network_twomode" %in% class(object)) {
+    graph <- igraph::graph_from_incidence_matrix(object,
+                                                 directed = FALSE,
+                                                 weighted = TRUE,
+                                                 add.names = NULL)
+    igraph::V(graph)$shape <- ifelse(igraph::V(graph)$type, "square", "circle")
+  }
+
+  # Check if all entities are included in attributes object (if provided)
+  if (!is.null(atts) & !(all(igraph::V(graph)$name %in% atts$value))) {
+    miss <- which(!igraph::V(graph)$name %in% atts$value)
+    stop("Some network entities are missing in the attributes object:\n",
+         paste(igraph::V(graph)$name[miss], collapse = "\n"))
+  }
+
+  # Remove tie weights below threshold
+  if (!is.null(threshold)) {
+    graph <- igraph::delete.edges(graph, which(!igraph::E(graph)$weight >= threshold))
+  }
+
+  # Add node colors
+  if (is.character(node_colors)) {
+    if (!is.null(atts) & length(node_colors) == 1 && node_colors %in% colnames(atts)) {
+      col_pos <- which(colnames(atts) == node_colors)
+      igraph::V(graph)$color <- atts[match(igraph::V(graph)$name, atts$value), col_pos]
+    } else if (length(node_colors) > 1 & length(node_colors) != igraph::vcount(graph)) {
+      stop("Number of custom colors does not equal number of nodes in the network.")
+    } else {
+      igraph::V(graph)$color <- node_colors
+    }
+  } else {
+    igraph::V(graph)$color <- "black"
+  }
+
+  # Add edge colors
+  if (is.null(edge_color)) {
+    if ("combine" %in% as.character(attributes(object)$call)) {
+      igraph::E(graph)$color <- "green"
+      igraph::E(graph)$color[igraph::E(graph)$weight == 2] <- "red"
+      igraph::E(graph)$color[igraph::E(graph)$weight == 3] <- "blue"
+      # Change edge weight for networks with combine aggregation
+      igraph::E(graph)$weight[igraph::E(graph)$weight > 0] <- 1
+    } else if ("subtract" %in% as.character(attributes(object)$call)) {
+      igraph::E(graph)$color <- "green"
+      igraph::E(graph)$color[igraph::E(graph)$weight < 0] <- "red"
+    } else if ("congruence" %in% as.character(attributes(object)$call)) {
+      igraph::E(graph)$color <- "green"
+    } else if ("conflict" %in% as.character(attributes(object)$call)) {
+      igraph::E(graph)$color <- "red"
+    } else {
+      igraph::E(graph)$color <- "gray"
+    }
+  } else if (!all(is.na(edge_color))) {
+    if (length(edge_color) > 1 & length(edge_color) != igraph::ecount(graph)) {
+      igraph::E(graph)$color <- "gray"
+      warning("Number of custom edge_colors does not match number of edges ",
+              "in the network. Will set edge_color to default (gray).")
+    } else {
+      igraph::E(graph)$color <- edge_color
+    }
+  } else {
+    igraph::E(graph)$color <- "gray"
+  }
+
+  # Add node size(s)
+  if (length(node_size) > 1 & length(node_size) != igraph::vcount(graph)) {
+    igraph::V(graph)$size <- 7
+    warning("Number of provided node size values does not equal number of ",
+            "nodes in the network. node_size will be set to default value (7).")
+  } else if (is.character(node_size) & length(node_size) == 1 & !is.null(atts) && node_size %in% colnames(atts)) {
+    col_pos <- which(colnames(atts) == node_size)
+    igraph::V(graph)$size <- atts[match(igraph::V(graph)$name, atts$value), col_pos]
+  } else if (is.numeric(node_size)) {
+    igraph::V(graph)$size <- node_size
+  }
+
+  # Add labels
+  if (!is.logical(node_label)) {
+    if (is.character(node_label) & length(node_label) == 1 & !is.null(atts) && node_label %in% colnames(atts)) {
+      col_pos <- which(colnames(atts) == node_label)
+      igraph::V(graph)$name <- atts[match(igraph::V(graph)$name, atts$value), col_pos]
+    } else if (!is.null(node_label)) {
+      if (length(node_label) > 1 & length(node_label) != igraph::vcount(graph)) {
+        stop("Number of custom labels does not equal number of nodes in the network.")
+      }
+      igraph::V(graph)$name <- node_label
+    }
+  }
+
+  # Remove isolates
+  if (exclude_isolates) {
+    graph <- igraph::delete.vertices(graph, igraph::degree(graph) == 0)
+  }
+
+  # Only plot giant component of network. Useful for some plotting algorithms.
+  if (giant_component) {
+    # Get giant component
+    components <- igraph::clusters(graph)
+    biggest_cluster_id <- which.max(components$csize)
+
+    # Get members of giant component
+    vert_ids <- igraph::V(graph)[components$membership == biggest_cluster_id]
+
+    # Create subgraph
+    graph <- igraph::induced_subgraph(graph, vert_ids)
+  }
+
+
+  # Truncate labels of entities
+  igraph::V(graph)$name <- sapply(igraph::V(graph)$name, function(e) if (nchar(e) > truncate) paste0(substr(e, 1, truncate - 1), "*") else e)
+
+  # Use absolute edge weight values for plotting
+  igraph::E(graph)$weight <- abs(igraph::E(graph)$weight)
+
+  # Start network plot
+  g <- ggraph::ggraph(graph, layout = layout) +
+    suppressWarnings(ggraph::geom_edge_link(ggplot2::aes(edge_width = igraph::E(graph)$weight, edge_colour = igraph::E(graph)$color),
+                           alpha = edge_alpha,
+                           show.legend = FALSE)) + # add edges
+    ggraph::scale_edge_width(range = edge_size_range) + # add edge scale
+    ggraph::geom_node_point(ggplot2::aes(colour = igraph::V(graph)$color), # add nodes
+                            size = igraph::V(graph)$size,
+                            shape = igraph::V(graph)$shape,
+                            show.legend = NA)
+  # Add labels
+  if ((!is.null(node_label) && !all(is.na(node_label))) && (is.character(node_label) || node_label == TRUE)) {
+    g <- g +
+      ggraph::geom_node_text(ggplot2::aes(label = igraph::V(graph)$name),
+                             repel = TRUE,
+                             max.overlaps = max_overlaps,
+                             show.legend = FALSE)
+  }
+
+  # Add theme and set node colors and edges to identity
+  g <- g +
+    ggraph::theme_graph(base_family = "", base_size = font_size) +
+    ggplot2::scale_color_identity() +
+    ggraph::scale_edge_color_identity()
+
+  return(g)
 }
 
-#' Convert a \code{dna_network_twomode} object to a matrix
+#' @rdname autoplot.dna_network
+#' @export
+autoplot.dna_network_twomode <- autoplot.dna_network_onemode
+
+
+# Barplots ---------------------------------------------------------------------
+
+#' Generate the data necessary for creating a barplot for a variable
 #'
-#' Convert a \code{dna_network_twomode} object to a matrix.
+#' Generate the data necessary for creating a barplot for a variable.
 #'
-#' Remove the attributes and \code{"dna_network_twomode"} class label from a
-#' \code{dna_network_twomode} object and return it as a numeric matrix.
+#' Create a \code{dna_barplot} object, which contains a data frame with
+#' entity value frequencies grouped by the levels of a qualifier variable.
+#' The qualifier variable is optional.
 #'
-#' @param x The \code{dna_network_twomode} object, as returned by the
-#'   \code{\link{dna_network}} function.
+#' @param variable The variable for which the barplot will be generated. There
+#'   will be one bar per entity label of this variable.
+#' @param qualifier A boolean (binary) or integer variable to group the value
+#'   frequencies by. Can be \code{NULL} to skip the grouping.
+#' @inheritParams dna_network
+#'
+#' @examples
+#' \dontrun{
+#' dna_init()
+#' dna_sample()
+#' dna_openDatabase("sample.dna", coderId = 1, coderPassword = "sample")
+#'
+#' # compute barplot data
+#' b <- dna_barplot(statementType = "DNA Statement",
+#'                  variable = "concept",
+#'                  qualifier = "agreement")
+#' b
+#' }
+#'
+#' @author Philip Leifeld
+#'
+#' @family {rDNA barplots}
+#'
+#' @importFrom rJava .jarray
+#' @importFrom rJava .jcall
+#' @importFrom rJava .jevalArray
+#' @importFrom rJava .jnull
+#' @importFrom rJava is.jnull
+#' @export
+dna_barplot <- function(statementType = "DNA Statement",
+                        variable = "concept",
+                        qualifier = "agreement",
+                        duplicates = "document",
+                        start.date = "01.01.1900",
+                        stop.date = "31.12.2099",
+                        start.time = "00:00:00",
+                        stop.time = "23:59:59",
+                        excludeValues = list(),
+                        excludeAuthors = character(),
+                        excludeSources = character(),
+                        excludeSections = character(),
+                        excludeTypes = character(),
+                        invertValues = FALSE,
+                        invertAuthors = FALSE,
+                        invertSources = FALSE,
+                        invertSections = FALSE,
+                        invertTypes = FALSE) {
+
+  # wrap the vectors of exclude values for document variables into Java arrays
+  excludeAuthors <- .jarray(excludeAuthors)
+  excludeSources <- .jarray(excludeSources)
+  excludeSections <- .jarray(excludeSections)
+  excludeTypes <- .jarray(excludeTypes)
+
+  # compile exclude variables and values vectors
+  dat <- matrix("", nrow = length(unlist(excludeValues)), ncol = 2)
+  count <- 0
+  if (length(excludeValues) > 0) {
+    for (i in 1:length(excludeValues)) {
+      if (length(excludeValues[[i]]) > 0) {
+        for (j in 1:length(excludeValues[[i]])) {
+          count <- count + 1
+          dat[count, 1] <- names(excludeValues)[i]
+          dat[count, 2] <- excludeValues[[i]][j]
+        }
+      }
+    }
+    var <- dat[, 1]
+    val <- dat[, 2]
+  } else {
+    var <- character()
+    val <- character()
+  }
+  var <- .jarray(var) # array of variable names of each excluded value
+  val <- .jarray(val) # array of values to be excluded
+
+  # encode R NULL as Java null value if necessary
+  if (is.null(qualifier) || is.na(qualifier)) {
+    qualifier <- .jnull(class = "java/lang/String")
+  }
+
+  # call rBarplotData function to compute results
+  b <- .jcall(dnaEnvironment[["dna"]]$headlessDna,
+              "Lexport/BarplotResult;",
+              "rBarplotData",
+              statementType,
+              variable,
+              qualifier,
+              duplicates,
+              start.date,
+              stop.date,
+              start.time,
+              stop.time,
+              var,
+              val,
+              excludeAuthors,
+              excludeSources,
+              excludeSections,
+              excludeTypes,
+              invertValues,
+              invertAuthors,
+              invertSources,
+              invertSections,
+              invertTypes,
+              simplify = TRUE)
+
+  at <- .jcall(b, "[[Ljava/lang/String;", "getAttributes")
+  at <- t(sapply(at, FUN = .jevalArray))
+
+  counts <- .jcall(b, "[[I", "getCounts")
+  counts <- t(sapply(counts, FUN = .jevalArray))
+  if (nrow(counts) < nrow(at)) {
+    counts <- t(counts)
+  }
+
+  results <- data.frame(.jcall(b, "[S", "getValues"),
+                        counts,
+                        at)
+
+  intValues <- .jcall(b, "[I", "getIntValues")
+  intColNames <- intValues
+  if (is.jnull(qualifier)) {
+    intValues <- integer(0)
+    intColNames <- "Frequency"
+  }
+
+  atVar <- .jcall(b, "[S", "getAttributeVariables")
+
+  colnames(results) <- c("Entity", intColNames, atVar)
+
+  attributes(results)$variable <- .jcall(b, "S", "getVariable")
+  attributes(results)$intValues <- intValues
+  attributes(results)$attributeVariables <- atVar
+
+  class(results) <- c("dna_barplot", class(results))
+
+  return(results)
+}
+
+#' Print a \code{dna_barplot} object
+#'
+#' Show details of a \code{dna_barplot} object.
+#'
+#' Print the data frame returned by the \code{\link{dna_barplot}} function.
+#'
+#' @param x A \code{dna_barplot} object, as returned by the
+#'   \code{\link{dna_barplot}} function.
+#' @param trim Number of maximum characters to display in entity labels.
+#'   Entities with more characters are truncated, and the last character is
+#'   replaced by an asterisk (\code{*}).
+#' @param attr Display attributes, such as the name of the variable and the
+#'   levels of the qualifier variable if available.
 #' @param ... Additional arguments. Currently not in use.
 #'
 #' @author Philip Leifeld
 #'
-#' @seealso \link{print.dna_network_twomode}, \link{dna_network},
-#'   \link{as.matrix.dna_network_onemode}
+#' @family {rDNA barplots}
+#'
 #' @export
-as.matrix.dna_network_twomode <- as.matrix.dna_network_onemode
+print.dna_barplot <- function(x, trim = 30, attr = TRUE, ...) {
+  x2 <- x
+  if (isTRUE(attr)) {
+    cat("Variable:", attr(x2, "variable"))
+    intVal <- attr(x2, "intValues")
+    if (length(intVal) > 0) {
+      cat(".\nQualifier levels:", paste(intVal, collapse = ", "))
+    } else {
+      cat(".\nNo qualifier variable")
+    }
+    cat(".\n")
+  }
+  x2$Entity <- sapply(x2$Entity, function(e) if (nchar(e) > trim) paste0(substr(e, 1, trim - 1), "*") else e)
+  class(x2) <- "data.frame"
+  print(x2)
+}
 
+#' Plot \code{dna_barplot} object.
+#'
+#' Plot a barplot generated from \code{\link{dna_barplot}}.
+#'
+#' This function plots \code{dna_barplot} objects generated by the
+#' \code{\link{dna_barplot}} function. It plots agreement and disagreement with
+#' DNA statements for different entities such as \code{"concept"},
+#' \code{"organization"}, or \code{"person"}. Colors can be modified before
+#' plotting (see examples).
+#'
+#' @param object A \code{dna_barplot} object.
+#' @param ... Additional arguments; currently not in use.
+#' @param lab.pos,lab.neg Names for (dis-)agreement labels.
+#' @param lab Should (dis-)agreement labels and title be displayed?
+#' @param colors If \code{TRUE}, the \code{Colors} column in the
+#'   \code{dna_barplot} object will be used to fill the bars. Also accepts
+#'   character objects matching one of the attribute variables of the
+#'   \code{dna_barplot} object.
+#' @param fontSize Text size in pt.
+#' @param barWidth Thickness of the bars. Bars will touch when set to \code{1}.
+#'   When set to \code{0.5}, space between two bars is the same as thickness of
+#'   bars.
+#' @param axisWidth Thickness of the x-axis which separates agreement from
+#'   disagreement.
+#' @param truncate Sets the number of characters to which axis labels should be
+#'   truncated.
+#' @param exclude.min Reduces the plot to entities with a minimum frequency of
+#'   statements.
+#'
+#' @examples
+#' \dontrun{
+#' dna_init()
+#' dna_sample()
+#'
+#' dna_openDatabase("sample.dna", coderId = 1, coderPassword = "sample")
+#'
+#' # compute barplot data
+#' b <- dna_barplot(statementType = "DNA Statement",
+#'                  variable = "concept",
+#'                  qualifier = "agreement")
+#'
+#' # plot barplot with ggplot2
+#' library("ggplot2")
+#' autoplot(b)
+#'
+#' # use entity colours (here: colors of organizations as an illustration)
+#' b <- dna_barplot(statementType = "DNA Statement",
+#'                  variable = "organization",
+#'                  qualifier = "agreement")
+#' autoplot(b, colors = TRUE)
+#'
+#' # edit the colors before plotting
+#' b$Color[b$Type == "NGO"] <- "red"         # change NGO color to red
+#' b$Color[b$Type == "Government"] <- "blue" # change government color to blue
+#' autoplot(b, colors = TRUE)
+#'
+#' # use an attribute, such as type, to color the bars
+#' autoplot(b, colors = "Type") +
+#'   scale_colour_manual(values = "black")
+#'
+#' # replace colors for the three possible actor types with custom colors
+#' autoplot(b, colors = "Type") +
+#'   scale_fill_manual(values = c("red", "blue", "green")) +
+#'   scale_colour_manual(values = "black")
+#' }
+#'
+#' @author Johannes B. Gruber, Tim Henrichsen
+#'
+#' @family {rDNA barplots}
+#'
+#' @importFrom ggplot2 autoplot
+#' @importFrom ggplot2 ggplot
+#' @importFrom ggplot2 aes_string
+#' @importFrom ggplot2 geom_line
+#' @importFrom ggplot2 theme_minimal
+#' @importFrom ggplot2 theme
+#' @importFrom ggplot2 geom_bar
+#' @importFrom ggplot2 position_stack
+#' @importFrom ggplot2 coord_flip
+#' @importFrom ggplot2 element_blank
+#' @importFrom ggplot2 element_text
+#' @importFrom ggplot2 scale_color_identity
+#' @importFrom ggplot2 scale_fill_identity
+#' @importFrom ggplot2 geom_text
+#' @importFrom ggplot2 .pt
+#' @importFrom ggplot2 annotate
+#' @importFrom ggplot2 scale_x_discrete
+#' @importFrom utils stack
+#' @importFrom grDevices col2rgb
+#' @export
+autoplot.dna_barplot <- function(object,
+                                 ...,
+                                 lab.pos = "Agreement",
+                                 lab.neg = "Disagreement",
+                                 lab = TRUE,
+                                 colors = FALSE,
+                                 fontSize = 12,
+                                 barWidth = 0.6,
+                                 axisWidth = 1.5,
+                                 truncate = 40,
+                                 exclude.min = NULL) {
+
+
+  if (!("dna_barplot" %in% class(object))) {
+    stop("Invalid data object. Please compute a dna_barplot object via the ",
+         "dna_barplot function before plotting.")
+  }
+
+  if (!("Entity" %in% colnames(object))) {
+    stop("dna_barplot object does not have a \'Entity\' variable. Please ",
+         "compute a new dna_barplot object via the dna_barplot function before",
+         " plotting.")
+  }
+
+  if (isTRUE(colors) & !("Color" %in% colnames(object)) |
+      is.character(colors) & !(colors %in% colnames(object))) {
+    colors <- FALSE
+    warning("No color variable found in dna_barplot object. Colors will be",
+            " ignored.")
+  }
+
+  if (!is.numeric(truncate)) {
+    truncate <- Inf
+    warning("No numeric value provided for trimming of entities. Truncation ",
+            "will be ignored.")
+  }
+
+  # Get qualifier values
+  w <- attr(object, "intValues")
+
+  if (!all(w %in% colnames(object))) {
+    stop("dna_barplot object does not include all qualifier values of the ",
+         "statement type. Please compute a new dna_barplot object via the ",
+         "dna_barplot function.")
+  }
+
+  # Check if qualifier is binary
+  binary <- all(w %in% c(0, 1))
+
+  # Compute total values per entity
+  object$sum <- rowSums(object[, colnames(object) %in% w])
+
+  # Exclude minimum number of statements per entity
+  if (is.numeric(exclude.min)) {
+    if (exclude.min > max(object$sum)) {
+      exclude.min <- NULL
+      warning("Value provided in exclude.min is higher than maximum frequency ",
+              "of entity (", max(object$sum), "). Will ignore exclude.min.")
+    } else {
+      object <- object[object$sum >= exclude.min, ]
+    }
+  }
+
+  # Stack agreement and disagreement
+  object2 <- cbind(object$Entity, utils::stack(object, select = colnames(object) %in% w))
+  colnames(object2) <- c("entity", "frequency", "agreement")
+
+  object <- object[order(object$sum, decreasing = TRUE), ]
+
+  object2$entity <- factor(object2$entity, levels = rev(object$Entity))
+
+  # Get colors
+  if (isTRUE(colors)) {
+    object2$color <- object$Color[match(object2$entity, object$Entity)]
+    object2$text_color <- "black"
+    # Change text color to white in case of dark bar colors
+    object2$text_color[sum(grDevices::col2rgb(object2$color) * c(299, 587, 114)) / 1000 < 123] <- "white"
+  } else if (is.character(colors)) {
+    object2$color <- object[, colors][match(object2$entity, object$Entity)]
+    object2$text_color <- "black"
+  } else {
+    object2$color <- "white"
+    object2$text_color <- "black"
+  }
+
+
+  if (binary) {
+    # setting disagreement as -1 instead 0
+    object2$agreement <- ifelse(object2$agreement == 0, -1, 1)
+    # recode frequency in positive and negative
+    object2$frequency <- object2$frequency * as.integer(object2$agreement)
+
+    # generate position of bar labels
+    offset <- (max(object2$frequency) + abs(min(object2$frequency))) * 0.05
+    offset <- ifelse(offset < 0.5, 0.5, offset) # offset should be at least 0.5
+    if (offset > abs(min(object2$frequency))) {
+      offset <- abs(min(object2$frequency))
+    }
+    if (offset > max(object2$frequency)) {
+      offset <- abs(min(object2$frequency))
+    }
+    object2$pos <- ifelse(object2$frequency > 0,
+                          object2$frequency + offset,
+                          object2$frequency - offset)
+
+    # move 0 labels where necessary
+    object2$pos[object2$frequency == 0] <- ifelse(object2$agreement[object2$frequency == 0] == 1,
+                                                  object2$pos[object2$frequency == 0] * -1,
+                                                  object2$pos[object2$frequency == 0])
+    object2$label <- as.factor(abs(object2$frequency))
+  } else {
+    object2$count <- object2$frequency
+    # set frequency of negative qualifiers to negative values
+    object2$frequency <- ifelse(as.numeric(as.character(object2$agreement)) >= 0, object2$frequency,
+                                object2$frequency * -1)
+    # remove zero frequencies
+    object2 <- object2[object2$frequency != 0, ]
+    # generate position of bar labels
+    object2$pos <- ifelse(object2$frequency > 0,
+                          1.1,
+                          -0.1)
+    # Add labels
+    object2$label <- paste(object2$count, object2$agreement, sep = " x ")
+  }
+
+  offset <- (max(object2$frequency) + abs(min(object2$frequency))) * 0.05
+  offset <- ifelse(offset < 0.5, 0.5, offset)
+  yintercepts <- data.frame(x = c(0.5, length(unique(object2$entity)) + 0.5),
+                            y = c(0, 0))
+  high <- yintercepts$x[2] + 0.25
+
+  object2 <- object2[order(as.numeric(as.character(object2$agreement)),
+                           decreasing = FALSE), ]
+  object2$agreement <- factor(object2$agreement, levels = w)
+
+  # Plot
+  g <- ggplot2::ggplot(object2,
+                       ggplot2::aes_string(x = "entity",
+                                           y = "frequency",
+                                           fill = "agreement",
+                                           group = "agreement",
+                                           label = "label"))
+  if (binary) { # Bars for the binary case
+    g <- g + ggplot2::geom_bar(ggplot2::aes_string(fill = "color",
+                                                   color = "text_color"),
+                               stat = "identity",
+                               width = barWidth,
+                               show.legend = FALSE)
+    # For the integer case with positive and negative values
+  } else if (max(w) > 0 & min(w) < 0) {
+    g <- g + ggplot2::geom_bar(ggplot2::aes_string(fill = "color",
+                                                   color = "text_color"),
+                               stat = "identity",
+                               width = barWidth,
+                               show.legend = FALSE,
+                               data = object2[as.numeric(as.character(object2$agreement)) >= 0, ],
+                               position = ggplot2::position_stack(reverse = TRUE)) +
+      ggplot2::geom_bar(ggplot2::aes_string(fill = "color",
+                                            color = "text_color"),
+                        stat = "identity",
+                        width = barWidth,
+                        show.legend = FALSE,
+                        data = object2[as.numeric(as.character(object2$agreement)) < 0, ])
+    # For the integer case with positive values only
+  } else if (min(w) >= 0) {
+    g <- g + ggplot2::geom_bar(ggplot2::aes_string(fill = "color",
+                                                   color = "text_color"),
+                               stat = "identity",
+                               width = barWidth,
+                               show.legend = FALSE,
+                               position = ggplot2::position_stack(reverse = TRUE))
+    # For the integer case with negative values only
+  } else {
+    g <- g + ggplot2::geom_bar(ggplot2::aes_string(fill = "color",
+                                                   color = "text_color"),
+                               stat = "identity",
+                               width = barWidth,
+                               show.legend = FALSE)
+  }
+  g <- g + ggplot2::coord_flip() +
+    ggplot2::theme_minimal() +
+    # Add intercept line
+    ggplot2::geom_line(ggplot2::aes_string(x = "x", y = "y"),
+                       data = yintercepts,
+                       linewidth = axisWidth,
+                       inherit.aes = FALSE) +
+    # Remove all panel grids, axis titles and axis ticks and text for x-axis
+    ggplot2::theme(panel.grid.major = ggplot2::element_blank(),
+                   panel.grid.minor = ggplot2::element_blank(),
+                   axis.title = ggplot2::element_blank(),
+                   axis.ticks.y = ggplot2::element_blank(),
+                   axis.text.x = ggplot2::element_blank(),
+                   axis.text.y = ggplot2::element_text(size = fontSize)) #+
+  if (is.logical(colors)) {
+    g <- g + ggplot2::scale_fill_identity() +
+      ggplot2::scale_color_identity()
+  }
+  if (binary) { # Add entity labels for binary case
+    g <- g +
+      ggplot2::geom_text(ggplot2::aes_string(x = "entity",
+                                             y = "pos",
+                                             label = "label"),
+                         size = (fontSize / ggplot2::.pt),
+                         inherit.aes = FALSE,
+                         data = object2)
+    # Add entity labels for integer case with positive and negative values
+  } else if (max(w) > 0 & min(w) < 0) {
+    g <- g +
+      ggplot2::geom_text(ggplot2::aes_string(color = "text_color"),
+                         size = (fontSize / ggplot2::.pt),
+                         position = ggplot2::position_stack(vjust = 0.5, reverse = TRUE),
+                         inherit.aes = TRUE,
+                         data = object2[object2$frequency >= 0, ]) +
+      ggplot2::geom_text(ggplot2::aes_string(color = "text_color"),
+                         size = (fontSize / ggplot2::.pt),
+                         position = ggplot2::position_stack(vjust = 0.5),
+                         inherit.aes = TRUE,
+                         data = object2[object2$frequency < 0, ])
+    # Add entity labels for integer case with positive values only
+  } else if (min(w) >= 0) {
+    g <- g +
+      ggplot2::geom_text(ggplot2::aes_string(color = "text_color"),
+                         size = (fontSize / ggplot2::.pt),
+                         position = ggplot2::position_stack(vjust = 0.5, reverse = TRUE),
+                         inherit.aes = TRUE)
+  } else {
+    g <- g +
+      ggplot2::geom_text(ggplot2::aes_string(color = "text_color"),
+                         size = (fontSize / ggplot2::.pt),
+                         position = ggplot2::position_stack(vjust = 0.5),
+                         inherit.aes = TRUE)
+  }
+  if (lab) { # Add (dis-)agreement labels
+    g <- g +
+      ggplot2::annotate("text",
+                        x = high,
+                        y = offset * 2,
+                        hjust = 0,
+                        label = lab.pos,
+                        size = (fontSize / ggplot2::.pt)) +
+      ggplot2::annotate("text",
+                        x = high,
+                        y = 0 - offset * 2,
+                        hjust = 1,
+                        label = lab.neg,
+                        size = (fontSize / ggplot2::.pt)) +
+      # Truncate labels of entities
+      ggplot2::scale_x_discrete(labels = sapply(as.character(object2$entity), function(e) if (nchar(e) > truncate) paste0(substr(e, 1, truncate - 1), "*") else e),
+                                expand = c(0, 2, 0, 2),
+                                limits = levels(object2$entity))
+  } else {
+    g <- g +
+      # Truncate labels of entities
+      ggplot2::scale_x_discrete(labels = sapply(as.character(object2$entity), function(e) if (nchar(e) > truncate) paste0(substr(e, 1, truncate - 1), "*") else e),
+                                limits = levels(object2$entity))
+  }
+  return(g)
+}
+
+
+# Backbones --------------------------------------------------------------------
 
 #' Compute and retrieve the backbone and redundant set
 #'
@@ -1495,6 +2518,17 @@ dna_backbone <- function(penalty = 3.5,
   }
 }
 
+#' @rdname dna_backbone
+#' @param x A \code{"dna_backbone"} object.
+#' @noRd
+print.dna_backbone <- function(x, ...) {
+  cat(paste0("Penalty: ", x$penalty, ". Iterations: ", x$iterations, ".\n\n"))
+  cat(paste0("Backbone set (loss: ", round(x$unpenalized_backbone_loss, 4), "):\n"))
+  cat(paste(1:length(x$backbone), x$backbone), sep = "\n")
+  cat(paste0("\nRedundant set (loss: ", round(x$unpenalized_redundant_loss, 4), "):\n"))
+  cat(paste(1:length(x$redundant), x$redundant), sep = "\n")
+}
+
 #' @param ma Number of iterations to compute moving average.
 #' @rdname dna_backbone
 #' @importFrom graphics lines
@@ -1552,17 +2586,6 @@ plot.dna_backbone <- function(x, ma = 500, ...) {
        xlab = "Iteration",
        ylab = paste("Acceptance ratio in the last", ma, "iterations"),
        main = "Acceptance ratio")
-}
-
-#' @rdname dna_backbone
-#' @param x A \code{"dna_backbone"} object.
-#' @noRd
-print.dna_backbone <- function(x, ...) {
-  cat(paste0("Penalty: ", x$penalty, ". Iterations: ", x$iterations, ".\n\n"))
-  cat(paste0("Backbone set (loss: ", round(x$unpenalized_backbone_loss, 4), "):\n"))
-  cat(paste(1:length(x$backbone), x$backbone), sep = "\n")
-  cat(paste0("\nRedundant set (loss: ", round(x$unpenalized_redundant_loss, 4), "):\n"))
-  cat(paste(1:length(x$redundant), x$redundant), sep = "\n")
 }
 
 #' @rdname dna_backbone
@@ -1627,534 +2650,4 @@ autoplot.dna_backbone <- function(object, ..., ma = 500) {
   # wrap in list
   plots <- list(g_accept, g_loss, g_size, g_ar)
   return(plots)
-}
-
-#' Generate the data necessary for creating a barplot for a variable
-#'
-#' Generate the data necessary for creating a barplot for a variable.
-#'
-#' Create a \code{dna_barplot} object, which contains a data frame with
-#' entity value frequencies grouped by the levels of a qualifier variable.
-#' The qualifier variable is optional.
-#'
-#' @param variable The variable for which the barplot will be generated. There
-#'   will be one bar per entity label of this variable.
-#' @param qualifier A boolean (binary) or integer variable to group the value
-#'   frequencies by. Can be \code{NULL} to skip the grouping.
-#' @inheritParams dna_network
-#'
-#' @examples
-#' \dontrun{
-#' dna_init()
-#' dna_sample()
-#' dna_openDatabase("sample.dna", coderId = 1, coderPassword = "sample")
-#'
-#' # compute barplot data
-#' b <- dna_barplot(statementType = "DNA Statement",
-#'                  variable = "concept",
-#'                  qualifier = "agreement")
-#' b
-#' }
-#'
-#' @author Philip Leifeld
-#'
-#' @seealso \link{print.dna_barplot}, \link{autoplot.dna_barplot}
-#'
-#' @importFrom rJava .jarray
-#' @importFrom rJava .jcall
-#' @importFrom rJava .jevalArray
-#' @importFrom rJava .jnull
-#' @importFrom rJava is.jnull
-#' @export
-dna_barplot <- function(statementType = "DNA Statement",
-                        variable = "concept",
-                        qualifier = "agreement",
-                        duplicates = "document",
-                        start.date = "01.01.1900",
-                        stop.date = "31.12.2099",
-                        start.time = "00:00:00",
-                        stop.time = "23:59:59",
-                        excludeValues = list(),
-                        excludeAuthors = character(),
-                        excludeSources = character(),
-                        excludeSections = character(),
-                        excludeTypes = character(),
-                        invertValues = FALSE,
-                        invertAuthors = FALSE,
-                        invertSources = FALSE,
-                        invertSections = FALSE,
-                        invertTypes = FALSE) {
-
-  # wrap the vectors of exclude values for document variables into Java arrays
-  excludeAuthors <- .jarray(excludeAuthors)
-  excludeSources <- .jarray(excludeSources)
-  excludeSections <- .jarray(excludeSections)
-  excludeTypes <- .jarray(excludeTypes)
-
-  # compile exclude variables and values vectors
-  dat <- matrix("", nrow = length(unlist(excludeValues)), ncol = 2)
-  count <- 0
-  if (length(excludeValues) > 0) {
-    for (i in 1:length(excludeValues)) {
-      if (length(excludeValues[[i]]) > 0) {
-        for (j in 1:length(excludeValues[[i]])) {
-          count <- count + 1
-          dat[count, 1] <- names(excludeValues)[i]
-          dat[count, 2] <- excludeValues[[i]][j]
-        }
-      }
-    }
-    var <- dat[, 1]
-    val <- dat[, 2]
-  } else {
-    var <- character()
-    val <- character()
-  }
-  var <- .jarray(var) # array of variable names of each excluded value
-  val <- .jarray(val) # array of values to be excluded
-
-  # encode R NULL as Java null value if necessary
-  if (is.null(qualifier) || is.na(qualifier)) {
-    qualifier <- .jnull(class = "java/lang/String")
-  }
-
-  # call rBarplotData function to compute results
-  b <- .jcall(dnaEnvironment[["dna"]]$headlessDna,
-              "Lexport/BarplotResult;",
-              "rBarplotData",
-              statementType,
-              variable,
-              qualifier,
-              duplicates,
-              start.date,
-              stop.date,
-              start.time,
-              stop.time,
-              var,
-              val,
-              excludeAuthors,
-              excludeSources,
-              excludeSections,
-              excludeTypes,
-              invertValues,
-              invertAuthors,
-              invertSources,
-              invertSections,
-              invertTypes,
-              simplify = TRUE)
-
-  at <- .jcall(b, "[[Ljava/lang/String;", "getAttributes")
-  at <- t(sapply(at, FUN = .jevalArray))
-
-  counts <- .jcall(b, "[[I", "getCounts")
-  counts <- t(sapply(counts, FUN = .jevalArray))
-  if (nrow(counts) < nrow(at)) {
-    counts <- t(counts)
-  }
-
-  results <- data.frame(.jcall(b, "[S", "getValues"),
-                        counts,
-                        at)
-
-  intValues <- .jcall(b, "[I", "getIntValues")
-  intColNames <- intValues
-  if (is.jnull(qualifier)) {
-    intValues <- integer(0)
-    intColNames <- "Frequency"
-  }
-
-  atVar <- .jcall(b, "[S", "getAttributeVariables")
-
-  colnames(results) <- c("Entity", intColNames, atVar)
-
-  attributes(results)$variable <- .jcall(b, "S", "getVariable")
-  attributes(results)$intValues <- intValues
-  attributes(results)$attributeVariables <- atVar
-
-  class(results) <- c("dna_barplot", class(results))
-
-  return(results)
-}
-
-#' Print a \code{dna_barplot} object
-#'
-#' Show details of a \code{dna_barplot} object.
-#'
-#' Print the data frame returned by the \code{\link{dna_barplot}} function.
-#'
-#' @param x A \code{dna_barplot} object, as returned by the
-#'   \code{\link{dna_barplot}} function.
-#' @param trim Number of maximum characters to display in entity labels.
-#'   Entities with more characters are truncated, and the last character is
-#'   replaced by an asterisk (\code{*}).
-#' @param attr Display attributes, such as the name of the variable and the
-#'   levels of the qualifier variable if available.
-#' @param ... Additional arguments. Currently not in use.
-#'
-#' @author Philip Leifeld
-#'
-#' @seealso \link{dna_barplot}, \link{autoplot.dna_barplot}
-#' @export
-print.dna_barplot <- function(x, trim = 30, attr = TRUE, ...) {
-  x2 <- x
-  if (isTRUE(attr)) {
-    cat("Variable:", attr(x2, "variable"))
-    intVal <- attr(x2, "intValues")
-    if (length(intVal) > 0) {
-      cat(".\nQualifier levels:", paste(intVal, collapse = ", "))
-    } else {
-      cat(".\nNo qualifier variable")
-    }
-    cat(".\n")
-  }
-  x2$Entity <- sapply(x2$Entity, function(e) if (nchar(e) > trim) paste0(substr(e, 1, trim - 1), "*") else e)
-  class(x2) <- "data.frame"
-  print(x2)
-}
-
-#' Plot \code{dna_barplot} object.
-#'
-#' Plot a barplot generated from \code{\link{dna_barplot}}.
-#'
-#' This function plots \code{dna_barplot} objects generated by the
-#' \code{\link{dna_barplot}} function. It plots agreement and disagreement with
-#' DNA statements for different entities such as \code{"concept"},
-#' \code{"organization"}, or \code{"person"}. Colors can be modified before
-#' plotting (see examples).
-#'
-#' @param object A \code{dna_barplot} object.
-#' @param lab.pos,lab.neg Names for (dis-)agreement labels.
-#' @param lab Should (dis-)agreement labels and title be displayed?
-#' @param colors If \code{TRUE}, the \code{Colors} column in the
-#'   \code{dna_barplot} object will be used to fill the bars. Also accepts
-#'   character objects matching one of the attribute variables of the
-#'   \code{dna_barplot} object.
-#' @param fontSize Text size in pt.
-#' @param barWidth Thickness of the bars. Bars will touch when set to \code{1}.
-#'   When set to \code{0.5}, space between two bars is the same as thickness of
-#'   bars.
-#' @param axisWidth Thickness of the x-axis which separates agreement from
-#'   disagreement.
-#' @param truncate Sets the number of characters to which axis labels should be
-#'   truncated.
-#' @param exclude.min Reduces the plot to entities with a minimum frequency of
-#'   statements.
-#'
-#' @examples
-#' \dontrun{
-#' dna_init()
-#' dna_sample()
-#'
-#' dna_openDatabase("sample.dna", coderId = 1, coderPassword = "sample")
-#'
-#' # compute barplot data
-#' b <- dna_barplot(statementType = "DNA Statement",
-#'                  variable = "concept",
-#'                  qualifier = "agreement")
-#'
-#' # plot barplot with ggplot2
-#' library("ggplot2")
-#' autoplot(b)
-#'
-#' # use entity colours (here: colors of organizations as an illustration)
-#' b <- dna_barplot(statementType = "DNA Statement",
-#'                  variable = "organization",
-#'                  qualifier = "agreement")
-#' autoplot(b, colors = TRUE)
-#'
-#' # edit the colors before plotting
-#' b$Color[b$Type == "NGO"] <- "red"         # change NGO color to red
-#' b$Color[b$Type == "Government"] <- "blue" # change government color to blue
-#' autoplot(b, colors = TRUE)
-#'
-#' # use an attribute, such as type, to color the bars
-#' autoplot(b, colors = "Type") +
-#'   scale_colour_manual(values = "black")
-#'
-#' # replace colors for the three possible actor types with custom colors
-#' autoplot(b, colors = "Type") +
-#'   scale_fill_manual(values = c("red", "blue", "green")) +
-#'   scale_colour_manual(values = "black")
-#' }
-#'
-#' @author Johannes B. Gruber, Tim Henrichsen
-#'
-#' @seealso \link{dna_barplot}
-#'
-#' @importFrom ggplot2 autoplot
-#' @importFrom ggplot2 ggplot
-#' @importFrom ggplot2 aes_string
-#' @importFrom ggplot2 geom_line
-#' @importFrom ggplot2 theme_minimal
-#' @importFrom ggplot2 theme
-#' @importFrom ggplot2 geom_bar
-#' @importFrom ggplot2 position_stack
-#' @importFrom ggplot2 coord_flip
-#' @importFrom ggplot2 element_blank
-#' @importFrom ggplot2 element_text
-#' @importFrom ggplot2 scale_color_identity
-#' @importFrom ggplot2 scale_fill_identity
-#' @importFrom ggplot2 geom_text
-#' @importFrom ggplot2 .pt
-#' @importFrom ggplot2 annotate
-#' @importFrom ggplot2 scale_x_discrete
-#' @importFrom utils stack
-#' @importFrom grDevices col2rgb
-#' @export
-autoplot.dna_barplot <- function(object,
-                                 lab.pos = "Agreement",
-                                 lab.neg = "Disagreement",
-                                 lab = TRUE,
-                                 colors = FALSE,
-                                 fontSize = 12,
-                                 barWidth = 0.6,
-                                 axisWidth = 1.5,
-                                 truncate = 40,
-                                 exclude.min = NULL) {
-
-
-  if (!("dna_barplot" %in% class(object))) {
-    stop("Invalid data object. Please compute a dna_barplot object via the ",
-         "dna_barplot function before plotting.")
-  }
-
-  if (!("Entity" %in% colnames(object))) {
-    stop("dna_barplot object does not have a \'Entity\' variable. Please ",
-         "compute a new dna_barplot object via the dna_barplot function before",
-         " plotting.")
-  }
-
-  if (isTRUE(colors) & !("Color" %in% colnames(object)) |
-      is.character(colors) & !(colors %in% colnames(object))) {
-    colors <- FALSE
-    warning("No color variable found in dna_barplot object. Colors will be",
-            " ignored.")
-  }
-
-  if (!is.numeric(truncate)) {
-    truncate <- Inf
-    warning("No numeric value provided for trimming of entities. Truncation ",
-            "will be ignored.")
-  }
-
-  # Get qualifier values
-  w <- attr(object, "intValues")
-
-  if (!all(w %in% colnames(object))) {
-    stop("dna_barplot object does not include all qualifier values of the ",
-         "statement type. Please compute a new dna_barplot object via the ",
-         "dna_barplot function.")
-  }
-
-  # Check if qualifier is binary
-  binary <- all(w %in% c(0, 1))
-
-  # Compute total values per entity
-  object$sum <- rowSums(object[, colnames(object) %in% w])
-
-  # Exclude minimum number of statements per entity
-  if (is.numeric(exclude.min)) {
-    if (exclude.min > max(object$sum)) {
-      exclude.min <- NULL
-      warning("Value provided in exclude.min is higher than maximum frequency ",
-              "of entity (", max(object$sum), "). Will ignore exclude.min.")
-    } else {
-      object <- object[object$sum >= exclude.min, ]
-    }
-  }
-
-  # Stack agreement and disagreement
-  object2 <- cbind(object$Entity, utils::stack(object, select = colnames(object) %in% w))
-  colnames(object2) <- c("entity", "frequency", "agreement")
-
-  object <- object[order(object$sum, decreasing = TRUE), ]
-
-  object2$entity <- factor(object2$entity, levels = rev(object$Entity))
-
-  # Get colors
-  if (isTRUE(colors)) {
-    object2$color <- object$Color[match(object2$entity, object$Entity)]
-    object2$text_color <- "black"
-    # Change text color to white in case of dark bar colors
-    object2$text_color[sum(grDevices::col2rgb(object2$color) * c(299, 587, 114)) / 1000 < 123] <- "white"
-  } else if (is.character(colors)) {
-    object2$color <- object[, colors][match(object2$entity, object$Entity)]
-    object2$text_color <- "black"
-  } else {
-    object2$color <- "white"
-    object2$text_color <- "black"
-  }
-
-
-  if (binary) {
-    # setting disagreement as -1 instead 0
-    object2$agreement <- ifelse(object2$agreement == 0, -1, 1)
-    # recode frequency in positive and negative
-    object2$frequency <- object2$frequency * as.integer(object2$agreement)
-
-    # generate position of bar labels
-    offset <- (max(object2$frequency) + abs(min(object2$frequency))) * 0.05
-    offset <- ifelse(offset < 0.5, 0.5, offset) # offset should be at least 0.5
-    if (offset > abs(min(object2$frequency))) {
-      offset <- abs(min(object2$frequency))
-    }
-    if (offset > max(object2$frequency)) {
-      offset <- abs(min(object2$frequency))
-    }
-    object2$pos <- ifelse(object2$frequency > 0,
-                          object2$frequency + offset,
-                          object2$frequency - offset)
-
-    # move 0 labels where necessary
-    object2$pos[object2$frequency == 0] <- ifelse(object2$agreement[object2$frequency == 0] == 1,
-                                                  object2$pos[object2$frequency == 0] * -1,
-                                                  object2$pos[object2$frequency == 0])
-    object2$label <- as.factor(abs(object2$frequency))
-  } else {
-    object2$count <- object2$frequency
-    # set frequency of negative qualifiers to negative values
-    object2$frequency <- ifelse(as.numeric(as.character(object2$agreement)) >= 0, object2$frequency,
-                                object2$frequency * -1)
-    # remove zero frequencies
-    object2 <- object2[object2$frequency != 0, ]
-    # generate position of bar labels
-    object2$pos <- ifelse(object2$frequency > 0,
-                          1.1,
-                          -0.1)
-    # Add labels
-    object2$label <- paste(object2$count, object2$agreement, sep = " x ")
-  }
-
-  offset <- (max(object2$frequency) + abs(min(object2$frequency))) * 0.05
-  offset <- ifelse(offset < 0.5, 0.5, offset)
-  yintercepts <- data.frame(x = c(0.5, length(unique(object2$entity)) + 0.5),
-                            y = c(0, 0))
-  high <- yintercepts$x[2] + 0.25
-
-  object2 <- object2[order(as.numeric(as.character(object2$agreement)),
-                           decreasing = FALSE), ]
-  object2$agreement <- factor(object2$agreement, levels = w)
-
-  # Plot
-  g <- ggplot2::ggplot(object2,
-                       ggplot2::aes_string(x = "entity",
-                                           y = "frequency",
-                                           fill = "agreement",
-                                           group = "agreement",
-                                           label = "label"))
-  if (binary) { # Bars for the binary case
-    g <- g + ggplot2::geom_bar(ggplot2::aes_string(fill = "color",
-                                                   color = "text_color"),
-                               stat = "identity",
-                               width = barWidth,
-                               show.legend = FALSE)
-    # For the integer case with positive and negative values
-  } else if (max(w) > 0 & min(w) < 0) {
-    g <- g + ggplot2::geom_bar(ggplot2::aes_string(fill = "color",
-                                                   color = "text_color"),
-                               stat = "identity",
-                               width = barWidth,
-                               show.legend = FALSE,
-                               data = object2[as.numeric(as.character(object2$agreement)) >= 0, ],
-                               position = ggplot2::position_stack(reverse = TRUE)) +
-      ggplot2::geom_bar(ggplot2::aes_string(fill = "color",
-                                            color = "text_color"),
-                        stat = "identity",
-                        width = barWidth,
-                        show.legend = FALSE,
-                        data = object2[as.numeric(as.character(object2$agreement)) < 0, ])
-    # For the integer case with positive values only
-  } else if (min(w) >= 0) {
-    g <- g + ggplot2::geom_bar(ggplot2::aes_string(fill = "color",
-                                                   color = "text_color"),
-                               stat = "identity",
-                               width = barWidth,
-                               show.legend = FALSE,
-                               position = ggplot2::position_stack(reverse = TRUE))
-    # For the integer case with negative values only
-  } else {
-    g <- g + ggplot2::geom_bar(ggplot2::aes_string(fill = "color",
-                                                   color = "text_color"),
-                               stat = "identity",
-                               width = barWidth,
-                               show.legend = FALSE)
-  }
-  g <- g + ggplot2::coord_flip() +
-    ggplot2::theme_minimal() +
-    # Add intercept line
-    ggplot2::geom_line(ggplot2::aes_string(x = "x", y = "y"),
-                       data = yintercepts,
-                       linewidth = axisWidth,
-                       inherit.aes = FALSE) +
-    # Remove all panel grids, axis titles and axis ticks and text for x-axis
-    ggplot2::theme(panel.grid.major = ggplot2::element_blank(),
-                   panel.grid.minor = ggplot2::element_blank(),
-                   axis.title = ggplot2::element_blank(),
-                   axis.ticks.y = ggplot2::element_blank(),
-                   axis.text.x = ggplot2::element_blank(),
-                   axis.text.y = ggplot2::element_text(size = fontSize)) #+
-  if (is.logical(colors)) {
-    g <- g + ggplot2::scale_fill_identity() +
-      ggplot2::scale_color_identity()
-  }
-  if (binary) { # Add entity labels for binary case
-    g <- g +
-      ggplot2::geom_text(ggplot2::aes_string(x = "entity",
-                                             y = "pos",
-                                             label = "label"),
-                         size = (fontSize / ggplot2::.pt),
-                         inherit.aes = FALSE,
-                         data = object2)
-    # Add entity labels for integer case with positive and negative values
-  } else if (max(w) > 0 & min(w) < 0) {
-    g <- g +
-      ggplot2::geom_text(ggplot2::aes_string(color = "text_color"),
-                         size = (fontSize / ggplot2::.pt),
-                         position = ggplot2::position_stack(vjust = 0.5, reverse = TRUE),
-                         inherit.aes = TRUE,
-                         data = object2[object2$frequency >= 0, ]) +
-      ggplot2::geom_text(ggplot2::aes_string(color = "text_color"),
-                         size = (fontSize / ggplot2::.pt),
-                         position = ggplot2::position_stack(vjust = 0.5),
-                         inherit.aes = TRUE,
-                         data = object2[object2$frequency < 0, ])
-    # Add entity labels for integer case with positive values only
-  } else if (min(w) >= 0) {
-    g <- g +
-      ggplot2::geom_text(ggplot2::aes_string(color = "text_color"),
-                         size = (fontSize / ggplot2::.pt),
-                         position = ggplot2::position_stack(vjust = 0.5, reverse = TRUE),
-                         inherit.aes = TRUE)
-  } else {
-    g <- g +
-      ggplot2::geom_text(ggplot2::aes_string(color = "text_color"),
-                         size = (fontSize / ggplot2::.pt),
-                         position = ggplot2::position_stack(vjust = 0.5),
-                         inherit.aes = TRUE)
-  }
-  if (lab) { # Add (dis-)agreement labels
-    g <- g +
-      ggplot2::annotate("text",
-                        x = high,
-                        y = offset * 2,
-                        hjust = 0,
-                        label = lab.pos,
-                        size = (fontSize / ggplot2::.pt)) +
-      ggplot2::annotate("text",
-                        x = high,
-                        y = 0 - offset * 2,
-                        hjust = 1,
-                        label = lab.neg,
-                        size = (fontSize / ggplot2::.pt)) +
-      # Truncate labels of entities
-      ggplot2::scale_x_discrete(labels = sapply(as.character(object2$entity), function(e) if (nchar(e) > truncate) paste0(substr(e, 1, truncate - 1), "*") else e),
-                                expand = c(0, 2, 0, 2),
-                                limits = levels(object2$entity))
-  } else {
-    g <- g +
-      # Truncate labels of entities
-      ggplot2::scale_x_discrete(labels = sapply(as.character(object2$entity), function(e) if (nchar(e) > truncate) paste0(substr(e, 1, truncate - 1), "*") else e),
-                                limits = levels(object2$entity))
-  }
-  return(g)
 }

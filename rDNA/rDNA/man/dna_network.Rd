@@ -272,6 +272,15 @@ nw <- dna_network(networkType = "onemode",
 }
 
 }
+\seealso{
+Other {rDNA networks}: 
+\code{\link{as.matrix.dna_network_onemode}()},
+\code{\link{as.matrix.dna_network_twomode}()},
+\code{\link{autoplot.dna_network}},
+\code{\link{print.dna_network_onemode}()},
+\code{\link{print.dna_network_twomode}()}
+}
 \author{
 Philip Leifeld
 }
+\concept{{rDNA networks}}

@@ -24,7 +24,7 @@ To install the new rDNA 3 directly from GitHub, try the following code in R:
 
 ``` r
 # install.packages("remotes")
-remotes::install_github("leifeld/dna/rDNA@*release",
+remotes::install_github("leifeld/dna/rDNA/rDNA@*release",
                         INSTALL_opts = "--no-multiarch")
 ```
 
