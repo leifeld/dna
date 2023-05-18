@@ -66,6 +66,16 @@ dna_openDatabase(coderId = 1,
 }
 
 }
+\seealso{
+\code{\link{dna_queryCoders}}
+
+Other {rDNA database connections}: 
+\code{\link{dna_closeDatabase}()},
+\code{\link{dna_openConnectionProfile}()},
+\code{\link{dna_printDetails}()},
+\code{\link{dna_saveConnectionProfile}()}
+}
 \author{
 Philip Leifeld
 }
+\concept{{rDNA database connections}}

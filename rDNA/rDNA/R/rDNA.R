@@ -1,4 +1,4 @@
-# Startup ----------------------------------------------------------------------
+# Package startup --------------------------------------------------------------
 
 dnaEnvironment <- new.env(hash = TRUE, parent = emptyenv())
 
@@ -37,11 +37,13 @@ dnaEnvironment <- new.env(hash = TRUE, parent = emptyenv())
 #' @param returnString Return a character object representing the jar file name?
 #'
 #' @author Philip Leifeld
-#' 
+#'
 #' @examples
 #' \dontrun{
 #' dna_init()
 #' }
+#'
+#' @family {rDNA package startup}
 #'
 #' @export
 #' @importFrom rJava .jinit .jnew .jarray
@@ -73,7 +75,7 @@ dna_init <- function(jarfile = dna_jar(), memory = 1024, returnString = FALSE) {
 #' Identify and/or download and install the correct DNA jar file
 #'
 #' Identify and/or download and install the correct DNA jar file.
-#' 
+#'
 #' rDNA requires the installation of a DNA jar file to run properly. While it is
 #' possible to store the jar file in the respective working directory, it is
 #' preferable to install it in the rDNA library installation directory under
@@ -90,18 +92,20 @@ dna_init <- function(jarfile = dna_jar(), memory = 1024, returnString = FALSE) {
 #' from source, and attempt to store the built jar file in the library path or,
 #' if this fails, in the working directory and return the file name of the jar
 #' file. If all of this fails, an error message is thrown.
-#' 
+#'
 #' @return The file name of the jar file that matches the installed \pkg{rDNA}
 #'   version, including full path.
-#' 
+#'
 #' @author Philip Leifeld
+#'
+#' @family {rDNA package startup}
 #'
 #' @importFrom utils download.file unzip packageVersion
 #' @export
 dna_jar <- function() {
   # detect package version
   v <- as.character(packageVersion("rDNA"))
-  
+
   # try to locate jar file in library path and return jar file path
   tryCatch({
     rdna_dir <- dirname(system.file(".", package = "rDNA"))
@@ -111,7 +115,7 @@ dna_jar <- function() {
       return(jar)
     }
   }, error = function(e) {success <- FALSE})
-  
+
   # try to locate jar file in working directory and return jar file path
   tryCatch({
     jar <- paste0(getwd(), "/inst/java/dna-", v, ".jar")
@@ -120,7 +124,7 @@ dna_jar <- function() {
       return(jar)
     }
   }, error = function(e) {success <- FALSE})
-  
+
   # try to download from GitHub release directory to library path
   tryCatch({
     rdna_dir <- dirname(system.file(".", package = "rDNA"))
@@ -138,7 +142,7 @@ dna_jar <- function() {
       return(dest)
     }
   }, error = function(e) {success <- FALSE})
-  
+
   # try to download from GitHub release directory to working directory
   tryCatch({
     rdna_dir <- dirname(system.file(".", package = "rDNA"))
@@ -154,7 +158,7 @@ dna_jar <- function() {
       return(dest)
     }
   }, error = function(e) {success <- FALSE})
-  
+
   # try to download and build from source
   tryCatch({
     td <- tempdir()
@@ -177,7 +181,7 @@ dna_jar <- function() {
       message("DNA source code downloaded and jar file built successfully.")
     }
   }, error = function(e) {success <- FALSE})
-  
+
   # try to copy built jar to library path
   tryCatch({
     targetdir <- paste0(find.package("rDNA"), "/", "inst/java/")
@@ -190,7 +194,7 @@ dna_jar <- function() {
       return(dest)
     }
   }, error = function(e) {success <- FALSE})
-  
+
   # try to copy built jar to working directory
   tryCatch({
     dest <- paste0(getwd(), "/dna-", v, ".jar")
@@ -201,7 +205,7 @@ dna_jar <- function() {
       return(dest)
     }
   }, error = function(e) {success <- FALSE})
-  
+
   stop("DNA jar file could not be identified or downloaded. Please download ",
        "the DNA jar file matching the version number of rDNA and store it in ",
        "the inst/java/ directory of your rDNA library installation path or in ",
@@ -227,6 +231,8 @@ dna_jar <- function() {
 #'
 #' @author Johannes B. Gruber, Philip Leifeld
 #'
+#' @family {rDNA package startup}
+#'
 #' @export
 dna_sample <- function(overwrite = FALSE) {
   if (file.exists(paste0(getwd(), "/sample.dna")) & overwrite == FALSE) {
@@ -240,73 +246,8 @@ dna_sample <- function(overwrite = FALSE) {
   return(paste0(getwd(), "/sample.dna"))
 }
 
-#' Query the coders in a database
-#'
-#' Display the coder IDs, names, and colors present in a DNA database.
-#'
-#' Some functions require knowing the coder ID with which changes should be
-#' made. This function queries any database, which does not have to be opened,
-#' for their coder IDs, names, and colors, and returns them as a data frame.
-#'
-#' @param db_url The URL or full path of the database.
-#' @param db_type The type of database. Valid values are \code{"sqlite"},
-#'   \code{postgresql}, and \code{postgresql}.
-#' @param db_name The name of the database at the given URL or path. Can be a
-#'   zero-length character object (\code{""}) for file-based SQLite databases.
-#' @param db_port The connection port for the database connection. No port is
-#'   required (\code{db_port = -1}) for SQLite databases. MySQL databases often
-#'   use port \code{3306}. PostgreSQL databases often use port \code{5432}. If
-#'   \code{db_port = NULL}, one of these default values will be selected based
-#'   on the \code{db_type} argument.
-#' @param db_login The login user name for the database. This is the database
-#'   login user name, not the coder name. Can be a zero-length character object
-#'   (\code{""}) for SQLite databases.
-#' @param db_password The password for the database. This is the database
-#'   password, not the coder password. Can be a zero-length character object
-#'   (\code{""}) for SQLite databases.
-#'
-#' @author Philip Leifeld
-#'
-#' @examples
-#' \dontrun{
-#' dna_init()
-#' dna_sample()
-#' dna_queryCoders("sample.dna")
-#' }
-#'
-#' @export
-#' @importFrom rJava .jcall .jevalArray
-dna_queryCoders <- function(db_url,
-                            db_type = "sqlite",
-                            db_name = "",
-                            db_port = NULL,
-                            db_login = "",
-                            db_password = "") {
-  if (is.null(db_port) && !is.null(db_type)) {
-    if (db_type == "sqlite") {
-      db_port <- as.integer(-1)
-    } else if (db_type == "mysql") {
-      db_port <- as.integer(3306)
-    } else if (db_type == "postgresql") {
-      db_port <- as.integer(5432)
-    }
-  } else {
-    db_port <- as.integer(db_port)
-  }
-  q <- .jcall(dnaEnvironment[["dna"]]$headlessDna,
-              "[Ljava/lang/Object;",
-              "queryCoders",
-              db_type,
-              ifelse(db_type == "sqlite", normalizePath(db_url), db_url),
-              db_name,
-              db_port,
-              db_login,
-              db_password)
-  names(q) <- c("ID", "Name", "Color")
-  q <- lapply(q, .jevalArray)
-  q <- as.data.frame(q, stringsAsFactors = FALSE)
-  return(q)
-}
+
+# Database connections ---------------------------------------------------------
 
 #' Open a database
 #'
@@ -342,6 +283,9 @@ dna_queryCoders <- function(db_url,
 #'   (\code{""}) for SQLite databases.
 #'
 #' @author Philip Leifeld
+#'
+#' @family {rDNA database connections}
+#' @seealso \code{\link{dna_queryCoders}}
 #'
 #' @examples
 #' \dontrun{
@@ -413,32 +357,6 @@ dna_openDatabase <- function(db_url,
               db_password)
 }
 
-#' Print database details
-#'
-#' Print number of documents and statements and active coder.
-#'
-#' For the DNA database that is currently open, print the number of documents
-#' and statements, the URL, statement types (and their statement counts), and
-#' the active coder to the console.
-#'
-#' @author Philip Leifeld
-#'
-#' @examples
-#' \dontrun{
-#' dna_init()
-#' dna_sample()
-#' dna_openDatabase(coderId = 1,
-#'                  coderPassword = "sample",
-#'                  db_url = "sample.dna")
-#' dna_printDetails()
-#' }
-#' 
-#' @export
-#' @importFrom rJava .jcall
-dna_printDetails <- function() {
-  .jcall(dnaEnvironment[["dna"]]$headlessDna, "V", "printDatabaseDetails")
-}
-
 #' Close the open DNA database (if any).
 #'
 #' Close the DNA database that is currently active (if any).
@@ -458,10 +376,79 @@ dna_printDetails <- function() {
 #' dna_closeDatabase()
 #' }
 #'
+#' @family {rDNA database connections}
+#'
 #' @export
 #' @importFrom rJava .jcall
 dna_closeDatabase <- function() {
   .jcall(dnaEnvironment[["dna"]]$headlessDna, "V", "closeDatabase")
+}
+
+#' Open a connection profile
+#'
+#' Open a connection profile and establish a connection to the database.
+#'
+#' Load a connection profile from a \code{.dnc} file. The file contains
+#' connection details for a database (like a bookmark) along with the coder ID
+#' of the coder who saved the connection profile. By loading the connection
+#' profile, a connection to the database will be established by DNA, and the
+#' coder saved in the connection profile will be activated. The coder password
+#' the user needs to provide is the coder password for the coder saved in the
+#' connection profile. It serves to decrypt the information stored in the file
+#' and activate the coder in the database connection. If an empty character
+#' object is provided as the password (\code{""}), the user will be prompted
+#' interactively for a password. If the \pkg{askpass} package is installed, this
+#' package will be used to mask the user input; otherwise the password is
+#' visible in clear text. Installing the \pkg{askpass} package is strongly
+#' recommended.
+#'
+#' @param file The file name of the connection profile to open.
+#' @param coderPassword The clear text coder password. If a zero-length
+#'   character object (\code{""}) is provided, the user will be prompted
+#'   for a password interactively.
+#'
+#' @author Philip Leifeld
+#'
+#' @examples
+#' \dontrun{
+#' dna_init()
+#' dna_sample()
+#' dna_openDatabase(coderId = 1,
+#'                  coderPassword = "sample",
+#'                  db_url = "sample.dna")
+#' dna_saveConnectionProfile(file = "my profile.dnc", coderPassword = "sample")
+#' dna_closeDatabase()
+#' dna_openConnectionProfile(file = "my profile.dnc", coderPassword = "sample")
+#' }
+#'
+#' @family {rDNA database connections}
+#'
+#' @export
+#' @importFrom rJava .jcall
+dna_openConnectionProfile <- function(file, coderPassword = "") {
+  if (is.null(file) || !is.character(file) || length(file) != 1) {
+    stop("Please provide a file name for the connection profile.")
+  }
+  if (!file.exists(file)) {
+    stop("File does not exist.")
+  } else {
+    file <- normalizePath(file)
+  }
+  if (is.null(coderPassword) || !is.character(coderPassword) || coderPassword == "") {
+    if (!requireNamespace("askpass", quietly = TRUE)) {
+      coderPassword <- readline("Coder password: ")
+    } else {
+      coderPassword <- askpass::askpass("Coder password: ")
+    }
+  }
+  if (is.null(coderPassword) || length(coderPassword) == 0) {
+    coderPassword <- ""
+  }
+  s <- .jcall(dnaEnvironment[["dna"]]$headlessDna,
+              "Z",
+              "openConnectionProfile",
+              file,
+              coderPassword)
 }
 
 #' Save a connection profile to a file
@@ -488,6 +475,8 @@ dna_closeDatabase <- function() {
 #'   for a password interactively.
 #'
 #' @author Philip Leifeld
+#'
+#' @family {rDNA database connections}
 #'
 #' @examples
 #' \dontrun{
@@ -522,28 +511,13 @@ dna_saveConnectionProfile <- function(file, coderPassword = "") {
               coderPassword)
 }
 
-#' Open a connection profile
+#' Print database details
 #'
-#' Open a connection profile and establish a connection to the database.
+#' Print number of documents and statements and active coder.
 #'
-#' Load a connection profile from a \code{.dnc} file. The file contains
-#' connection details for a database (like a bookmark) along with the coder ID
-#' of the coder who saved the connection profile. By loading the connection
-#' profile, a connection to the database will be established by DNA, and the
-#' coder saved in the connection profile will be activated. The coder password
-#' the user needs to provide is the coder password for the coder saved in the
-#' connection profile. It serves to decrypt the information stored in the file
-#' and activate the coder in the database connection. If an empty character
-#' object is provided as the password (\code{""}), the user will be prompted
-#' interactively for a password. If the \pkg{askpass} package is installed, this
-#' package will be used to mask the user input; otherwise the password is
-#' visible in clear text. Installing the \pkg{askpass} package is strongly
-#' recommended.
-#' 
-#' @param file The file name of the connection profile to open.
-#' @param coderPassword The clear text coder password. If a zero-length
-#'   character object (\code{""}) is provided, the user will be prompted
-#'   for a password interactively.
+#' For the DNA database that is currently open, print the number of documents
+#' and statements, the URL, statement types (and their statement counts), and
+#' the active coder to the console.
 #'
 #' @author Philip Leifeld
 #'
@@ -554,38 +528,90 @@ dna_saveConnectionProfile <- function(file, coderPassword = "") {
 #' dna_openDatabase(coderId = 1,
 #'                  coderPassword = "sample",
 #'                  db_url = "sample.dna")
-#' dna_saveConnectionProfile(file = "my profile.dnc", coderPassword = "sample")
-#' dna_closeDatabase()
-#' dna_openConnectionProfile(file = "my profile.dnc", coderPassword = "sample")
+#' dna_printDetails()
 #' }
+#'
+#' @family {rDNA database connections}
 #'
 #' @export
 #' @importFrom rJava .jcall
-dna_openConnectionProfile <- function(file, coderPassword = "") {
-  if (is.null(file) || !is.character(file) || length(file) != 1) {
-    stop("Please provide a file name for the connection profile.")
-  }
-  if (!file.exists(file)) {
-    stop("File does not exist.")
-  } else {
-    file <- normalizePath(file)
-  }
-  if (is.null(coderPassword) || !is.character(coderPassword) || coderPassword == "") {
-    if (!requireNamespace("askpass", quietly = TRUE)) {
-      coderPassword <- readline("Coder password: ")
-    } else {
-      coderPassword <- askpass::askpass("Coder password: ")
-    }
-  }
-  if (is.null(coderPassword) || length(coderPassword) == 0) {
-    coderPassword <- ""
-  }
-  s <- .jcall(dnaEnvironment[["dna"]]$headlessDna,
-              "Z",
-              "openConnectionProfile",
-              file,
-              coderPassword)
+dna_printDetails <- function() {
+  .jcall(dnaEnvironment[["dna"]]$headlessDna, "V", "printDatabaseDetails")
 }
+
+
+# Coder management--------------------------------------------------------------
+
+#' Query the coders in a database
+#'
+#' Display the coder IDs, names, and colors present in a DNA database.
+#'
+#' Some functions require knowing the coder ID with which changes should be
+#' made. This function queries any database, which does not have to be opened,
+#' for their coder IDs, names, and colors, and returns them as a data frame.
+#'
+#' @param db_url The URL or full path of the database.
+#' @param db_type The type of database. Valid values are \code{"sqlite"},
+#'   \code{postgresql}, and \code{postgresql}.
+#' @param db_name The name of the database at the given URL or path. Can be a
+#'   zero-length character object (\code{""}) for file-based SQLite databases.
+#' @param db_port The connection port for the database connection. No port is
+#'   required (\code{db_port = -1}) for SQLite databases. MySQL databases often
+#'   use port \code{3306}. PostgreSQL databases often use port \code{5432}. If
+#'   \code{db_port = NULL}, one of these default values will be selected based
+#'   on the \code{db_type} argument.
+#' @param db_login The login user name for the database. This is the database
+#'   login user name, not the coder name. Can be a zero-length character object
+#'   (\code{""}) for SQLite databases.
+#' @param db_password The password for the database. This is the database
+#'   password, not the coder password. Can be a zero-length character object
+#'   (\code{""}) for SQLite databases.
+#'
+#' @author Philip Leifeld
+#'
+#' @examples
+#' \dontrun{
+#' dna_init()
+#' dna_sample()
+#' dna_queryCoders("sample.dna")
+#' }
+#'
+#' @export
+#' @importFrom rJava .jcall .jevalArray
+dna_queryCoders <- function(db_url,
+                            db_type = "sqlite",
+                            db_name = "",
+                            db_port = NULL,
+                            db_login = "",
+                            db_password = "") {
+  if (is.null(db_port) && !is.null(db_type)) {
+    if (db_type == "sqlite") {
+      db_port <- as.integer(-1)
+    } else if (db_type == "mysql") {
+      db_port <- as.integer(3306)
+    } else if (db_type == "postgresql") {
+      db_port <- as.integer(5432)
+    }
+  } else {
+    db_port <- as.integer(db_port)
+  }
+  q <- .jcall(dnaEnvironment[["dna"]]$headlessDna,
+              "[Ljava/lang/Object;",
+              "queryCoders",
+              db_type,
+              ifelse(db_type == "sqlite", normalizePath(db_url), db_url),
+              db_name,
+              db_port,
+              db_login,
+              db_password)
+  names(q) <- c("ID", "Name", "Color")
+  q <- lapply(q, .jevalArray)
+  q <- as.data.frame(q, stringsAsFactors = FALSE)
+  return(q)
+}
+
+
+# Attributes -------------------------------------------------------------------
 
 #' Get the entities and attributes for a variable
 #'
@@ -630,6 +656,8 @@ dna_openConnectionProfile <- function(file, coderPassword = "") {
 #'
 #' @author Philip Leifeld
 #'
+#' @family {rDNA attributes}
+#'
 #' @importFrom rJava .jcall
 #' @importFrom rJava J
 #' @export
@@ -637,45 +665,45 @@ dna_getAttributes <- function(statementType = NULL,
                               variable = NULL,
                               statementTypeId = NULL,
                               variableId = NULL) {
-  
+
   # check if the arguments are valid
   statementTypeValid <- TRUE
   if (is.null(statementType) || !is.character(statementType) || length(statementType) != 1 || is.na(statementType) || statementType == "") {
     statementTypeValid <- FALSE
   }
-  
+
   statementTypeIdValid <- TRUE
   if (is.null(statementTypeId) || !is.numeric(statementTypeId) || length(statementTypeId) != 1 || is.na(statementTypeId) || statementTypeId %% 1 != 0) {
     statementTypeIdValid <- FALSE
   }
-  
+
   variableValid <- TRUE
   if (is.null(variable) || !is.character(variable) || length(variable) != 1 || is.na(variable) || variable == "") {
     variableValid <- FALSE
   }
-  
+
   variableIdValid <- TRUE
   if (is.null(variableId) || !is.numeric(variableId) || length(variableId) != 1 || is.na(variableId) || variableId %% 1 != 0) {
     variableIdValid <- FALSE
   }
-  
+
   errorString <- "Please supply 1) a variable ID or 2) a statement type name and a variable name or 3) a statement type ID and a variable name."
   if ((!variableValid && !variableIdValid) || (!statementTypeIdValid && !statementTypeValid && !variableIdValid)) {
     stop(errorString)
   }
-  
+
   if (variableIdValid && variableValid) {
     variable <- NULL
     variableValid <- FALSE
     warning("Both a variable ID and a variable name were supplied. Ignoring the 'variable' argument.")
   }
-  
+
   if (statementTypeIdValid && statementTypeValid && !variableIdValid && variableValid) {
     statementType <- NULL
     statementTypeValid <- FALSE
     warning("Both a statement type ID and a statement type name were supplied. Ignoring the 'statementType' argument.")
   }
-  
+
   if (variableIdValid && (statementTypeIdValid || statementTypeValid)) {
     statementTypeId <- NULL
     statementTypeIdValid <- FALSE
@@ -683,7 +711,7 @@ dna_getAttributes <- function(statementType = NULL,
     statementTypeValid <- FALSE
     warning("If a variable ID is provided, a statement type is not necessary. Ignoring the 'statementType' and 'statementTypeId' arguments.")
   }
-  
+
   # get the data from the DNA database using rJava
   if (variableIdValid) {
     a <- .jcall(dnaEnvironment[["dna"]]$headlessDna,
@@ -705,12 +733,12 @@ dna_getAttributes <- function(statementType = NULL,
   } else {
     stop(errorString)
   }
-  
+
   # extract the relevant information from the Java reference
   varNames <- .jcall(a, "[S", "getVariableNames")
   nr <- .jcall(a, "I", "nrow")
   nc <- .jcall(a, "I", "ncol")
-  
+
   # create an empty data frame with the first (integer) column for IDs
   dat <- cbind(data.frame(ID = integer(nr)),
                matrix(character(nr), nrow = nr, ncol = nc - 1))
@@ -725,6 +753,9 @@ dna_getAttributes <- function(statementType = NULL,
   class(dat) <- c("dna_attributes", class(dat))
   return(dat)
 }
+
+
+# Networks ---------------------------------------------------------------------
 
 #' Compute and retrieve a network
 #'
@@ -932,6 +963,8 @@ dna_getAttributes <- function(statementType = NULL,
 #'
 #' @author Philip Leifeld
 #'
+#' @family {rDNA networks}
+#'
 #' @importFrom rJava .jarray
 #' @importFrom rJava .jcall
 #' @importFrom rJava .jnull
@@ -967,13 +1000,13 @@ dna_network <- function(networkType = "twomode",
                         invertTypes = FALSE,
                         fileFormat = NULL,
                         outfile = NULL) {
-  
+
   # wrap the vectors of exclude values for document variables into Java arrays
   excludeAuthors <- .jarray(excludeAuthors)
   excludeSources <- .jarray(excludeSources)
   excludeSections <- .jarray(excludeSections)
   excludeTypes <- .jarray(excludeTypes)
-  
+
   # compile exclude variables and values vectors
   dat <- matrix("", nrow = length(unlist(excludeValues)), ncol = 2)
   count <- 0
@@ -995,7 +1028,7 @@ dna_network <- function(networkType = "twomode",
   }
   var <- .jarray(var) # array of variable names of each excluded value
   val <- .jarray(val) # array of values to be excluded
-  
+
   # encode R NULL as Java null value if necessary
   if (is.null(qualifier) || is.na(qualifier)) {
     qualifier <- .jnull(class = "java/lang/String")
@@ -1006,7 +1039,7 @@ dna_network <- function(networkType = "twomode",
   if (is.null(outfile)) {
     outfile <- .jnull(class = "java/lang/String")
   }
-  
+
   # call rNetwork function to compute results
   .jcall(dnaEnvironment[["dna"]]$headlessDna,
          "V",
@@ -1043,9 +1076,9 @@ dna_network <- function(networkType = "twomode",
          outfile,
          fileFormat
   )
-  
+
   exporter <- .jcall(dnaEnvironment[["dna"]]$headlessDna, "Lexport/Exporter;", "getExporter") # get a reference to the Exporter object, in which results are stored
-  
+
   if (networkType == "eventlist") { # assemble an event list in the form of a data frame of filtered statements
     f <- J(exporter, "getFilteredStatements", simplify = TRUE) # array list of filtered export statements; use J because array list return type not recognized using .jcall
     l <- list() # create a list for filtered statements, later to be converted to data frame, with one row per statement
@@ -1085,15 +1118,15 @@ dna_network <- function(networkType = "twomode",
     m <- .jcall(exporter, "[Lexport/Matrix;", "getMatrixResultsArray") # get list of Matrix objects from Exporter object
     l <- list() # create a list in which each result is stored; can be of length 1 if no time window is used
     for (t in 1:length(m)) { # loop through the matrices
-      mat <- .jcall(m[[1]], "[[D", "getMatrix", simplify = TRUE) # get the resulting matrix at step t as a double[][] object and save as matrix
-      rownames(mat) <- .jcall(m[[1]], "[S", "getRowNames", simplify = TRUE) # add the row names to the matrix
-      colnames(mat) <- .jcall(m[[1]], "[S", "getColumnNames", simplify = TRUE) # add the column names to the matrix
-      attributes(mat)$start <- as.POSIXct(.jcall(m[[1]], "J", "getStartLong"), origin = "1970-01-01") # add the start date/time of the result as an attribute to the matrix
-      attributes(mat)$stop <- as.POSIXct(.jcall(m[[1]], "J", "getStopLong"), origin = "1970-01-01") # add the end date/time of the result as an attribute to the matrix
+      mat <- .jcall(m[[t]], "[[D", "getMatrix", simplify = TRUE) # get the resulting matrix at step t as a double[][] object and save as matrix
+      rownames(mat) <- .jcall(m[[t]], "[S", "getRowNames", simplify = TRUE) # add the row names to the matrix
+      colnames(mat) <- .jcall(m[[t]], "[S", "getColumnNames", simplify = TRUE) # add the column names to the matrix
+      attributes(mat)$start <- as.POSIXct(.jcall(m[[t]], "J", "getStartLong"), origin = "1970-01-01") # add the start date/time of the result as an attribute to the matrix
+      attributes(mat)$stop <- as.POSIXct(.jcall(m[[t]], "J", "getStopLong"), origin = "1970-01-01") # add the end date/time of the result as an attribute to the matrix
       if (length(m) > 1) {
-        attributes(mat)$middle <- as.POSIXct(.jcall(m[[1]], "J", "getDateTimeLong"), origin = "1970-01-01") # add the mid-point date/time around which the time window is centered if the time window algorithm was used
+        attributes(mat)$middle <- as.POSIXct(.jcall(m[[t]], "J", "getDateTimeLong"), origin = "1970-01-01") # add the mid-point date/time around which the time window is centered if the time window algorithm was used
       }
-      attributes(mat)$numStatements <- .jcall(m[[1]], "I", "getNumStatements") # add the number of filtered statements the matrix is based on as an attribute to the matrix
+      attributes(mat)$numStatements <- .jcall(m[[t]], "I", "getNumStatements") # add the number of filtered statements the matrix is based on as an attribute to the matrix
       attributes(mat)$call <- match.call() # add the arguments of the call as an attribute to the matrix
       class(mat) <- c(paste0("dna_network_", networkType), class(mat)) # add "dna_network_onemode" or "dna_network_twomode" as a class label in addition to "matrix"
       l[[t]] <- mat # add the matrix to the list
@@ -1107,6 +1140,49 @@ dna_network <- function(networkType = "twomode",
     }
   }
 }
+
+#' Convert a \code{dna_network_onemode} object to a matrix
+#'
+#' Convert a \code{dna_network_onemode} object to a matrix.
+#'
+#' Remove the attributes and \code{"dna_network_onemode"} class label from a
+#' \code{dna_network_onemode} object and return it as a numeric matrix.
+#'
+#' @param x The \code{dna_network_onemode} object, as returned by the
+#'   \code{\link{dna_network}} function.
+#' @param ... Additional arguments. Currently not in use.
+#'
+#' @author Philip Leifeld
+#'
+#' @family {rDNA networks}
+#'
+#' @export
+as.matrix.dna_network_onemode <- function(x, ...) {
+  attr(x, "start") <- NULL
+  attr(x, "stop") <- NULL
+  attr(x, "numStatements") <- NULL
+  attr(x, "call") <- NULL
+  attr(x, "class") <- NULL
+  return(x)
+}
+
+#' Convert a \code{dna_network_twomode} object to a matrix
+#'
+#' Convert a \code{dna_network_twomode} object to a matrix.
+#'
+#' Remove the attributes and \code{"dna_network_twomode"} class label from a
+#' \code{dna_network_twomode} object and return it as a numeric matrix.
+#'
+#' @param x The \code{dna_network_twomode} object, as returned by the
+#'   \code{\link{dna_network}} function.
+#' @param ... Additional arguments. Currently not in use.
+#'
+#' @author Philip Leifeld
+#'
+#' @family {rDNA networks}
+#'
+#' @export
+as.matrix.dna_network_twomode <- as.matrix.dna_network_onemode
 
 #' Print a \code{dna_network_onemode} object
 #'
@@ -1127,8 +1203,8 @@ dna_network <- function(networkType = "twomode",
 #'
 #' @author Philip Leifeld
 #'
-#' @seealso \link{as.matrix.dna_network_onemode}, \link{dna_network},
-#'   \link{print.dna_network_onemode}
+#' @family {rDNA networks}
+#'
 #' @export
 print.dna_network_onemode <- function(x, trim = 5, attr = TRUE, ...) {
   rn <- rownames(x)
@@ -1180,95 +1256,79 @@ print.dna_network_onemode <- function(x, trim = 5, attr = TRUE, ...) {
 #'
 #' @author Philip Leifeld
 #'
-#' @seealso \link{as.matrix.dna_network_twomode}, \link{dna_network},
-#'   \link{print.dna_network_onemode}
+#' @family {rDNA networks}
+#'
 #' @export
 print.dna_network_twomode <- print.dna_network_onemode
 
-#' Convert a \code{dna_network_onemode} object to a matrix
-#' 
-#' Convert a \code{dna_network_onemode} object to a matrix.
-#' 
-#' Remove the attributes and \code{"dna_network_onemode"} class label from a
-#' \code{dna_network_onemode} object and return it as a numeric matrix.
-#' 
-#' @param x The \code{dna_network_onemode} object, as returned by the
-#'   \code{\link{dna_network}} function.
-#' @param ... Additional arguments. Currently not in use.
+#' Plot networks created using rDNA.
 #'
-#' @author Philip Leifeld
+#' Plot a network generated using \code{\link{dna_network}}.
 #'
-#' @seealso \link{print.dna_network_onemode}, \link{dna_network},
-#'   \link{as.matrix.dna_network_twomode}
-#' @export
-as.matrix.dna_network_onemode <- function(x, ...) {
-  attr(x, "start") <- NULL
-  attr(x, "stop") <- NULL
-  attr(x, "numStatements") <- NULL
-  attr(x, "call") <- NULL
-  attr(x, "class") <- NULL
-  return(x)
-}
-
-#' Convert a \code{dna_network_twomode} object to a matrix
-#' 
-#' Convert a \code{dna_network_twomode} object to a matrix.
-#' 
-#' Remove the attributes and \code{"dna_network_twomode"} class label from a
-#' \code{dna_network_twomode} object and return it as a numeric matrix.
-#' 
-#' @param x The \code{dna_network_twomode} object, as returned by the
-#'   \code{\link{dna_network}} function.
-#' @param ... Additional arguments. Currently not in use.
+#' These functions plot \code{dna_network_onemode} and
+#' \code{dna_network_onemode} objects generated by the \code{\link{dna_network}}
+#' function. In order to use this function, please install the \code{igraph} and
+#' \code{ggraph} packages. Different layouts for one- and two-mode networks are
+#' available.
 #'
-#' @author Philip Leifeld
-#'
-#' @seealso \link{print.dna_network_twomode}, \link{dna_network},
-#'   \link{as.matrix.dna_network_onemode}
-#' @export
-as.matrix.dna_network_twomode <- as.matrix.dna_network_onemode
-
-
-#' Compute and retrieve the backbone and redundant set
-#'
-#' Compute and retrieve the backbone and redundant set of a discourse network.
-#'
-#' This function applies a simulated annealing algorithm to the discourse
-#' network to partition the set of second-mode entities (e.g., concepts) into a
-#' backbone set and a complementary redundant set.
-#'
-#' @param penalty The penalty parameter for large backbone sets. The larger the
-#'   value, the more strongly larger backbone sets are punished and the smaller
-#'   the resulting backbone is. Try out different values to find the right size
-#'   of the backbone set. Reasonable values could be \code{2.5}, \code{5},
-#'   \code{7.5}, or \code{12}, for example. The minimum is \code{0.0}, which
-#'   imposes no penalty on the size of the backbone set and produces a redundant
-#'   set with only one element. Start with \code{0.0} if you want to weed out a
-#'   single concept and subsequently increase the penalty to include more items
-#'   in the redundant set and shrink the backbone further.
-#' @param iterations The number of iterations of the simulated annealing
-#'   algorithm. More iterations take more time but may lead to better
-#'   optimization results.
-#' @param qualifierAggregation The aggregation rule for the \code{qualifier}
-#'   variable. This must be \code{"ignore"} (for ignoring the qualifier
-#'   variable), \code{"congruence"} (for recording a network tie only if both
-#'   nodes have the same qualifier value in the binary case or for recording the
-#'   similarity between the two nodes on the qualifier variable in the integer
-#'   case), \code{"conflict"} (for recording a network tie only if both nodes
-#'   have a different qualifier value in the binary case or for recording the
-#'   distance between the two nodes on the qualifier variable in the integer
-#'   case), or \code{"subtract"} (for subtracting the conflict tie value from
-#'   the congruence tie value in each dyad; note that negative values will be
-#'   replaced by \code{0} in the backbone calculation).
-#' @param normalization Normalization of edge weights. Valid settings are
-#'   \code{"no"} (for switching off normalization), \code{"average"} (for
-#'   average activity normalization), \code{"jaccard"} (for Jaccard coefficient
-#'   normalization), and \code{"cosine"} (for cosine similarity normalization).
-#' @param fileFormat An optional file format specification for saving the
-#'   backbone results to a file instead of returning an object. Valid values
-#'   are \code{"json"}, \code{"xml"}, and \code{NULL} (for returning the results
-#'   instead of writing them to a file).
-#' @inheritParams dna_network
+#' @param object A \code{dna_network} object.
+#' @param ... Additional arguments; currently not in use.
+#' @param atts A \code{dna_attributes} object generated by
+#'   \code{\link{dna_getAttributes}}. Provide this object and matching
+#'   attributes when plotting custom node colors, node labels and/or node sizes.
+#' @param layout The type of node layout to use. The following layouts are
+#'   available from the \code{igraph} and \code{ggraph} packages at the time of
+#'   writing:
+#'   \itemize{
+#'    \item \code{"stress"} (the default layout)
+#'    \item \code{"bipartite"} (only for two-mode networks)
+#'    \item \code{"backbone"}
+#'    \item \code{"circle"}
+#'    \item \code{"dh"}
+#'    \item \code{"drl"}
+#'    \item \code{"fr"}
+#'    \item \code{"gem"}
+#'    \item \code{"graphopt"}
+#'    \item \code{"kk"}
+#'    \item \code{"lgl"}
+#'    \item \code{"mds"}
+#'    \item \code{"nicely"}
+#'    \item \code{"randomly"}
+#'    \item \code{"star"}
+#'   }
+#'   See \link[ggraph]{layout_tbl_graph_igraph} for the current list of layouts.
+#' @param edge_size_range Two values indicating the minimum and maximum value
+#'   to scale edge widths.
+#' @param edge_color Provide the name of a color for edge colors. The default
+#'   \code{"NULL"} colors edges in line with the specified
+#'   \code{qualifierAggregation} in \code{\link{dna_network}}.
+#' @param edge_alpha Takes numeric values to control the alpha-transparency of
+#'   edges. Possible values range from \code{0} (fully transparent) to \code{1}
+#'   (fully visible).
+#' @param node_size Takes positive numeric values to control the size of nodes.
+#'   Also accepts numeric values matching an attribute of the \code{atts} object
+#'   (see examples).
+#' @param node_colors Provide the name of a color or use an attribute from the
+#'   \code{atts} object for node colors (see examples). Defaults to
+#'   \code{"black"}.
+#' @param node_label If \code{TRUE}, the row names (in a one-mode network) or
+#'   the row and column names (in a two-mode network) of the network matrix are
+#'   used for node labels. Also accepts character objects matching one of the
+#'   attribute variables of the \code{atts} object (see examples). \code{FALSE}
+#'   turns off node labels.
+#' @param font_size Controls the font size of the node labels.
+#' @param truncate Sets the number of characters to which node labels should be
+#'   truncated.
+#' @param threshold Minimum threshold for which edges should be plotted.
+#' @param giant_component Only plot the giant component (the biggest connected
+#'   cluster) of the network. Defaults to \code{FALSE}.
+#' @param exclude_isolates Exclude isolates (nodes with no connection to other
+#'   nodes) from the plot. Defaults to \code{FALSE}.
+#' @param max_overlaps Value to exclude node labels that overlap with too many
+#'   other node labels (see \code{\link[ggrepel]{geom_label_repel}}. Defaults
+#'   to \code{10}.
+#' @param seed Numeric value passed to \link{set.seed}. Ensures that plots are
+#'   reproducible.
 #'
 #' @examples
 #' \dontrun{
@@ -1276,358 +1336,385 @@ as.matrix.dna_network_twomode <- as.matrix.dna_network_onemode
 #' dna_sample()
 #' dna_openDatabase("sample.dna", coderId = 1, coderPassword = "sample")
 #'
-#' # compute backbone and redundant set
-#' b <- dna_backbone(penalty = 3.5,
-#'                   iterations = 10000,
-#'                   variable1 = "organization",
-#'                   variable2 = "concept",
-#'                   qualifier = "agreement",
+#' ## one-mode network examples
+#'
+#' # compute network matrix (subtract + normalization)
+#' nw <- dna_network(networkType = "onemode",
 #'                   qualifierAggregation = "subtract",
 #'                   normalization = "average")
 #'
-#' b # display main results
-#' 
-#' # extract results from the object
-#' b$backbone # show the set of backbone concepts
-#' b$redundant # show the set of redundant concepts
-#' b$unpenalized_backbone_loss # spectral loss between full and backbone network
-#' b$unpenalized_redundant_loss # spectral loss of redundant network
-#' b$backbone_network # show the backbone network
-#' b$redundant_network # show the redundant network
-#' b$full_network # show the full network
-#'
-#' # plot diagnostics with base R
-#' plot(b, ma = 500)
-#' 
-#' # arrange plots in a 2 x 2 view
-#' par(mfrow = c(2, 2))
-#' plot(b)
-#' 
-#' # plot diagnostics with ggplot2
+#' # plot network
 #' library("ggplot2")
-#' p <- autoplot(b)
-#' p
+#' autoplot(nw)
 #'
-#' # pick a specific diagnostic
-#' p[[3]]
+#' # plot only positively weighted edges
+#' autoplot(nw, threshold = 0)
 #'
-#' # use the patchwork package to arrange the diagnostics in a single plot
-#' library("patchwork")
-#' new_plot <- p[[1]] + p[[2]] + p[[3]] + p[[4]]
-#' new_plot & theme_grey() + theme(legend.position = "bottom")
+#' # congruence network
+#' nw <- dna_network(networkType = "onemode",
+#'                   qualifierAggregation = "congruence",
+#'                   excludeValues = list("concept" =
+#'                     c("There should be legislation to regulate emissions.")))
+#' autoplot(nw)
 #'
-#' # use the gridExtra package to arrange the diagnostics in a single plot
-#' library("gridExtra")
-#' grid.arrange(p[[1]], p[[2]], p[[3]], p[[4]])
+#' # use entity colors (here: colors of organizations) from attributes
+#' atts <- dna_getAttributes(variableId = 2)
+#' autoplot(nw, atts = atts, node_colors = "color", layout = "fr")
+#'
+#' # use colors from attributes (after editing some of them)
+#' atts$color[atts$Type == "NGO"] <- "red" # change NGO color to red
+#' atts$color[atts$Type == "Government"] <- "blue" # change government to blue
+#' autoplot(nw, atts = atts, node_colors = "color") # plot with custom colors
+#'
+#' # use an attribute, such as type, to plot node labels
+#' autoplot(nw, atts = atts, node_label = "Type")
+#'
+#' # plot node sizes according to the number of statements of entities;
+#' # first, compute additional matrix to calculate the number of statements
+#' nw_freq <- dna_network(networkType = "twomode",
+#'                        qualifierAggregation = "ignore",
+#'                        normalization = "no")
+#' # then add frequency of statements as an attribute
+#' atts$freq <- rowSums(nw_freq)[match(atts$value, rownames(nw_freq))]
+#' # plot network with node sizes matching statement frequencies
+#' autoplot(nw, atts = atts, node_size = "freq", node_colors = "color")
+#'
+#' # use igraph community detection for identification of network clusters;
+#' # remove negative edge weights
+#' nw[nw < 0] <- 0
+#' # convert dna_network to igraph object
+#' graph <- igraph::graph_from_adjacency_matrix(nw,
+#'                                              mode = "undirected",
+#'                                              weighted = TRUE,
+#'                                              diag = FALSE,
+#'                                              add.colnames = NULL,
+#'                                              add.rownames = NA)
+#' # compute communities using igraph cluster algorithms
+#' # (here: fast and greedy as an illustration))
+#' com <- igraph::cluster_fast_greedy(graph)
+#' # add node community membership as an attribute
+#' atts$membership <- com$membership[match(atts$value, com$names)]
+#' # use community membership as node color
+#' autoplot(nw, atts = atts, node_colors = "membership")
+#' # or plot ellipses using ggforce package
+#' library("ggforce")
+#' autoplot(nw, atts = atts, node_colors = "color") +
+#'   geom_mark_ellipse(aes(x = x,
+#'                         y = y,
+#'                         group = com$membership,
+#'                         fill = com$membership),
+#'                     show.legend = FALSE)
+#'
+#' # add legend to the network plot (here: colors mapped to type attribute)
+#' autoplot(nw, atts = atts, node_colors = "color") +
+#'   scale_color_identity(name = "",
+#'                        labels = c("Government", "NGO", "Business"),
+#'                        guide = "legend") +
+#'   theme(legend.position = "bottom", # change legend position
+#'         legend.text = element_text(size = 10)) # change legend font size
+#'
+#' ## two-mode network examples
+#'
+#' # compute two-mode network and plot it
+#' nw <- dna_network(networkType = "twomode",
+#'                   qualifierAggregation = "combine")
+#' library("ggplot2")
+#' autoplot(nw)
+#'
+#' # use entity colours (here: colors of organizations);
+#' # first, retrieve attributes for first-mode entities (organizations)
+#' atts <- dna_getAttributes(variableId = 2)
+#' # then, retrieve attributes for second-mode entities (concepts)
+#' atts2 <- dna_getAttributes(variableId = 3)
+#' # combine both attribute objects
+#' atts <- rbind(atts, atts2)
+#' # plot the network using the attributes of both variables
+#' autoplot(nw,
+#'          atts = atts,
+#'          node_colors = "color",
+#'          layout = "bipartite",
+#'          max_overlaps = 20)
+#' # edit the colors before plotting
+#' atts$color[atts$Type == "NGO"] <- "red" # change NGO color to red
+#' atts$color[atts$Type == "Government"] <- "blue" # government actors in blue
+#' # plot the network with custom colors
+#' autoplot(nw, atts = atts, node_colors = "color")
+#'
+#' # use an attribute, such as type, to plot node labels
+#' nw <- dna_network(networkType = "twomode",
+#'                   qualifierAggregation = "subtract",
+#'                   normalization = "activity")
+#' autoplot(nw, atts = atts, node_label = "Type")
+#'
+#' # plot node sizes according the number of statements of entities;
+#' # first, compute network matrix for plotting
+#' nw <- dna_network(networkType = "twomode",
+#'                   qualifierAggregation = "subtract",
+#'                   normalization = "activity")
+#' # compute dna_attributes objects
+#' atts <- dna_getAttributes(variableId = 2)
+#' atts2 <- dna_getAttributes(variableId = 3)
+#' # compute additional matrix to calculate the number of statements
+#' nw_freq <- dna_network(networkType = "twomode",
+#'                        qualifierAggregation = "ignore",
+#'                        normalization = "no")
+#' # add frequency of statements as attribute
+#' # compute statement frequencies of first-mode entities
+#' atts$freq <- rowSums(nw_freq)[match(atts$value, rownames(nw_freq))]
+#' # compute statement frequencies of second-mode entities
+#' atts2$freq <- colSums(nw_freq)[match(atts2$value, colnames(nw_freq))]
+#' # combine both attribute objects
+#' atts <- rbind(atts, atts2)
+#' # plot network with node sizes matching statement frequencies
+#' autoplot(nw, atts = atts, node_size = "freq", node_colors = "color")
+#'
+#' # use igraph community detection for identification of network clusters
+#' nw <- dna_network(networkType = "twomode",
+#'                   qualifierAggregation = "subtract",
+#'                   normalization = "activity")
+#' # compute dna_attributes objects and combine them
+#' atts <- dna_getAttributes(variableId = 2)
+#' atts2 <- dna_getAttributes(variableId = 3)
+#' atts <- rbind(atts, atts2)
+#' # remove negative edge weights
+#' nw[nw < 0] <- 0
+#' # convert dna_network to igraph object
+#' graph <- igraph::graph_from_incidence_matrix(nw,
+#'                                              directed = FALSE,
+#'                                              weighted = TRUE,
+#'                                              add.names = NULL)
+#' # compute communities using igraph cluster algorithms
+#' # (here: fast and greedy as an illustration))
+#' com <- igraph::cluster_fast_greedy(graph)
+#' # add node community membership as an attribute
+#' atts$membership <- com$membership[match(atts$value, com$names)]
+#' # use community membership as node color
+#' autoplot(nw, atts = atts, node_colors = "membership")
+#' # or plot ellipses using ggforce
+#' library("ggforce")
+#' autoplot(nw, atts = atts, node_colors = "color") +
+#'   geom_mark_ellipse(aes(x = x,
+#'                     y = y,
+#'                     group = com$membership,
+#'                     fill = com$membership),
+#'                     show.legend = FALSE)
 #' }
 #'
-#' @author Philip Leifeld, Tim Henrichsen
-#' 
-#' @importFrom rJava .jarray
-#' @importFrom rJava .jcall
-#' @importFrom rJava .jnull
-#' @importFrom rJava J
-#' @noRd
-dna_backbone <- function(penalty = 3.5,
-                         iterations = 10000,
-                         statementType = "DNA Statement",
-                         variable1 = "organization",
-                         variable1Document = FALSE,
-                         variable2 = "concept",
-                         variable2Document = FALSE,
-                         qualifier = "agreement",
-                         qualifierDocument = FALSE,
-                         qualifierAggregation = "subtract",
-                         normalization = "average",
-                         duplicates = "document",
-                         start.date = "01.01.1900",
-                         stop.date = "31.12.2099",
-                         start.time = "00:00:00",
-                         stop.time = "23:59:59",
-                         excludeValues = list(),
-                         excludeAuthors = character(),
-                         excludeSources = character(),
-                         excludeSections = character(),
-                         excludeTypes = character(),
-                         invertValues = FALSE,
-                         invertAuthors = FALSE,
-                         invertSources = FALSE,
-                         invertSections = FALSE,
-                         invertTypes = FALSE,
-                         fileFormat = NULL,
-                         outfile = NULL) {
-  
-  # wrap the vectors of exclude values for document variables into Java arrays
-  excludeAuthors <- .jarray(excludeAuthors)
-  excludeSources <- .jarray(excludeSources)
-  excludeSections <- .jarray(excludeSections)
-  excludeTypes <- .jarray(excludeTypes)
-  
-  # compile exclude variables and values vectors
-  dat <- matrix("", nrow = length(unlist(excludeValues)), ncol = 2)
-  count <- 0
-  if (length(excludeValues) > 0) {
-    for (i in 1:length(excludeValues)) {
-      if (length(excludeValues[[i]]) > 0) {
-        for (j in 1:length(excludeValues[[i]])) {
-          count <- count + 1
-          dat[count, 1] <- names(excludeValues)[i]
-          dat[count, 2] <- excludeValues[[i]][j]
-        }
-      }
-    }
-    var <- dat[, 1]
-    val <- dat[, 2]
-  } else {
-    var <- character()
-    val <- character()
-  }
-  var <- .jarray(var) # array of variable names of each excluded value
-  val <- .jarray(val) # array of values to be excluded
-  
-  # encode R NULL as Java null value if necessary
-  if (is.null(qualifier) || is.na(qualifier)) {
-    qualifier <- .jnull(class = "java/lang/String")
-  }
-  if (is.null(fileFormat)) {
-    fileFormat <- .jnull(class = "java/lang/String")
-  }
-  if (is.null(outfile)) {
-    outfile <- .jnull(class = "java/lang/String")
-  }
-  
-  # call rBackbone function to compute results
-  .jcall(dnaEnvironment[["dna"]]$headlessDna,
-         "V",
-         "rBackbone",
-         as.double(penalty),
-         as.integer(iterations),
-         statementType,
-         variable1,
-         variable1Document,
-         variable2,
-         variable2Document,
-         qualifier,
-         qualifierDocument,
-         qualifierAggregation,
-         normalization,
-         duplicates,
-         start.date,
-         stop.date,
-         start.time,
-         stop.time,
-         var,
-         val,
-         excludeAuthors,
-         excludeSources,
-         excludeSections,
-         excludeTypes,
-         invertValues,
-         invertAuthors,
-         invertSources,
-         invertSections,
-         invertTypes,
-         outfile,
-         fileFormat
-  )
-  
-  exporter <- .jcall(dnaEnvironment[["dna"]]$headlessDna, "Lexport/Exporter;", "getExporter") # get a reference to the Exporter object, in which results are stored
-  result <- .jcall(exporter, "Lexport/BackboneResult;", "getBackboneResult", simplify = TRUE)
-  if (!is.null(outfile) && !is.null(fileFormat) && is.character(outfile) && is.character(fileFormat) && fileFormat %in% c("json", "xml")) {
-    message("File exported.")
-  } else {
-    # create a list with various results
-    l <- list()
-    l$penalty <- .jcall(result, "D", "getPenalty")
-    l$iterations <- .jcall(result, "I", "getIterations")
-    l$backbone <- .jcall(result, "[S", "getBackboneEntities")
-    l$redundant <- .jcall(result, "[S", "getRedundantEntities")
-    l$unpenalized_backbone_loss <- .jcall(result, "D", "getUnpenalizedBackboneLoss")
-    l$unpenalized_redundant_loss <- .jcall(result, "D", "getUnpenalizedRedundantLoss")
-    rn <- .jcall(result, "[S", "getLabels")
-    
-    # store the three matrices in the result list
-    fullmat <- .jcall(result, "[[D", "getFullNetwork", simplify = TRUE)
-    rownames(fullmat) <- rn
-    colnames(fullmat) <- rn
-    l$full_network <- fullmat
-    backbonemat <- .jcall(result, "[[D", "getBackboneNetwork", simplify = TRUE)
-    rownames(backbonemat) <- rn
-    colnames(backbonemat) <- rn
-    l$backbone_network <- backbonemat
-    redundantmat <- .jcall(result, "[[D", "getRedundantNetwork", simplify = TRUE)
-    rownames(redundantmat) <- rn
-    colnames(redundantmat) <- rn
-    l$redundant_network <- redundantmat
-    
-    # store diagnostics per iteration as a data frame
-    d <- data.frame(iteration = 1:.jcall(result, "I", "getIterations"),
-                    temperature = .jcall(result, "[D", "getTemperature"),
-                    acceptance_prob = .jcall(result, "[D", "getAcceptanceProbability"),
-                    acceptance = .jcall(result, "[I", "getAcceptance"),
-                    penalized_backbone_loss = .jcall(result, "[D", "getPenalizedBackboneLoss"),
-                    proposed_backbone_size = .jcall(result, "[I", "getProposedBackboneSize"),
-                    current_backbone_size = .jcall(result, "[I", "getCurrentBackboneSize"),
-                    optimal_backbone_size = .jcall(result, "[I", "getOptimalBackboneSize"),
-                    acceptance_ratio_ma = .jcall(result, "[D", "getAcceptanceRatioMovingAverage"))
-    
-    l$diagnostics <- d
-    
-    # store start date/time, end date/time, number of statements, call, and class label in each network matrix
-    start <- as.POSIXct(.jcall(result, "J", "getStart"), origin = "1970-01-01") # add the start date/time of the result as an attribute to the matrices
-    attributes(l$full_network)$start <- start
-    attributes(l$backbone_network)$start <- start
-    attributes(l$redundant_network)$start <- start
-    stop <- as.POSIXct(.jcall(result, "J", "getStop"), origin = "1970-01-01") # add the end date/time of the result as an attribute to the matrices
-    attributes(l$full_network)$stop <- stop
-    attributes(l$backbone_network)$stop <- stop
-    attributes(l$redundant_network)$stop <- stop
-    attributes(l$full_network)$numStatements <- .jcall(result, "I", "getNumStatements") # add the number of filtered statements the matrix is based on as an attribute to the matrix
-    attributes(l$full_network)$call <- match.call()
-    attributes(l$backbone_network)$call <- match.call()
-    attributes(l$redundant_network)$call <- match.call()
-    class(l$full_network) <- c("dna_network_onemode", class(l$full_network))
-    class(l$backbone_network) <- c("dna_network_onemode", class(l$backbone_network))
-    class(l$redundant_network) <- c("dna_network_onemode", class(l$redundant_network))
-    
-    class(l) <- c("dna_backbone", class(l))
-    return(l)
-  }
-}
-
-#' @param ma Number of iterations to compute moving average.
-#' @rdname dna_backbone
-#' @importFrom graphics lines
-#' @importFrom stats filter
-#' @noRd
-plot.dna_backbone <- function(x, ma = 500, ...) {
-  # temperature and acceptance probability
-  plot(x = x$diagnostics$iteration,
-       y = x$diagnostics$temperature,
-       col = "red",
-       type = "l",
-       lwd = 3,
-       xlab = "Iteration",
-       ylab = "Acceptance probability",
-       main = "Temperature and acceptance probability")
-  # note that better solutions are coded as -1 and need to be skipped:
-  lines(x = x$diagnostics$iteration[x$diagnostics$acceptance_prob >= 0],
-        y = x$diagnostics$acceptance_prob[x$diagnostics$acceptance_prob >= 0])
-  
-  # spectral distance between full network and backbone network per iteration
-  bb_loss <- stats::filter(x$diagnostics$penalized_backbone_loss,
-                           rep(1 / ma, ma),
-                           sides = 1)
-  plot(x = x$diagnostics$iteration,
-       y = bb_loss,
-       type = "l",
-       xlab = "Iteration",
-       ylab = "Penalized backbone loss",
-       main = "Penalized spectral backbone distance")
-  
-  # number of concepts in the backbone solution per iteration
-  current_size_ma <- stats::filter(x$diagnostics$current_backbone_size,
-                                   rep(1 / ma, ma),
-                                   sides = 1)
-  optimal_size_ma <- stats::filter(x$diagnostics$optimal_backbone_size,
-                                   rep(1 / ma, ma),
-                                   sides = 1)
-  plot(x = x$diagnostics$iteration,
-       y = current_size_ma,
-       ylim = c(min(c(current_size_ma, optimal_size_ma), na.rm = TRUE),
-                max(c(current_size_ma, optimal_size_ma), na.rm = TRUE)),
-       type = "l",
-       xlab = "Iteration",
-       ylab = paste0("Number of elements (MA, last ", ma, ")"),
-       main = "Backbone size (red = best)")
-  lines(x = x$diagnostics$iteration, y = optimal_size_ma, col = "red")
-  
-  # ratio of recent acceptances
-  accept_ratio <- stats::filter(x$diagnostics$acceptance,
-                                rep(1 / ma, ma),
-                                sides = 1)
-  plot(x = x$diagnostics$iteration,
-       y = accept_ratio,
-       type = "l",
-       xlab = "Iteration",
-       ylab = paste("Acceptance ratio in the last", ma, "iterations"),
-       main = "Acceptance ratio")
-}
-
-#' @rdname dna_backbone
-#' @param x A \code{"dna_backbone"} object.
-#' @noRd
-print.dna_backbone <- function(x, ...) {
-  cat(paste0("Penalty: ", x$penalty, ". Iterations: ", x$iterations, ".\n\n"))
-  cat(paste0("Backbone set (loss: ", round(x$unpenalized_backbone_loss, 4), "):\n"))
-  cat(paste(1:length(x$backbone), x$backbone), sep = "\n")
-  cat(paste0("\nRedundant set (loss: ", round(x$unpenalized_redundant_loss, 4), "):\n"))
-  cat(paste(1:length(x$redundant), x$redundant), sep = "\n")
-}
-
-#' @rdname dna_backbone
-#' @param object A \code{"dna_backbone"} object.
-#' @param ... Additional arguments.
+#' @author Tim Henrichsen
+#'
+#' @family {rDNA networks}
+#'
 #' @importFrom ggplot2 autoplot
-#' @importFrom ggplot2 ggplot
-#' @importFrom ggplot2 aes_string
-#' @importFrom ggplot2 geom_line
-#' @importFrom ggplot2 ylab
-#' @importFrom ggplot2 xlab
-#' @importFrom ggplot2 ggtitle
-#' @importFrom ggplot2 theme_bw
-#' @importFrom ggplot2 theme
-#' @noRd
-autoplot.dna_backbone <- function(object, ..., ma = 500) {
-  bd <- object$diagnostics
-  bd$bb_loss <- stats::filter(bd$penalized_backbone_loss, rep(1 / ma, ma), sides = 1)
-  bd$current_size_ma <- stats::filter(bd$current_backbone_size, rep(1 / ma, ma), sides = 1)
-  bd$optimal_size_ma <- stats::filter(bd$optimal_backbone_size, rep(1 / ma, ma), sides = 1)
-  bd$accept_ratio <- stats::filter(bd$acceptance, rep(1 / ma, ma), sides = 1)
-  
-  # temperature and acceptance probability
-  g_accept <- ggplot2::ggplot(bd, ggplot2::aes_string(y = "temperature", x = "iteration")) +
-    ggplot2::geom_line(color = "#a50f15") +
-    ggplot2::geom_line(data = bd[bd$acceptance_prob >= 0, ],
-                       ggplot2::aes_string(y = "acceptance_prob", x = "iteration")) +
-    ggplot2::ylab("Acceptance probability") +
-    ggplot2::xlab("Iteration") +
-    ggplot2::ggtitle("Temperature and acceptance probability") +
-    ggplot2::theme_bw()
-  
-  # spectral distance between full network and backbone network per iteration
-  g_loss <- ggplot2::ggplot(bd, ggplot2::aes_string(y = "bb_loss", x = "iteration")) +
-    ggplot2::geom_line() +
-    ggplot2::ylab("Penalized backbone loss") +
-    ggplot2::xlab("Iteration") +
-    ggplot2::ggtitle("Penalized spectral backbone distance") +
-    ggplot2::theme_bw()
-  
-  # number of concepts in the backbone solution per iteration
-  d <- data.frame(iteration = rep(bd$iteration, 2),
-                  size = c(bd$current_size_ma, bd$optimal_size_ma),
-                  Criterion = c(rep("Current iteration", nrow(bd)),
-                                rep("Best solution", nrow(bd))))
-  g_size <- ggplot2::ggplot(d, ggplot2::aes_string(y = "size", x = "iteration", color = "Criterion")) +
-    ggplot2::geom_line() +
-    ggplot2::ylab(paste0("Number of elements (MA, last ", ma, ")")) +
-    ggplot2::xlab("Iteration") +
-    ggplot2::ggtitle("Backbone size") +
-    ggplot2::theme_bw() +
-    ggplot2::theme(legend.position = "bottom")
-  
-  # ratio of recent acceptances
-  g_ar <- ggplot2::ggplot(bd, ggplot2::aes_string(y = "accept_ratio", x = "iteration")) +
-    ggplot2::geom_line() +
-    ggplot2::ylab(paste("Acceptance ratio in the last", ma, "iterations")) +
-    ggplot2::xlab("Iteration") +
-    ggplot2::ggtitle("Acceptance ratio") +
-    ggplot2::theme_bw()
-  
-  # wrap in list
-  plots <- list(g_accept, g_loss, g_size, g_ar)
-  return(plots)
+#' @importFrom ggplot2 aes
+#' @importFrom ggplot2 scale_color_identity
+#' @name autoplot.dna_network
+NULL
+
+#' @rdname autoplot.dna_network
+#' @export
+autoplot.dna_network_onemode <- function(object,
+                                         ...,
+                                         atts = NULL,
+                                         layout = "auto",
+                                         edge_size_range = c(0.2, 2),
+                                         edge_color = NULL,
+                                         edge_alpha = 1,
+                                         node_size = 3,
+                                         node_colors = "black",
+                                         node_label = TRUE,
+                                         font_size = 6,
+                                         truncate = 50,
+                                         threshold = NULL,
+                                         giant_component = FALSE,
+                                         exclude_isolates = FALSE,
+                                         max_overlaps = 10,
+                                         seed = 12345) {
+  set.seed(seed)
+
+  if (!grepl("dna_network", class(object)[1])) {
+    stop("Invalid data object. Please compute a dna_network object with the ",
+         "dna_network() function before plotting.")
+  }
+
+  if (!requireNamespace("igraph", quietly = TRUE)) {
+    stop("The autoplot function requires the 'igraph' package to be installed.\n",
+         "To do this, enter 'install.packages(\"igraph\")'.")
+  }
+
+  if (!requireNamespace("ggraph", quietly = TRUE)) {
+    stop("The autoplot function requires the 'ggraph' package to be installed.\n",
+         "To do this, enter 'install.packages(\"ggraph\")'.")
+  }
+
+  if (!is.null(atts) & !"dna_attributes" %in% class(atts)) {
+    stop("Object provided in 'atts' is not a dna_attributes object. Please ",
+         "provide a dna_attributes object using dna_getAttributes() or set atts ",
+         "to NULL if you do not want to use DNA attributes.")
+  }
+
+  if (!is.numeric(truncate)) {
+    truncate <- Inf
+    warning("No numeric value provided for trimming of entities. Truncation ",
+            "will be ignored.")
+  }
+
+  # Convert network matrix to igraph network
+  if ("dna_network_onemode" %in% class(object)) {
+    graph <- igraph::graph_from_adjacency_matrix(object,
+                                                 mode = "undirected",
+                                                 weighted = TRUE,
+                                                 diag = FALSE,
+                                                 add.colnames = NULL,
+                                                 add.rownames = NA)
+    igraph::V(graph)$shape <- "circle"
+  } else if ("dna_network_twomode" %in% class(object)) {
+    graph <- igraph::graph_from_incidence_matrix(object,
+                                                 directed = FALSE,
+                                                 weighted = TRUE,
+                                                 add.names = NULL)
+    igraph::V(graph)$shape <- ifelse(igraph::V(graph)$type, "square", "circle")
+  }
+
+  # Check if all entities are included in attributes object (if provided)
+  if (!is.null(atts) & !(all(igraph::V(graph)$name %in% atts$value))) {
+    miss <- which(!igraph::V(graph)$name %in% atts$value)
+    stop("Some network entities are missing in the attributes object:\n",
+         paste(igraph::V(graph)$name[miss], collapse = "\n"))
+  }
+
+  # Remove tie weights below threshold
+  if (!is.null(threshold)) {
+    graph <- igraph::delete.edges(graph, which(!igraph::E(graph)$weight >= threshold))
+  }
+
+  # Add node colors
+  if (is.character(node_colors)) {
+    if (!is.null(atts) & length(node_colors) == 1 && node_colors %in% colnames(atts)) {
+      col_pos <- which(colnames(atts) == node_colors)
+      igraph::V(graph)$color <- atts[match(igraph::V(graph)$name, atts$value), col_pos]
+    } else if (length(node_colors) > 1 & length(node_colors) != igraph::vcount(graph)) {
+      stop("Number of custom colors does not equal number of nodes in the network.")
+    } else {
+      igraph::V(graph)$color <- node_colors
+    }
+  } else {
+    igraph::V(graph)$color <- "black"
+  }
+
+  # Add edge colors
+  if (is.null(edge_color)) {
+    if ("combine" %in% as.character(attributes(object)$call)) {
+      igraph::E(graph)$color <- "green"
+      igraph::E(graph)$color[igraph::E(graph)$weight == 2] <- "red"
+      igraph::E(graph)$color[igraph::E(graph)$weight == 3] <- "blue"
+      # Change edge weight for networks with combine aggregation
+      igraph::E(graph)$weight[igraph::E(graph)$weight > 0] <- 1
+    } else if ("subtract" %in% as.character(attributes(object)$call)) {
+      igraph::E(graph)$color <- "green"
+      igraph::E(graph)$color[igraph::E(graph)$weight < 0] <- "red"
+    } else if ("congruence" %in% as.character(attributes(object)$call)) {
+      igraph::E(graph)$color <- "green"
+    } else if ("conflict" %in% as.character(attributes(object)$call)) {
+      igraph::E(graph)$color <- "red"
+    } else {
+      igraph::E(graph)$color <- "gray"
+    }
+  } else if (!all(is.na(edge_color))) {
+    if (length(edge_color) > 1 & length(edge_color) != igraph::ecount(graph)) {
+      igraph::E(graph)$color <- "gray"
+      warning("Number of custom edge_colors does not match number of edges ",
+              "in the network. Will set edge_color to default (gray).")
+    } else {
+      igraph::E(graph)$color <- edge_color
+    }
+  } else {
+    igraph::E(graph)$color <- "gray"
+  }
+
+  # Add node size(s)
+  if (length(node_size) > 1 & length(node_size) != igraph::vcount(graph)) {
+    igraph::V(graph)$size <- 7
+    warning("Number of provided node size values does not equal number of ",
+            "nodes in the network. node_size will be set to default value (7).")
+  } else if (is.character(node_size) & length(node_size) == 1 & !is.null(atts) && node_size %in% colnames(atts)) {
+    col_pos <- which(colnames(atts) == node_size)
+    igraph::V(graph)$size <- atts[match(igraph::V(graph)$name, atts$value), col_pos]
+  } else if (is.numeric(node_size)) {
+    igraph::V(graph)$size <- node_size
+  }
+
+  # Add labels
+  if (!is.logical(node_label)) {
+    if (is.character(node_label) & length(node_label) == 1 & !is.null(atts) && node_label %in% colnames(atts)) {
+      col_pos <- which(colnames(atts) == node_label)
+      igraph::V(graph)$name <- atts[match(igraph::V(graph)$name, atts$value), col_pos]
+    } else if (!is.null(node_label)) {
+      if (length(node_label) > 1 & length(node_label) != igraph::vcount(graph)) {
+        stop("Number of custom labels does not equal number of nodes in the network.")
+      }
+      igraph::V(graph)$name <- node_label
+    }
+  }
+
+  # Remove isolates
+  if (exclude_isolates) {
+    graph <- igraph::delete.vertices(graph, igraph::degree(graph) == 0)
+  }
+
+  # Only plot giant component of network. Useful for some plotting algorithms.
+  if (giant_component) {
+    # Get giant component
+    components <- igraph::clusters(graph)
+    biggest_cluster_id <- which.max(components$csize)
+
+    # Get members of giant component
+    vert_ids <- igraph::V(graph)[components$membership == biggest_cluster_id]
+
+    # Create subgraph
+    graph <- igraph::induced_subgraph(graph, vert_ids)
+  }
+
+
+  # Truncate labels of entities
+  igraph::V(graph)$name <- sapply(igraph::V(graph)$name, function(e) if (nchar(e) > truncate) paste0(substr(e, 1, truncate - 1), "*") else e)
+
+  # Use absolute edge weight values for plotting
+  igraph::E(graph)$weight <- abs(igraph::E(graph)$weight)
+
+  # Start network plot
+  g <- ggraph::ggraph(graph, layout = layout) +
+    suppressWarnings(ggraph::geom_edge_link(ggplot2::aes(edge_width = igraph::E(graph)$weight, edge_colour = igraph::E(graph)$color),
+                           alpha = edge_alpha,
+                           show.legend = FALSE)) + # add edges
+    ggraph::scale_edge_width(range = edge_size_range) + # add edge scale
+    ggraph::geom_node_point(ggplot2::aes(colour = igraph::V(graph)$color), # add nodes
+                            size = igraph::V(graph)$size,
+                            shape = igraph::V(graph)$shape,
+                            show.legend = NA)
+  # Add labels
+  if ((!is.null(node_label) && !all(is.na(node_label))) && (is.character(node_label) || node_label == TRUE)) {
+    g <- g +
+      ggraph::geom_node_text(ggplot2::aes(label = igraph::V(graph)$name),
+                             repel = TRUE,
+                             max.overlaps = max_overlaps,
+                             show.legend = FALSE)
+  }
+
+  # Add theme and set node colors and edges to identity
+  g <- g +
+    ggraph::theme_graph(base_family = "", base_size = font_size) +
+    ggplot2::scale_color_identity() +
+    ggraph::scale_edge_color_identity()
+
+  return(g)
 }
+
+#' @rdname autoplot.dna_network
+#' @export
+autoplot.dna_network_twomode <- autoplot.dna_network_onemode
+
+
+# Barplots ---------------------------------------------------------------------
 
 #' Generate the data necessary for creating a barplot for a variable
 #'
@@ -1657,8 +1744,8 @@ autoplot.dna_backbone <- function(object, ..., ma = 500) {
 #' }
 #'
 #' @author Philip Leifeld
-#' 
-#' @seealso \link{print.dna_barplot}, \link{autoplot.dna_barplot}
+#'
+#' @family {rDNA barplots}
 #'
 #' @importFrom rJava .jarray
 #' @importFrom rJava .jcall
@@ -1684,13 +1771,13 @@ dna_barplot <- function(statementType = "DNA Statement",
                         invertSources = FALSE,
                         invertSections = FALSE,
                         invertTypes = FALSE) {
-  
+
   # wrap the vectors of exclude values for document variables into Java arrays
   excludeAuthors <- .jarray(excludeAuthors)
   excludeSources <- .jarray(excludeSources)
   excludeSections <- .jarray(excludeSections)
   excludeTypes <- .jarray(excludeTypes)
-  
+
   # compile exclude variables and values vectors
   dat <- matrix("", nrow = length(unlist(excludeValues)), ncol = 2)
   count <- 0
@@ -1712,12 +1799,12 @@ dna_barplot <- function(statementType = "DNA Statement",
   }
   var <- .jarray(var) # array of variable names of each excluded value
   val <- .jarray(val) # array of values to be excluded
-  
+
   # encode R NULL as Java null value if necessary
   if (is.null(qualifier) || is.na(qualifier)) {
     qualifier <- .jnull(class = "java/lang/String")
   }
-  
+
   # call rBarplotData function to compute results
   b <- .jcall(dnaEnvironment[["dna"]]$headlessDna,
               "Lexport/BarplotResult;",
@@ -1742,37 +1829,37 @@ dna_barplot <- function(statementType = "DNA Statement",
               invertSections,
               invertTypes,
               simplify = TRUE)
-  
+
   at <- .jcall(b, "[[Ljava/lang/String;", "getAttributes")
   at <- t(sapply(at, FUN = .jevalArray))
-  
+
   counts <- .jcall(b, "[[I", "getCounts")
   counts <- t(sapply(counts, FUN = .jevalArray))
   if (nrow(counts) < nrow(at)) {
     counts <- t(counts)
   }
-  
+
   results <- data.frame(.jcall(b, "[S", "getValues"),
                         counts,
                         at)
-  
+
   intValues <- .jcall(b, "[I", "getIntValues")
   intColNames <- intValues
   if (is.jnull(qualifier)) {
     intValues <- integer(0)
     intColNames <- "Frequency"
   }
-  
+
   atVar <- .jcall(b, "[S", "getAttributeVariables")
-  
+
   colnames(results) <- c("Entity", intColNames, atVar)
-  
+
   attributes(results)$variable <- .jcall(b, "S", "getVariable")
   attributes(results)$intValues <- intValues
   attributes(results)$attributeVariables <- atVar
-  
+
   class(results) <- c("dna_barplot", class(results))
-  
+
   return(results)
 }
 
@@ -1793,7 +1880,8 @@ dna_barplot <- function(statementType = "DNA Statement",
 #'
 #' @author Philip Leifeld
 #'
-#' @seealso \link{dna_barplot}, \link{autoplot.dna_barplot}
+#' @family {rDNA barplots}
+#'
 #' @export
 print.dna_barplot <- function(x, trim = 30, attr = TRUE, ...) {
   x2 <- x
@@ -1821,8 +1909,9 @@ print.dna_barplot <- function(x, trim = 30, attr = TRUE, ...) {
 #' DNA statements for different entities such as \code{"concept"},
 #' \code{"organization"}, or \code{"person"}. Colors can be modified before
 #' plotting (see examples).
-#' 
+#'
 #' @param object A \code{dna_barplot} object.
+#' @param ... Additional arguments; currently not in use.
 #' @param lab.pos,lab.neg Names for (dis-)agreement labels.
 #' @param lab Should (dis-)agreement labels and title be displayed?
 #' @param colors If \code{TRUE}, the \code{Colors} column in the
@@ -1846,31 +1935,31 @@ print.dna_barplot <- function(x, trim = 30, attr = TRUE, ...) {
 #' dna_sample()
 #'
 #' dna_openDatabase("sample.dna", coderId = 1, coderPassword = "sample")
-#' 
+#'
 #' # compute barplot data
 #' b <- dna_barplot(statementType = "DNA Statement",
 #'                  variable = "concept",
 #'                  qualifier = "agreement")
-#' 
+#'
 #' # plot barplot with ggplot2
 #' library("ggplot2")
 #' autoplot(b)
-#' 
+#'
 #' # use entity colours (here: colors of organizations as an illustration)
 #' b <- dna_barplot(statementType = "DNA Statement",
 #'                  variable = "organization",
 #'                  qualifier = "agreement")
 #' autoplot(b, colors = TRUE)
-#' 
+#'
 #' # edit the colors before plotting
 #' b$Color[b$Type == "NGO"] <- "red"         # change NGO color to red
 #' b$Color[b$Type == "Government"] <- "blue" # change government color to blue
 #' autoplot(b, colors = TRUE)
-#' 
+#'
 #' # use an attribute, such as type, to color the bars
 #' autoplot(b, colors = "Type") +
 #'   scale_colour_manual(values = "black")
-#' 
+#'
 #' # replace colors for the three possible actor types with custom colors
 #' autoplot(b, colors = "Type") +
 #'   scale_fill_manual(values = c("red", "blue", "green")) +
@@ -1879,8 +1968,8 @@ print.dna_barplot <- function(x, trim = 30, attr = TRUE, ...) {
 #'
 #' @author Johannes B. Gruber, Tim Henrichsen
 #'
-#' @seealso \link{dna_barplot}
-#' 
+#' @family {rDNA barplots}
+#'
 #' @importFrom ggplot2 autoplot
 #' @importFrom ggplot2 ggplot
 #' @importFrom ggplot2 aes_string
@@ -1901,7 +1990,8 @@ print.dna_barplot <- function(x, trim = 30, attr = TRUE, ...) {
 #' @importFrom utils stack
 #' @importFrom grDevices col2rgb
 #' @export
-autoplot.dna_barplot <- function(object, 
+autoplot.dna_barplot <- function(object,
+                                 ...,
                                  lab.pos = "Agreement",
                                  lab.neg = "Disagreement",
                                  lab = TRUE,
@@ -1911,66 +2001,66 @@ autoplot.dna_barplot <- function(object,
                                  axisWidth = 1.5,
                                  truncate = 40,
                                  exclude.min = NULL) {
-  
-  
+
+
   if (!("dna_barplot" %in% class(object))) {
-    stop("Invalid data object. Please compute a dna_barplot object via the ", 
+    stop("Invalid data object. Please compute a dna_barplot object via the ",
          "dna_barplot function before plotting.")
   }
-  
+
   if (!("Entity" %in% colnames(object))) {
     stop("dna_barplot object does not have a \'Entity\' variable. Please ",
          "compute a new dna_barplot object via the dna_barplot function before",
          " plotting.")
   }
-  
+
   if (isTRUE(colors) & !("Color" %in% colnames(object)) |
       is.character(colors) & !(colors %in% colnames(object))) {
     colors <- FALSE
     warning("No color variable found in dna_barplot object. Colors will be",
             " ignored.")
   }
-  
+
   if (!is.numeric(truncate)) {
     truncate <- Inf
     warning("No numeric value provided for trimming of entities. Truncation ",
             "will be ignored.")
   }
-  
+
   # Get qualifier values
   w <- attr(object, "intValues")
-  
+
   if (!all(w %in% colnames(object))) {
     stop("dna_barplot object does not include all qualifier values of the ",
          "statement type. Please compute a new dna_barplot object via the ",
          "dna_barplot function.")
   }
-  
+
   # Check if qualifier is binary
   binary <- all(w %in% c(0, 1))
-  
+
   # Compute total values per entity
   object$sum <- rowSums(object[, colnames(object) %in% w])
-  
+
   # Exclude minimum number of statements per entity
   if (is.numeric(exclude.min)) {
     if (exclude.min > max(object$sum)) {
       exclude.min <- NULL
-      warning("Value provided in exclude.min is higher than maximum frequency ", 
+      warning("Value provided in exclude.min is higher than maximum frequency ",
               "of entity (", max(object$sum), "). Will ignore exclude.min.")
     } else {
       object <- object[object$sum >= exclude.min, ]
     }
   }
-  
+
   # Stack agreement and disagreement
   object2 <- cbind(object$Entity, utils::stack(object, select = colnames(object) %in% w))
   colnames(object2) <- c("entity", "frequency", "agreement")
-  
+
   object <- object[order(object$sum, decreasing = TRUE), ]
-  
+
   object2$entity <- factor(object2$entity, levels = rev(object$Entity))
-  
+
   # Get colors
   if (isTRUE(colors)) {
     object2$color <- object$Color[match(object2$entity, object$Entity)]
@@ -1983,15 +2073,15 @@ autoplot.dna_barplot <- function(object,
   } else {
     object2$color <- "white"
     object2$text_color <- "black"
-  }  
-  
-  
+  }
+
+
   if (binary) {
     # setting disagreement as -1 instead 0
     object2$agreement <- ifelse(object2$agreement == 0, -1, 1)
     # recode frequency in positive and negative
     object2$frequency <- object2$frequency * as.integer(object2$agreement)
-    
+
     # generate position of bar labels
     offset <- (max(object2$frequency) + abs(min(object2$frequency))) * 0.05
     offset <- ifelse(offset < 0.5, 0.5, offset) # offset should be at least 0.5
@@ -2004,7 +2094,7 @@ autoplot.dna_barplot <- function(object,
     object2$pos <- ifelse(object2$frequency > 0,
                           object2$frequency + offset,
                           object2$frequency - offset)
-    
+
     # move 0 labels where necessary
     object2$pos[object2$frequency == 0] <- ifelse(object2$agreement[object2$frequency == 0] == 1,
                                                   object2$pos[object2$frequency == 0] * -1,
@@ -2024,17 +2114,17 @@ autoplot.dna_barplot <- function(object,
     # Add labels
     object2$label <- paste(object2$count, object2$agreement, sep = " x ")
   }
-  
+
   offset <- (max(object2$frequency) + abs(min(object2$frequency))) * 0.05
   offset <- ifelse(offset < 0.5, 0.5, offset)
   yintercepts <- data.frame(x = c(0.5, length(unique(object2$entity)) + 0.5),
                             y = c(0, 0))
   high <- yintercepts$x[2] + 0.25
-  
+
   object2 <- object2[order(as.numeric(as.character(object2$agreement)),
                            decreasing = FALSE), ]
   object2$agreement <- factor(object2$agreement, levels = w)
-  
+
   # Plot
   g <- ggplot2::ggplot(object2,
                        ggplot2::aes_string(x = "entity",
@@ -2106,7 +2196,7 @@ autoplot.dna_barplot <- function(object,
                          inherit.aes = FALSE,
                          data = object2)
     # Add entity labels for integer case with positive and negative values
-  } else if (max(w) > 0 & min(w) < 0) { 
+  } else if (max(w) > 0 & min(w) < 0) {
     g <- g +
       ggplot2::geom_text(ggplot2::aes_string(color = "text_color"),
                          size = (fontSize / ggplot2::.pt),
@@ -2160,43 +2250,142 @@ autoplot.dna_barplot <- function(object,
 }
 
 
-# TODO: write roxygen2 documentation and continue writing the function
-# code to test this: results <- dna_saturation(c(1, 2, 3, 4, 5, 7, 8, 9, 11, 13, 14, 15, 17, 18, 19, 20, 21, 24, 27, 28), numSamples = 20, duplicates = "include")
-dna_saturation <- function(codedDocumentIds,
-                           numSamples = 1,
-                           maxNumDocuments = length(codedDocumentIds),
-                           networkType = "twomode",
-                           statementType = "DNA Statement",
-                           variable1 = "organization",
-                           variable1Document = FALSE,
-                           variable2 = "concept",
-                           variable2Document = FALSE,
-                           qualifier = "agreement",
-                           qualifierDocument = FALSE,
-                           qualifierAggregation = "ignore",
-                           normalization = "no",
-                           duplicates = "include",
-                           start.date = "01.01.1900",
-                           stop.date = "31.12.2099",
-                           start.time = "00:00:00",
-                           stop.time = "23:59:59",
-                           excludeValues = list(),
-                           excludeAuthors = character(),
-                           excludeSources = character(),
-                           excludeSections = character(),
-                           excludeTypes = character(),
-                           invertValues = FALSE,
-                           invertAuthors = FALSE,
-                           invertSources = FALSE,
-                           invertSections = FALSE,
-                           invertTypes = FALSE) {
-  
+# Backbones --------------------------------------------------------------------
+
+#' Compute and retrieve the backbone and redundant set
+#'
+#' Compute and retrieve the backbone and redundant set of a discourse network.
+#'
+#' This function applies a simulated annealing algorithm to the discourse
+#' network to partition the set of second-mode entities (e.g., concepts) into a
+#' backbone set and a complementary redundant set.
+#'
+#' @param penalty The penalty parameter for large backbone sets. The larger the
+#'   value, the more strongly larger backbone sets are punished and the smaller
+#'   the resulting backbone is. Try out different values to find the right size
+#'   of the backbone set. Reasonable values could be \code{2.5}, \code{5},
+#'   \code{7.5}, or \code{12}, for example. The minimum is \code{0.0}, which
+#'   imposes no penalty on the size of the backbone set and produces a redundant
+#'   set with only one element. Start with \code{0.0} if you want to weed out a
+#'   single concept and subsequently increase the penalty to include more items
+#'   in the redundant set and shrink the backbone further.
+#' @param iterations The number of iterations of the simulated annealing
+#'   algorithm. More iterations take more time but may lead to better
+#'   optimization results.
+#' @param qualifierAggregation The aggregation rule for the \code{qualifier}
+#'   variable. This must be \code{"ignore"} (for ignoring the qualifier
+#'   variable), \code{"congruence"} (for recording a network tie only if both
+#'   nodes have the same qualifier value in the binary case or for recording the
+#'   similarity between the two nodes on the qualifier variable in the integer
+#'   case), \code{"conflict"} (for recording a network tie only if both nodes
+#'   have a different qualifier value in the binary case or for recording the
+#'   distance between the two nodes on the qualifier variable in the integer
+#'   case), or \code{"subtract"} (for subtracting the conflict tie value from
+#'   the congruence tie value in each dyad; note that negative values will be
+#'   replaced by \code{0} in the backbone calculation).
+#' @param normalization Normalization of edge weights. Valid settings are
+#'   \code{"no"} (for switching off normalization), \code{"average"} (for
+#'   average activity normalization), \code{"jaccard"} (for Jaccard coefficient
+#'   normalization), and \code{"cosine"} (for cosine similarity normalization).
+#' @param fileFormat An optional file format specification for saving the
+#'   backbone results to a file instead of returning an object. Valid values
+#'   are \code{"json"}, \code{"xml"}, and \code{NULL} (for returning the results
+#'   instead of writing them to a file).
+#' @inheritParams dna_network
+#'
+#' @examples
+#' \dontrun{
+#' dna_init()
+#' dna_sample()
+#' dna_openDatabase("sample.dna", coderId = 1, coderPassword = "sample")
+#'
+#' # compute backbone and redundant set
+#' b <- dna_backbone(penalty = 3.5,
+#'                   iterations = 10000,
+#'                   variable1 = "organization",
+#'                   variable2 = "concept",
+#'                   qualifier = "agreement",
+#'                   qualifierAggregation = "subtract",
+#'                   normalization = "average")
+#'
+#' b # display main results
+#'
+#' # extract results from the object
+#' b$backbone # show the set of backbone concepts
+#' b$redundant # show the set of redundant concepts
+#' b$unpenalized_backbone_loss # spectral loss between full and backbone network
+#' b$unpenalized_redundant_loss # spectral loss of redundant network
+#' b$backbone_network # show the backbone network
+#' b$redundant_network # show the redundant network
+#' b$full_network # show the full network
+#'
+#' # plot diagnostics with base R
+#' plot(b, ma = 500)
+#'
+#' # arrange plots in a 2 x 2 view
+#' par(mfrow = c(2, 2))
+#' plot(b)
+#'
+#' # plot diagnostics with ggplot2
+#' library("ggplot2")
+#' p <- autoplot(b)
+#' p
+#'
+#' # pick a specific diagnostic
+#' p[[3]]
+#'
+#' # use the patchwork package to arrange the diagnostics in a single plot
+#' library("patchwork")
+#' new_plot <- p[[1]] + p[[2]] + p[[3]] + p[[4]]
+#' new_plot & theme_grey() + theme(legend.position = "bottom")
+#'
+#' # use the gridExtra package to arrange the diagnostics in a single plot
+#' library("gridExtra")
+#' grid.arrange(p[[1]], p[[2]], p[[3]], p[[4]])
+#' }
+#'
+#' @author Philip Leifeld, Tim Henrichsen
+#'
+#' @importFrom rJava .jarray
+#' @importFrom rJava .jcall
+#' @importFrom rJava .jnull
+#' @importFrom rJava J
+#' @noRd
+dna_backbone <- function(penalty = 3.5,
+                         iterations = 10000,
+                         statementType = "DNA Statement",
+                         variable1 = "organization",
+                         variable1Document = FALSE,
+                         variable2 = "concept",
+                         variable2Document = FALSE,
+                         qualifier = "agreement",
+                         qualifierDocument = FALSE,
+                         qualifierAggregation = "subtract",
+                         normalization = "average",
+                         duplicates = "document",
+                         start.date = "01.01.1900",
+                         stop.date = "31.12.2099",
+                         start.time = "00:00:00",
+                         stop.time = "23:59:59",
+                         excludeValues = list(),
+                         excludeAuthors = character(),
+                         excludeSources = character(),
+                         excludeSections = character(),
+                         excludeTypes = character(),
+                         invertValues = FALSE,
+                         invertAuthors = FALSE,
+                         invertSources = FALSE,
+                         invertSections = FALSE,
+                         invertTypes = FALSE,
+                         fileFormat = NULL,
+                         outfile = NULL) {
+
   # wrap the vectors of exclude values for document variables into Java arrays
   excludeAuthors <- .jarray(excludeAuthors)
   excludeSources <- .jarray(excludeSources)
   excludeSections <- .jarray(excludeSections)
   excludeTypes <- .jarray(excludeTypes)
-  
+
   # compile exclude variables and values vectors
   dat <- matrix("", nrow = length(unlist(excludeValues)), ncol = 2)
   count <- 0
@@ -2218,65 +2407,247 @@ dna_saturation <- function(codedDocumentIds,
   }
   var <- .jarray(var) # array of variable names of each excluded value
   val <- .jarray(val) # array of values to be excluded
-  
+
   # encode R NULL as Java null value if necessary
   if (is.null(qualifier) || is.na(qualifier)) {
     qualifier <- .jnull(class = "java/lang/String")
   }
-  
-  # call rSaturation function to compute results
-  results <- .jcall(dnaEnvironment[["dna"]]$headlessDna,
-                    "[[D",
-                    "rSaturation",
-                    .jarray(as.integer(codedDocumentIds)),
-                    as.integer(numSamples),
-                    as.integer(maxNumDocuments),
-                    networkType,
-                    statementType,
-                    variable1,
-                    variable1Document,
-                    variable2,
-                    variable2Document,
-                    qualifier,
-                    qualifierDocument,
-                    qualifierAggregation,
-                    normalization,
-                    duplicates,
-                    start.date,
-                    stop.date,
-                    start.time,
-                    stop.time,
-                    var,
-                    val,
-                    excludeAuthors,
-                    excludeSources,
-                    excludeSections,
-                    excludeTypes,
-                    invertValues,
-                    invertAuthors,
-                    invertSources,
-                    invertSections,
-                    invertTypes
+  if (is.null(fileFormat)) {
+    fileFormat <- .jnull(class = "java/lang/String")
+  }
+  if (is.null(outfile)) {
+    outfile <- .jnull(class = "java/lang/String")
+  }
+
+  # call rBackbone function to compute results
+  .jcall(dnaEnvironment[["dna"]]$headlessDna,
+         "V",
+         "rBackbone",
+         as.double(penalty),
+         as.integer(iterations),
+         statementType,
+         variable1,
+         variable1Document,
+         variable2,
+         variable2Document,
+         qualifier,
+         qualifierDocument,
+         qualifierAggregation,
+         normalization,
+         duplicates,
+         start.date,
+         stop.date,
+         start.time,
+         stop.time,
+         var,
+         val,
+         excludeAuthors,
+         excludeSources,
+         excludeSections,
+         excludeTypes,
+         invertValues,
+         invertAuthors,
+         invertSources,
+         invertSections,
+         invertTypes,
+         outfile,
+         fileFormat
   )
-  
-  results <- as.data.frame(sapply(results, .jevalArray))
-  
-  ### TODO: This code fits a non-linear model through the first sample curve, but a better non-linear model is needed.
-  ###       This page contains some ideas: https://www.statforbiology.com/nonlinearregression/usefulequations
-  ###       It may be necessary to change it from cumulative Euclidean changes to Euclidean changes in Java to be able to fit this well
-  # dta <- data.frame(documents = 1:nrow(results), cumulative_change = results[, 1])
-  # add_nls <- nls(cumulative_change ~ log(r * documents), data = dta, start = list(r = 1))
-  # summary(add_nls)
-  # plot(dta$documents, dta$cumulative_change, type = "l")
-  # lines(dta$documents, log(coef(add_nls)[1] * dta$documents))
-  
-  ### TODO: This code plots the curves for each sample
-  # test <- reshape(results, direction = "long", varying = 1:ncol(results), v.names = "change")
-  # colnames(test) <- c("Sample", "Change", "Documents")
-  # rownames(test) <- NULL
-  # test$Sample <- as.factor(test$Sample)
-  # library("ggplot2")
-  # ggplot(test, aes(x = Documents, y = Change, colour = Sample)) + geom_line()
-  
-  return(results)
+
+  exporter <- .jcall(dnaEnvironment[["dna"]]$headlessDna, "Lexport/Exporter;", "getExporter") # get a reference to the Exporter object, in which results are stored
+  result <- .jcall(exporter, "Lexport/BackboneResult;", "getBackboneResult", simplify = TRUE)
+  if (!is.null(outfile) && !is.null(fileFormat) && is.character(outfile) && is.character(fileFormat) && fileFormat %in% c("json", "xml")) {
+    message("File exported.")
+  } else {
+    # create a list with various results
+    l <- list()
+    l$penalty <- .jcall(result, "D", "getPenalty")
+    l$iterations <- .jcall(result, "I", "getIterations")
+    l$backbone <- .jcall(result, "[S", "getBackboneEntities")
+    l$redundant <- .jcall(result, "[S", "getRedundantEntities")
+    l$unpenalized_backbone_loss <- .jcall(result, "D", "getUnpenalizedBackboneLoss")
+    l$unpenalized_redundant_loss <- .jcall(result, "D", "getUnpenalizedRedundantLoss")
+    rn <- .jcall(result, "[S", "getLabels")
+
+    # store the three matrices in the result list
+    fullmat <- .jcall(result, "[[D", "getFullNetwork", simplify = TRUE)
+    rownames(fullmat) <- rn
+    colnames(fullmat) <- rn
+    l$full_network <- fullmat
+    backbonemat <- .jcall(result, "[[D", "getBackboneNetwork", simplify = TRUE)
+    rownames(backbonemat) <- rn
+    colnames(backbonemat) <- rn
+    l$backbone_network <- backbonemat
+    redundantmat <- .jcall(result, "[[D", "getRedundantNetwork", simplify = TRUE)
+    rownames(redundantmat) <- rn
+    colnames(redundantmat) <- rn
+    l$redundant_network <- redundantmat
+
+    # store diagnostics per iteration as a data frame
+    d <- data.frame(iteration = 1:.jcall(result, "I", "getIterations"),
+                    temperature = .jcall(result, "[D", "getTemperature"),
+                    acceptance_prob = .jcall(result, "[D", "getAcceptanceProbability"),
+                    acceptance = .jcall(result, "[I", "getAcceptance"),
+                    penalized_backbone_loss = .jcall(result, "[D", "getPenalizedBackboneLoss"),
+                    proposed_backbone_size = .jcall(result, "[I", "getProposedBackboneSize"),
+                    current_backbone_size = .jcall(result, "[I", "getCurrentBackboneSize"),
+                    optimal_backbone_size = .jcall(result, "[I", "getOptimalBackboneSize"),
+                    acceptance_ratio_ma = .jcall(result, "[D", "getAcceptanceRatioMovingAverage"))
+
+    l$diagnostics <- d
+
+    # store start date/time, end date/time, number of statements, call, and class label in each network matrix
+    start <- as.POSIXct(.jcall(result, "J", "getStart"), origin = "1970-01-01") # add the start date/time of the result as an attribute to the matrices
+    attributes(l$full_network)$start <- start
+    attributes(l$backbone_network)$start <- start
+    attributes(l$redundant_network)$start <- start
+    stop <- as.POSIXct(.jcall(result, "J", "getStop"), origin = "1970-01-01") # add the end date/time of the result as an attribute to the matrices
+    attributes(l$full_network)$stop <- stop
+    attributes(l$backbone_network)$stop <- stop
+    attributes(l$redundant_network)$stop <- stop
+    attributes(l$full_network)$numStatements <- .jcall(result, "I", "getNumStatements") # add the number of filtered statements the matrix is based on as an attribute to the matrix
+    attributes(l$full_network)$call <- match.call()
+    attributes(l$backbone_network)$call <- match.call()
+    attributes(l$redundant_network)$call <- match.call()
+    class(l$full_network) <- c("dna_network_onemode", class(l$full_network))
+    class(l$backbone_network) <- c("dna_network_onemode", class(l$backbone_network))
+    class(l$redundant_network) <- c("dna_network_onemode", class(l$redundant_network))
+
+    class(l) <- c("dna_backbone", class(l))
+    return(l)
+  }
+}
+
+#' @rdname dna_backbone
+#' @param x A \code{"dna_backbone"} object.
+#' @noRd
+print.dna_backbone <- function(x, ...) {
+  cat(paste0("Penalty: ", x$penalty, ". Iterations: ", x$iterations, ".\n\n"))
+  cat(paste0("Backbone set (loss: ", round(x$unpenalized_backbone_loss, 4), "):\n"))
+  cat(paste(1:length(x$backbone), x$backbone), sep = "\n")
+  cat(paste0("\nRedundant set (loss: ", round(x$unpenalized_redundant_loss, 4), "):\n"))
+  cat(paste(1:length(x$redundant), x$redundant), sep = "\n")
+}
+
+#' @param ma Number of iterations to compute moving average.
+#' @rdname dna_backbone
+#' @importFrom graphics lines
+#' @importFrom stats filter
+#' @noRd
+plot.dna_backbone <- function(x, ma = 500, ...) {
+  # temperature and acceptance probability
+  plot(x = x$diagnostics$iteration,
+       y = x$diagnostics$temperature,
+       col = "red",
+       type = "l",
+       lwd = 3,
+       xlab = "Iteration",
+       ylab = "Acceptance probability",
+       main = "Temperature and acceptance probability")
+  # note that better solutions are coded as -1 and need to be skipped:
+  lines(x = x$diagnostics$iteration[x$diagnostics$acceptance_prob >= 0],
+        y = x$diagnostics$acceptance_prob[x$diagnostics$acceptance_prob >= 0])
+
+  # spectral distance between full network and backbone network per iteration
+  bb_loss <- stats::filter(x$diagnostics$penalized_backbone_loss,
+                           rep(1 / ma, ma),
+                           sides = 1)
+  plot(x = x$diagnostics$iteration,
+       y = bb_loss,
+       type = "l",
+       xlab = "Iteration",
+       ylab = "Penalized backbone loss",
+       main = "Penalized spectral backbone distance")
+
+  # number of concepts in the backbone solution per iteration
+  current_size_ma <- stats::filter(x$diagnostics$current_backbone_size,
+                                   rep(1 / ma, ma),
+                                   sides = 1)
+  optimal_size_ma <- stats::filter(x$diagnostics$optimal_backbone_size,
+                                   rep(1 / ma, ma),
+                                   sides = 1)
+  plot(x = x$diagnostics$iteration,
+       y = current_size_ma,
+       ylim = c(min(c(current_size_ma, optimal_size_ma), na.rm = TRUE),
+                max(c(current_size_ma, optimal_size_ma), na.rm = TRUE)),
+       type = "l",
+       xlab = "Iteration",
+       ylab = paste0("Number of elements (MA, last ", ma, ")"),
+       main = "Backbone size (red = best)")
+  lines(x = x$diagnostics$iteration, y = optimal_size_ma, col = "red")
+
+  # ratio of recent acceptances
+  accept_ratio <- stats::filter(x$diagnostics$acceptance,
+                                rep(1 / ma, ma),
+                                sides = 1)
+  plot(x = x$diagnostics$iteration,
+       y = accept_ratio,
+       type = "l",
+       xlab = "Iteration",
+       ylab = paste("Acceptance ratio in the last", ma, "iterations"),
+       main = "Acceptance ratio")
+}
+
+#' @rdname dna_backbone
+#' @param object A \code{"dna_backbone"} object.
+#' @param ... Additional arguments.
+#' @importFrom ggplot2 autoplot
+#' @importFrom ggplot2 ggplot
+#' @importFrom ggplot2 aes_string
+#' @importFrom ggplot2 geom_line
+#' @importFrom ggplot2 ylab
+#' @importFrom ggplot2 xlab
+#' @importFrom ggplot2 ggtitle
+#' @importFrom ggplot2 theme_bw
+#' @importFrom ggplot2 theme
+#' @noRd
+autoplot.dna_backbone <- function(object, ..., ma = 500) {
+  bd <- object$diagnostics
+  bd$bb_loss <- stats::filter(bd$penalized_backbone_loss, rep(1 / ma, ma), sides = 1)
+  bd$current_size_ma <- stats::filter(bd$current_backbone_size, rep(1 / ma, ma), sides = 1)
+  bd$optimal_size_ma <- stats::filter(bd$optimal_backbone_size, rep(1 / ma, ma), sides = 1)
+  bd$accept_ratio <- stats::filter(bd$acceptance, rep(1 / ma, ma), sides = 1)
+
+  # temperature and acceptance probability
+  g_accept <- ggplot2::ggplot(bd, ggplot2::aes_string(y = "temperature", x = "iteration")) +
+    ggplot2::geom_line(color = "#a50f15") +
+    ggplot2::geom_line(data = bd[bd$acceptance_prob >= 0, ],
+                       ggplot2::aes_string(y = "acceptance_prob", x = "iteration")) +
+    ggplot2::ylab("Acceptance probability") +
+    ggplot2::xlab("Iteration") +
+    ggplot2::ggtitle("Temperature and acceptance probability") +
+    ggplot2::theme_bw()
+
+  # spectral distance between full network and backbone network per iteration
+  g_loss <- ggplot2::ggplot(bd, ggplot2::aes_string(y = "bb_loss", x = "iteration")) +
+    ggplot2::geom_line() +
+    ggplot2::ylab("Penalized backbone loss") +
+    ggplot2::xlab("Iteration") +
+    ggplot2::ggtitle("Penalized spectral backbone distance") +
+    ggplot2::theme_bw()
+
+  # number of concepts in the backbone solution per iteration
+  d <- data.frame(iteration = rep(bd$iteration, 2),
+                  size = c(bd$current_size_ma, bd$optimal_size_ma),
+                  Criterion = c(rep("Current iteration", nrow(bd)),
+                                rep("Best solution", nrow(bd))))
+  g_size <- ggplot2::ggplot(d, ggplot2::aes_string(y = "size", x = "iteration", color = "Criterion")) +
+    ggplot2::geom_line() +
+    ggplot2::ylab(paste0("Number of elements (MA, last ", ma, ")")) +
+    ggplot2::xlab("Iteration") +
+    ggplot2::ggtitle("Backbone size") +
+    ggplot2::theme_bw() +
+    ggplot2::theme(legend.position = "bottom")
+
+  # ratio of recent acceptances
+  g_ar <- ggplot2::ggplot(bd, ggplot2::aes_string(y = "accept_ratio", x = "iteration")) +
+    ggplot2::geom_line() +
+    ggplot2::ylab(paste("Acceptance ratio in the last", ma, "iterations")) +
+    ggplot2::xlab("Iteration") +
+    ggplot2::ggtitle("Acceptance ratio") +
+    ggplot2::theme_bw()
+
+  # wrap in list
+  plots <- list(g_accept, g_loss, g_size, g_ar)
+  return(plots)
 }

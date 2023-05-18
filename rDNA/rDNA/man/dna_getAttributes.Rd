@@ -60,3 +60,4 @@ dna_getAttributes(statementType = "DNA Statement", variable = "concept")
 \author{
 Philip Leifeld
 }
+\concept{{rDNA attributes}}

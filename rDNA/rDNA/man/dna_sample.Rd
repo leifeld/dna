@@ -25,6 +25,12 @@ dna_openDatabase(s)
 }
 
 }
+\seealso{
+Other {rDNA package startup}: 
+\code{\link{dna_init}()},
+\code{\link{dna_jar}()}
+}
 \author{
 Johannes B. Gruber, Philip Leifeld
 }
+\concept{{rDNA package startup}}

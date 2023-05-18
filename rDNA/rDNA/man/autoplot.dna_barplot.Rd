@@ -6,6 +6,7 @@
 \usage{
 \method{autoplot}{dna_barplot}(
   object,
+  ...,
   lab.pos = "Agreement",
   lab.neg = "Disagreement",
   lab = TRUE,
@@ -19,6 +20,8 @@
 }
 \arguments{
 \item{object}{A \code{dna_barplot} object.}
+
+\item{...}{Additional arguments; currently not in use.}
 
 \item{lab.pos, lab.neg}{Names for (dis-)agreement labels.}
 
@@ -93,8 +96,11 @@ autoplot(b, colors = "Type") +
 
 }
 \seealso{
-\link{dna_barplot}
+Other {rDNA barplots}: 
+\code{\link{dna_barplot}()},
+\code{\link{print.dna_barplot}()}
 }
 \author{
 Johannes B. Gruber, Tim Henrichsen
 }
+\concept{{rDNA barplots}}

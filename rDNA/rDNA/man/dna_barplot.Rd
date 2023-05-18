@@ -138,8 +138,11 @@ b
 
 }
 \seealso{
-\link{print.dna_barplot}, \link{autoplot.dna_barplot}
+Other {rDNA barplots}: 
+\code{\link{autoplot.dna_barplot}()},
+\code{\link{print.dna_barplot}()}
 }
 \author{
 Philip Leifeld
 }
+\concept{{rDNA barplots}}

@@ -31,6 +31,12 @@ from source, and attempt to store the built jar file in the library path or,
 if this fails, in the working directory and return the file name of the jar
 file. If all of this fails, an error message is thrown.
 }
+\seealso{
+Other {rDNA package startup}: 
+\code{\link{dna_init}()},
+\code{\link{dna_sample}()}
+}
 \author{
 Philip Leifeld
 }
+\concept{{rDNA package startup}}

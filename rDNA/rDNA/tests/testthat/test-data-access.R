@@ -14,7 +14,7 @@ test_that("DNA can use databases and profiles", {
   expect_output(dna_openDatabase(db_url = s, coderId = 2, coderPassword = "sample"), "DNA database: ")
   expect_output(dna_printDetails(), "DNA database: ")
   expect_output(dna_printDetails(), "41 statements in 7 documents")
-  expect_false(dna_saveConnectionProfile(file = "profile.dnc", coderPassword = "sample"))
+  expect_true(dna_saveConnectionProfile(file = "profile.dnc", coderPassword = "sample"))
   expect_false(dna_saveConnectionProfile(file = "profile.dnc", coderPassword = "sample"))
   expect_output(dna_closeDatabase(), "Database was closed")
   expect_output(dna_closeDatabase(), "Tried to close database, but none was open")

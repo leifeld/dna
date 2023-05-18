@@ -42,6 +42,14 @@ dna_saveConnectionProfile(file = "my profile.dnc", coderPassword = "sample")
 }
 
 }
+\seealso{
+Other {rDNA database connections}: 
+\code{\link{dna_closeDatabase}()},
+\code{\link{dna_openConnectionProfile}()},
+\code{\link{dna_openDatabase}()},
+\code{\link{dna_printDetails}()}
+}
 \author{
 Philip Leifeld
 }
+\concept{{rDNA database connections}}

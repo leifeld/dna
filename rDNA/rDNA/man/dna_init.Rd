@@ -34,6 +34,12 @@ dna_init()
 }
 
 }
+\seealso{
+Other {rDNA package startup}: 
+\code{\link{dna_jar}()},
+\code{\link{dna_sample}()}
+}
 \author{
 Philip Leifeld
 }
+\concept{{rDNA package startup}}
