@@ -24,6 +24,14 @@ dna_closeDatabase()
 }
 
 }
+\seealso{
+Other {rDNA database connections}: 
+\code{\link{dna_openConnectionProfile}()},
+\code{\link{dna_openDatabase}()},
+\code{\link{dna_printDetails}()},
+\code{\link{dna_saveConnectionProfile}()}
+}
 \author{
 Philip Leifeld
 }
+\concept{{rDNA database connections}}

@@ -20,9 +20,14 @@ Remove the attributes and \code{"dna_network_twomode"} class label from a
 \code{dna_network_twomode} object and return it as a numeric matrix.
 }
 \seealso{
-\link{print.dna_network_twomode}, \link{dna_network},
-  \link{as.matrix.dna_network_onemode}
+Other {rDNA networks}: 
+\code{\link{as.matrix.dna_network_onemode}()},
+\code{\link{autoplot.dna_network}},
+\code{\link{dna_network}()},
+\code{\link{print.dna_network_onemode}()},
+\code{\link{print.dna_network_twomode}()}
 }
 \author{
 Philip Leifeld
 }
+\concept{{rDNA networks}}
