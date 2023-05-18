@@ -4,6 +4,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -359,6 +361,7 @@ class StatementPanel extends JPanel {
 		// go through the different statement filters and decide if statement should be shown
 		for (int i = 0; i < sfp.getFilterPanel().getComponents().length; i++) {
 			StatementFilter f = (StatementFilter) sfp.getFilterPanel().getComponents()[i];
+			Pattern p = Pattern.compile(f.getValue()); // to enable case-insensitive matching: Pattern.compile(f.getValue(), Pattern.CASE_INSENSITIVE);
 
 			// documents
 			if (f.getSource().equals("document")) {
@@ -370,10 +373,8 @@ class StatementPanel extends JPanel {
 						return false;
 					}
 				} else if (f.getLabel().equals("id")) {
-					if (String.valueOf(s.getDocumentId()).matches(f.getValue()) && f.isNegate()) {
-						return false;
-					}
-					if (!String.valueOf(s.getDocumentId()).matches(f.getValue()) && !f.isNegate()) {
+					Matcher m = p.matcher(String.valueOf(s.getDocumentId()));
+					if ((m.find() && f.isNegate()) || (!m.find() && !f.isNegate())) {
 						return false;
 					}
 				}
@@ -383,7 +384,10 @@ class StatementPanel extends JPanel {
 			if (f.getSource().equals("role")) {
 				boolean matched = s.getRoleValues()
 						.stream()
-						.filter(rv -> rv.getRoleName().equals(f.getLabel()) && rv.getValue().toString().matches(f.getValue()))
+						.filter(rv -> {
+							Matcher m = p.matcher(rv.getValue().toString());
+							return rv.getRoleName().equals(f.getLabel()) && m.find();
+						})
 						.count() > 0;
 				if (matched && f.isNegate() || !matched && !f.isNegate()) {
 					return false;
@@ -394,7 +398,10 @@ class StatementPanel extends JPanel {
 			if (f.getSource().equals("variable")) {
 				boolean matched = s.getRoleValues()
 						.stream()
-						.filter(rv -> rv.getVariableName().equals(f.getLabel()) && rv.getValue().toString().matches(f.getValue()))
+						.filter(rv -> {
+							Matcher m = p.matcher(rv.getValue().toString());
+							return rv.getVariableName().equals(f.getLabel()) && m.find();
+						})
 						.count() > 0;
 				if (matched && f.isNegate() || !matched && !f.isNegate()) {
 					return false;
@@ -404,18 +411,14 @@ class StatementPanel extends JPanel {
 			// coder
 			if (f.getSource().equals("coder")) {
 				if (f.getLabel().equals("id")) {
-					if (String.valueOf(s.getCoderId()).matches(f.getValue()) && f.isNegate()) {
-						return false;
-					}
-					if (!String.valueOf(s.getCoderId()).matches(f.getValue()) && !f.isNegate()) {
+					Matcher m = p.matcher(String.valueOf(s.getCoderId()));
+					if ((m.find() && f.isNegate()) || (!m.find() && !f.isNegate())) {
 						return false;
 					}
 				}
 				if (f.getLabel().equals("name")) {
-					if (s.getCoderName().matches(f.getValue()) && f.isNegate()) {
-						return false;
-					}
-					if (!s.getCoderName().matches(f.getValue()) && !f.isNegate()) {
+					Matcher m = p.matcher(s.getCoderName());
+					if ((m.find() && f.isNegate()) || (!m.find() && !f.isNegate())) {
 						return false;
 					}
 				}
@@ -424,18 +427,14 @@ class StatementPanel extends JPanel {
 			// statement
 			if (f.getSource().equals("statement")) {
 				if (f.getLabel().equals("id")) {
-					if (String.valueOf(s.getId()).matches(f.getValue()) && f.isNegate()) {
-						return false;
-					}
-					if (!String.valueOf(s.getId()).matches(f.getValue()) && !f.isNegate()) {
+					Matcher m = p.matcher(String.valueOf(s.getId()));
+					if ((m.find() && f.isNegate()) || (!m.find() && !f.isNegate())) {
 						return false;
 					}
 				}
 				if (f.getLabel().equals("text")) {
-					if (s.getText().matches(f.getValue()) && f.isNegate()) {
-						return false;
-					}
-					if (!s.getText().matches(f.getValue()) && !f.isNegate()) {
+					Matcher m = p.matcher(s.getText());
+					if ((m.find() && f.isNegate()) || (!m.find() && !f.isNegate())) {
 						return false;
 					}
 				}
@@ -612,10 +611,10 @@ class StatementPanel extends JPanel {
 					"not trivial to use. Consult a website like <a href=\"https://regex101.com/\">https://regex101.com/</a> " +
 					"to try out your regex pattern before using it here. The <a " +
 					"href=\"https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/regex/Pattern.html\">Oracle " +
-					"Java Pattern website</a> contains a useful overview of regex elements. Note that a regex does not merely " +
-					"match sub-units of text. To achieve this, try the following regex: <em>.*some text.*</em>, where the " +
-					"dot denotes an arbitrary character, the asterisk denotes zero or more times, and \"some text\" is the " +
-					"pattern to be matched in between.</p></html>";
+					"Java Pattern website</a> contains a useful overview of regex elements. Note that any sub-unit of the text " +
+					"is matched, not only the whole text. Note also that capitalization in the regex pattern matters. " +
+					"For example, the patterns \"something\" and \"Something\" do not return the same results. To disregard " +
+					"capitalization, try \"(?i)something\".</p></html>";
 			valueField.setToolTipText(valueFieldToolTip);
 			boxPanel.add(valueField);
 

@@ -1,12 +1,6 @@
 package gui;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Container;
-import java.awt.Image;
-import java.awt.Point;
-import java.awt.Rectangle;
+import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BaseMultiResolutionImage;
@@ -18,6 +12,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -136,6 +131,7 @@ public class MainWindow extends JFrame {
 
 		BaseMultiResolutionImage dnaIcon = new SvgIcon("/icons/dna.svg", 16).getImage();
 		this.setIconImage(dnaIcon);
+		if (Taskbar.isTaskbarSupported()) Taskbar.getTaskbar().setIconImage(dnaIcon); // set icon in the taskbar, for example MacOS dock
 		
 		// close SQL connection before exit
 		this.addWindowListener(new WindowAdapter() {
