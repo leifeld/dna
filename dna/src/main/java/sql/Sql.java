@@ -2733,16 +2733,29 @@ public class Sql {
 						.collect(Collectors.toList());
 
 				// create a set of data entries to remove from database because they don't exist anymore in the statement
-				deletionPile = data
-						.stream()
-						.filter(d -> s.getRoleValues()
-								.stream()
-								.noneMatch(v -> v.getDataType().equals(d.dataType) &&
-										v.getRoleVariableLinkId() == d.roleVariableLinkId &&
-										((v.getDataType().equals("long text") && v.getValue().equals(d.valueString)) ||
-												(v.getDataType().equals("short text") && d.valueInt == ((Entity) v.getValue()).getId()) ||
-												((v.getDataType().equals("boolean") || v.getDataType().equals("integer")) && (int) v.getValue() == d.valueInt))))
-						.collect(Collectors.toList());
+				ArrayList<RoleValue> roleValuesCopy = new ArrayList<RoleValue>();
+				for (int i = 0; i < s.getRoleValues().size(); i++) {
+					roleValuesCopy.add(s.getRoleValues().get(i));
+				}
+				deletionPile = new ArrayList<>();
+				for (int i = 0; i < data.size(); i++) {
+					boolean keep = false;
+					for (int j = roleValuesCopy.size() - 1; j >= 0; j--) {
+						if (data.get(i).dataType.equals(roleValuesCopy.get(j).getDataType()) &&
+								data.get(i).roleVariableLinkId == roleValuesCopy.get(j).getRoleVariableLinkId() &&
+								(data.get(i).dataType.equals("long text") && data.get(i).valueString.equals(roleValuesCopy.get(j).getValue()) ||
+										(data.get(i).dataType.equals("short text") && data.get(i).valueInt == ((Entity) roleValuesCopy.get(j).getValue()).getId()) ||
+										((data.get(i).dataType.equals("boolean") || data.get(i).dataType.equals("integer")) && data.get(i).valueInt == (int) roleValuesCopy.get(j).getValue()))
+						) {
+							keep = true;
+							roleValuesCopy.remove(j);
+							break;
+						}
+					}
+					if (!keep) {
+						deletionPile.add(data.get(i));
+					}
+				}
 
 				// insert missing entities into the database first, then insert data entries
 				for (int j = 0; j < insertionPile.size(); j++) {

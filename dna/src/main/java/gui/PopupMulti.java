@@ -643,7 +643,12 @@ public class PopupMulti extends JDialog {
                                 // save the newly set entity also in the current role value and reset the revert and save buttons
                                 RoleValuePanel.this.ts.getRoleValues().get(finalI1).setVariableId(v.getVariableId());
                                 RoleValuePanel.this.ts.getRoleValues().get(finalI1).setVariableName(v.getVariableName());
-                                RoleValuePanel.this.ts.getRoleValues().get(finalI1).setRoleVariableLinkId(PopupMulti.this.roleVariableLinks.stream().filter(l -> l.getVariableId() == v.getVariableId()).findFirst().get().getId());
+                                RoleValuePanel.this.ts.getRoleValues().get(finalI1).setRoleVariableLinkId(PopupMulti.this.roleVariableLinks
+                                        .stream()
+                                        .filter(l -> l.getRoleId() == RoleValuePanel.this.ts.getRoleValues().get(finalI1).getRoleId() && l.getVariableId() == v.getVariableId())
+                                        .findFirst()
+                                        .get()
+                                        .getId());
                                 RoleValuePanel.this.ts.getRoleValues().get(finalI1).setValue(newEntity);
                                 toggleButtons();
                             }

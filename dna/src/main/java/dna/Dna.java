@@ -27,8 +27,8 @@ public class Dna {
 	public static Dna dna;
 	public static Logger logger;
 	public static Sql sql;
-	public static final String date = "2023-05-17";
-	public static final String version = "3.1.0.3";
+	public static final String date = "2023-05-27";
+	public static final String version = "3.1.0.4";
 	public static final String operatingSystem = System.getProperty("os.name");
 	public static File workingDirectory = null;
 	public MainWindow mainWindow;
