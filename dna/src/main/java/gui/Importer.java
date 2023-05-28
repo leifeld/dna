@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -53,8 +54,7 @@ import javax.swing.table.TableRowSorter;
 import dna.Dna;
 import logger.LogEvent;
 import logger.Logger;
-import model.Coder;
-import model.TableDocument;
+import model.*;
 import sql.ConnectionProfile;
 import sql.Sql;
 import sql.Sql.SQLCloseable;
@@ -75,7 +75,7 @@ class Importer extends JDialog {
 	private ArrayList<Coder> domesticCoders;
 	private JTable documentTable;
 	private Sql sql;
-	private int version;
+	private String version;
 	private JCheckBox importStatementsBox, statementTypeBox, skipFullBox, skipEmptyBox, coderDocumentBox, coderStatementBox, skipDuplicatesBox, fixDatesBox, mergeAttributesBox, overwriteAttributesBox, importEntitiesBox, importRegexBox;
 
 	/**
@@ -329,10 +329,17 @@ class Importer extends JDialog {
 					Sql s = new Sql(cp, false, true);
 					
 					String v = s.getVersion();
-					if (v.startsWith("3")) {
-						Importer.this.version = 3;
+					if (v.startsWith("3.0")) {
+						Importer.this.version = "3.0";
+					} else if (v.startsWith("3.1")) {
+						Importer.this.version = "3.1";
 					} else if (v.startsWith("2")) {
-						Importer.this.version = 2;
+						Importer.this.version = "2";
+					} else {
+						LogEvent l = new LogEvent(Logger.WARNING,
+								"Import database version not recognized.",
+								"Tried to import data, but could not recognize the database version from the following information: " + v + ".");
+						Dna.logger.log(l);
 					}
 					
 					ArrayList<Coder> foreignCoders = s.getCoders();
@@ -791,7 +798,7 @@ class Importer extends JDialog {
 				LocalDateTime dateTime;
 				Date dateV2;
 				while (rs.next()) {
-					if (Importer.this.version == 2) {
+					if (Importer.this.version.equals("2")) {
 						dateV2 = new Date(rs.getLong("Date"));
 						dateTime = Instant.ofEpochMilli(dateV2.getTime()).atZone(ZoneId.systemDefault()).toLocalDateTime();
 					} else {
@@ -891,11 +898,260 @@ class Importer extends JDialog {
 		}
 
 		/**
-		 * Execute the background tasks and try to import the data into the
-		 * current database.
+		 * Execute the background tasks and try to import the data into the current database.
 		 */
 		@SuppressWarnings("resource")
 		public void run() {
+			//long time = System.nanoTime(); // take the time to compute later how long the updating took
+
+			//progressMonitor = new ProgressMonitor(Importer.this, "Preparing data for import", "(1/5) Processing regex keywords...", 0, 5);
+			//progressMonitor.setMillisToDecideToPopup(1);
+			//try {
+			//	Thread.sleep(500);
+			//} catch (InterruptedException e) {
+			//	e.printStackTrace();
+			//}
+			//progressMonitor.setProgress(0);
+
+			/* // TODO: need GUI to match variables, roles, and statement types onto items in the domestic database, separately and with different GUIs for the different data formats
+			            idea: read all domestic data upon opening GUI; read all foreign data upon selecting database in GUI; execute match function to create a default matching;
+			            let the user tweak the matching graphically and overwrite matching settings; when button is pressed, apply matching rules and convert foreign data structure
+			            in memory to the domestic format, then integrate into domestic database; if version 2 or 3.0, try finding a variable with the same name or match role and
+			            select first variable if no variable match
+			String documentSelectSql = "SELECT * FROM DOCUMENTS WHERE ID IN (";
+			for (int i = 0; i < docIds.size(); i++) {
+				documentSelectSql = documentSelectSql + docIds.get(i);
+				if (i < docIds.size() - 1) {
+					documentSelectSql = documentSelectSql + ", ";
+				}
+			}
+			documentSelectSql = documentSelectSql + ");";
+
+			try (Connection connForeign = Importer.this.sql.getDataSource().getConnection();
+				 Connection connDomestic = Dna.sql.getDataSource().getConnection();
+
+				 // regex
+				 PreparedStatement fRegexSelect = connForeign.prepareStatement("SELECT * FROM REGEXES;");
+				 PreparedStatement dRegexSelect = connDomestic.prepareStatement("SELECT Label FROM REGEXES;");
+				 PreparedStatement dRegexInsert = connDomestic.prepareStatement("INSERT INTO REGEXES (Label, Red, Green, Blue) VALUES (?, ?, ?, ?);");
+
+				 // documents
+				 PreparedStatement dDocumentInsert = connDomestic.prepareStatement("INSERT INTO DOCUMENTS (Title, Text, Coder, Author, Source, Section, Notes, Type, Date, Complete) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
+				 PreparedStatement dDocumentDuplicates = connDomestic.prepareStatement("SELECT ID FROM DOCUMENTS WHERE Title = ? AND Text = ?;");
+				 PreparedStatement fDocumentCountStatements = connForeign.prepareStatement("SELECT COUNT(ID) FROM STATEMENTS WHERE DocumentId = ?;");
+				 PreparedStatement fDocumentSelect = connForeign.prepareStatement(documentSelectSql);
+
+				 // statement types
+				 PreparedStatement dRoleVariableLinkSelect = connDomestic.prepareStatement("SELECT ROLEVARIABLELINKS.ID, RoleId, VariableId FROM ROLEVARIABLELINKS;");
+				 PreparedStatement dRoleSelect = connDomestic.prepareStatement("SELECT * FROM ROLES;");
+				 PreparedStatement dVariableSelect = connDomestic.prepareStatement("SELECT * FROM VARIABLES;");
+				 PreparedStatement dStatementTypeSelect = connDomestic.prepareStatement("SELECT * FROM STATEMENTTYPES;")
+				 // PreparedStatement fStatementTypeSelect = connForeign.prepareStatement("SELECT * FROM STATEMENTTYPES WHERE (SELECT COUNT(ID) FROM STATEMENTS WHERE STATEMENTS.StatementTypeId == STATEMENTTYPES.ID AND STATEMENTS.DocumentId IN (" + docIdsAddedSql + ")) > 0;");
+
+				 // variables
+				 // PreparedStatement fVariableSelect = connForeign.prepareStatement("SELECT * FROM VARIABLES WHERE StatementTypeId = ?;");
+				 // PreparedStatement dVariableInsert = connDomestic.prepareStatement("INSERT INTO VARIABLES (Variable, DataType) VALUES (?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
+
+				 SQLCloseable finish = connDomestic::rollback;) {
+				LogEvent le1 = new LogEvent(Logger.MESSAGE,
+						"[SQL] Initializing thread to import data: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
+						"A new thread has been started to import data from another database into the current database in the background: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");
+				Dna.logger.log(le1);
+				connDomestic.setAutoCommit(false);
+				ResultSet r1, r2;
+
+				// import regex keywords
+				int regexCount = 0;
+				if (importRegexBox.isSelected()) {
+					ArrayList<String> existingRegexes = new ArrayList<String>();
+					r1 = dRegexSelect.executeQuery();
+					while (r1.next()) {
+						existingRegexes.add(r1.getString("Label").substring(0, Math.min(190, r1.getString("Label").length())));
+					}
+					r1.close();
+					r1 = fRegexSelect.executeQuery();
+					while (r1.next()) {
+						if (!existingRegexes.contains(r1.getString("Label").substring(0, Math.min(190, r1.getString("Label").length())))) {
+							dRegexInsert.setString(1, r1.getString("Label").substring(0, Math.min(190, r1.getString("Label").length())));
+							dRegexInsert.setInt(2, r1.getInt("Red"));
+							dRegexInsert.setInt(3, r1.getInt("Green"));
+							dRegexInsert.setInt(4, r1.getInt("Blue"));
+							dRegexInsert.executeUpdate();
+							regexCount++;
+						}
+					}
+					r1.close();
+				}
+				//LogEvent le2 = new LogEvent(Logger.MESSAGE,
+				//		"[SQL]  ├─ Added " + regexCount + " regex keywords to import transaction.",
+				//		"Added " + regexCount + " regex keywords to the import transaction." +
+				//				" The transaction has not been committed yet and will be rolled" +
+				//				" back in the event of an error during further processing of the transaction.");
+				//Dna.logger.log(le2);
+
+				// import documents
+				//int documentCount = 0;
+				//int statementCount = 0;
+				int dateFixCount = 0;
+				//int ignoredStatementCount = 0;
+				HashMap<Integer, Integer> docIdsAdded = new HashMap<Integer, Integer>(); // foreign to domestic mapping of document IDs that were added
+				if (docIds.size() > 0) {
+					r1 = fDocumentSelect.executeQuery();
+					while (r1.next()) {
+
+						// check for duplicate title and text if necessary
+						boolean proceed = true;
+						if (skipDuplicatesBox.isSelected()) {
+							if (Importer.this.version.startsWith("3")) {
+								dDocumentDuplicates.setString(1, r1.getString("Title"));
+							} else {
+								dDocumentDuplicates.setString(1, r1.getString("Title").substring(0, Math.min(190, r1.getString("Title").length())));
+							}
+							dDocumentDuplicates.setString(2, r1.getString("Text"));
+							r2 = dDocumentDuplicates.executeQuery();
+							while (r2.next()) {
+								proceed = false;
+							}
+							r2.close();
+						}
+
+						// check empty/full document options
+						if (skipFullBox.isSelected() || skipEmptyBox.isSelected()) {
+							fDocumentCountStatements.setInt(1, r1.getInt("ID"));
+							r2 = fDocumentCountStatements.executeQuery();
+							while (r2.next()) {
+								if ((skipFullBox.isSelected() && r2.getInt(1) > 0) || (skipEmptyBox.isSelected() && r2.getInt(1) == 0)) {
+									proceed = false;
+								}
+							}
+							r2.close();
+						}
+
+						if (proceed) {
+							// fix date if necessary
+							LocalDateTime date;
+							if (Importer.this.version.startsWith("3")) {
+								date = LocalDateTime.ofEpochSecond(r1.getLong("Date"), 0, ZoneOffset.UTC);
+							} else { // DNA 2.0: use old Date class and convert
+								Date dateV2 = new Date(r1.getLong("Date"));
+								date = Instant.ofEpochMilli(dateV2.getTime()).atZone(ZoneId.systemDefault()).toLocalDateTime();
+							}
+							if (fixDatesBox.isSelected() && (date.getHour() != 0 || date.getMinute() != 0 || date.getSecond() != 0)) {
+								if (date.truncatedTo(ChronoUnit.DAYS).isBefore(date.plusHours(12).truncatedTo(ChronoUnit.DAYS))) {
+									date = date.plusHours(12).truncatedTo(ChronoUnit.DAYS);
+								} else {
+									date = date.truncatedTo(ChronoUnit.DAYS);
+								}
+								dateFixCount++;
+							}
+							// extract remaining document details and insert document into domestic database
+							dDocumentInsert.setString(1, r1.getString("Title").substring(0, Math.min(190, r1.getString("Title").length())));
+							dDocumentInsert.setString(2, r1.getString("Text"));
+							dDocumentInsert.setInt(3, coderMap.get(r1.getInt("Coder"))); // replace by mapped coder
+							dDocumentInsert.setString(4, r1.getString("Author").substring(0, Math.min(190, r1.getString("Author").length())));
+							dDocumentInsert.setString(5, r1.getString("Source").substring(0, Math.min(190, r1.getString("Source").length())));
+							dDocumentInsert.setString(6, r1.getString("Section").substring(0, Math.min(190, r1.getString("Section").length())));
+							dDocumentInsert.setString(7, r1.getString("Notes"));
+							dDocumentInsert.setString(8, r1.getString("Type").substring(0, Math.min(190, r1.getString("Type").length())));
+							dDocumentInsert.setLong(9, date.toEpochSecond(ZoneOffset.UTC));
+							if (Importer.this.version.equals("3.1")) {
+								dDocumentInsert.setInt(10, r1.getInt("Complete"));
+							} else {
+								dDocumentInsert.setInt(10, 0);
+							}
+							dDocumentInsert.executeUpdate();
+
+							// get generated document ID and save in hash map
+							ResultSet keySetDocument = dDocumentInsert.getGeneratedKeys();
+							int documentId = -1;
+							while (keySetDocument.next()) {
+								documentId = keySetDocument.getInt(1);
+								docIdsAdded.put(r1.getInt("ID"), documentId);
+							}
+							keySetDocument.close();
+						}
+					}
+					r1.close();
+				}
+
+				// import statement types
+				ArrayList<StatementType> statementTypes = new ArrayList<>();
+				r1 = dStatementTypeSelect.executeQuery();
+				while (r1.next()) {
+					statementTypes.add(new StatementType(r1.getInt("ID"), r1.getString("Label"), new Color(r1.getInt("Red"), r1.getInt("Green"), r1.getInt("Blue"))));
+				}
+				r1.close();
+
+				ArrayList<Variable> variables = new ArrayList<>();
+				r1 = dVariableSelect.executeQuery();
+				while (r1.next()) {
+					variables.add(new Variable(r1.getInt("ID"), r1.getString("Variable"), r1.getString("DataType")));
+				}
+				r1.close();
+
+				ArrayList<Role> roles = new ArrayList<>();
+				r1 = dRoleSelect.executeQuery();
+				while (r1.next()) {
+					roles.add(new Role(r1.getInt("ID"),
+							r1.getString("RoleName"),
+							new Color(r1.getInt("Red"), r1.getInt("Green"), r1.getInt("Blue")),
+							r1.getInt("StatementTypeId"),
+							r1.getInt("Position"),
+							r1.getInt("NumMin"),
+							r1.getInt("NumMax"),
+							r1.getInt("NumDefault"),
+							r1.getInt("DefaultVariableId")));
+				}
+				r1.close();
+
+				ArrayList<RoleVariableLink> roleVariableLinks = new ArrayList<>();
+				r1 = dRoleVariableLinkSelect.executeQuery();
+				while (r1.next()) {
+					roleVariableLinks.add(new RoleVariableLink(r1.getInt("ID"), r1.getInt("RoleId"), r1.getInt("VariableId")));
+				}
+				r1.close();
+
+
+
+
+				connDomestic.commit();
+
+				// log the results
+				long elapsed = System.nanoTime(); // measure time again for calculating difference
+				LogEvent le6 = new LogEvent(Logger.MESSAGE,
+						"[SQL]  └─ Successfully imported all data and committed to database.",
+						"Imported " + documentCount + " documents, " + statementCount + " statements, " + statementTypeCount +
+								" statement types, " + entityCount + " entities, " + attributeCount + " attribute values, and " + regexCount +
+								" regex keywords from another database and rounded " + dateFixCount +
+								" date/time stamps and ignored " + ignoredStatementCount +
+								" statements because they had an unknown statement type or wrong coder. It took " + (elapsed - time) / 1000000 +
+								" milliseconds.");
+				dna.Dna.logger.log(le6);
+				dispose(); // close the importer when done
+			} catch (Exception e) {
+				LogEvent le7 = new LogEvent(Logger.ERROR,
+						"[SQL] Failed to import data from other database.",
+						"Attempted importing data from another database, but the import failed. The transaction has been rolled back, and no changes have been written to the currently open database. Check the exception message stack for details.",
+						e);
+				dna.Dna.logger.log(le7);
+			} finally {
+				progressMonitor.setProgress(5);
+			}
+			*/
+
+			// enable buttons again after the import work is done
+			dbButton.setEnabled(true);
+			filterButton.setEnabled(true);
+			selectAll.setEnabled(true);
+			importButton.setEnabled(true);
+		}
+
+
+		/**
+         * Execute the background tasks and try to import the data into the current database.
+         */
+		@SuppressWarnings("resource")
+		public void runOld() {
 			long time = System.nanoTime(); // take the time to compute later how long the updating took
 			
 			progressMonitor = new ProgressMonitor(Importer.this, "Preparing data for import", "(1/5) Processing regex keywords...", 0, 5);
@@ -918,7 +1174,7 @@ class Importer extends JDialog {
 
 			try (Connection connForeign = Importer.this.sql.getDataSource().getConnection();
 					Connection connDomestic = Dna.sql.getDataSource().getConnection();
-					PreparedStatement d1 = connDomestic.prepareStatement("INSERT INTO DOCUMENTS (Title, Text, Coder, Author, Source, Section, Notes, Type, Date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
+					PreparedStatement d1 = connDomestic.prepareStatement("INSERT INTO DOCUMENTS (Title, Text, Coder, Author, Source, Section, Notes, Type, Date, Complete) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
 					PreparedStatement f1 = connForeign.prepareStatement(documentSelectSql);
 					PreparedStatement d2 = connDomestic.prepareStatement("SELECT COUNT(ID) FROM DOCUMENTS WHERE Title = ? AND Text = ?;");
 					PreparedStatement f2 = connForeign.prepareStatement("SELECT * FROM REGEXES;");
@@ -927,19 +1183,25 @@ class Importer extends JDialog {
 					PreparedStatement f3 = connForeign.prepareStatement("SELECT * FROM STATEMENTTYPES");
 					PreparedStatement f4 = connForeign.prepareStatement("SELECT * FROM VARIABLES WHERE StatementTypeId = ?;");
 					PreparedStatement d5 = connDomestic.prepareStatement("SELECT * FROM STATEMENTTYPES");
-					PreparedStatement d6 = connDomestic.prepareStatement("SELECT * FROM VARIABLES WHERE StatementTypeId = ?;");
+					// PreparedStatement d6 = connDomestic.prepareStatement("SELECT * FROM VARIABLES WHERE StatementTypeId = ?;");
+				 	// PreparedStatement d6 = connDomestic.prepareStatement("SELECT * FROM VARIABLES INNER JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.VariableId = VARIABLES.ID INNER JOIN ROLES ON ROLES.ID = ROLEVARIABLELINKS.RoleId WHERE ROLES.StatementTypeId = ?;");
 					PreparedStatement d7 = connDomestic.prepareStatement("INSERT INTO STATEMENTTYPES (Label, Red, Green, Blue) VALUES (?, ?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
-					PreparedStatement d8 = connDomestic.prepareStatement("INSERT INTO VARIABLES (Variable, DataType, StatementTypeId) VALUES (?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
+					// PreparedStatement d8 = connDomestic.prepareStatement("INSERT INTO VARIABLES (Variable, DataType, StatementTypeId) VALUES (?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
+					// PreparedStatement d8 = connDomestic.prepareStatement("INSERT INTO VARIABLES (Variable, DataType) VALUES (?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
 					PreparedStatement d11 = connDomestic.prepareStatement("INSERT INTO STATEMENTS (StatementTypeId, DocumentId, Start, Stop, Coder) VALUES (?, ?, ?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
 					PreparedStatement f6 = connForeign.prepareStatement("SELECT * FROM STATEMENTS WHERE DocumentId = ?;");
 					PreparedStatement f8 = connForeign.prepareStatement("SELECT * FROM DATABOOLEAN WHERE StatementId = ?;");
 					PreparedStatement f9 = connForeign.prepareStatement("SELECT * FROM DATAINTEGER WHERE StatementId = ?;");
 					PreparedStatement f10 = connForeign.prepareStatement("SELECT * FROM DATALONGTEXT WHERE StatementId = ?;");
 					PreparedStatement f11 = connForeign.prepareStatement("SELECT * FROM DATASHORTTEXT WHERE StatementId = ?;");
-					PreparedStatement d12 = connDomestic.prepareStatement("INSERT INTO DATABOOLEAN (StatementId, VariableId, Value) VALUES (?, ?, ?);");
-					PreparedStatement d13 = connDomestic.prepareStatement("INSERT INTO DATAINTEGER (StatementId, VariableId, Value) VALUES (?, ?, ?);");
-					PreparedStatement d14 = connDomestic.prepareStatement("INSERT INTO DATALONGTEXT (StatementId, VariableId, Value) VALUES (?, ?, ?);");
-					PreparedStatement d15 = connDomestic.prepareStatement("INSERT INTO DATASHORTTEXT (StatementId, VariableId, Entity) VALUES (?, ?, ?);");
+					// PreparedStatement d12 = connDomestic.prepareStatement("INSERT INTO DATABOOLEAN (StatementId, VariableId, Value) VALUES (?, ?, ?);");
+				 	// PreparedStatement d12 = connDomestic.prepareStatement("INSERT INTO DATABOOLEAN (StatementId, RoleVariableLinkId, Value) VALUES (?, ?, ?);");
+					// PreparedStatement d13 = connDomestic.prepareStatement("INSERT INTO DATAINTEGER (StatementId, VariableId, Value) VALUES (?, ?, ?);");
+				 	// PreparedStatement d13 = connDomestic.prepareStatement("INSERT INTO DATAINTEGER (StatementId, RoleVariableLinkId, Value) VALUES (?, ?, ?);");
+					// PreparedStatement d14 = connDomestic.prepareStatement("INSERT INTO DATALONGTEXT (StatementId, VariableId, Value) VALUES (?, ?, ?);");
+				 	// PreparedStatement d14 = connDomestic.prepareStatement("INSERT INTO DATALONGTEXT (StatementId, RoleVariableLinkId, Value) VALUES (?, ?, ?);");
+					// PreparedStatement d15 = connDomestic.prepareStatement("INSERT INTO DATASHORTTEXT (StatementId, VariableId, Entity) VALUES (?, ?, ?);");
+				 	// PreparedStatement d15 = connDomestic.prepareStatement("INSERT INTO DATASHORTTEXT (StatementId, RoleVariableLinkId, Entity) VALUES (?, ?, ?);");
 					PreparedStatement f15 = connForeign.prepareStatement("SELECT COUNT(ID) FROM STATEMENTS WHERE DocumentId = ?;");
 					PreparedStatement d16 = connDomestic.prepareStatement("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
 					PreparedStatement d17 = connDomestic.prepareStatement("INSERT INTO ATTRIBUTEVALUES (EntityId, AttributeVariableId, AttributeValue) VALUES (?, ?, ?);");
@@ -949,10 +1211,9 @@ class Importer extends JDialog {
 					PreparedStatement d21 = connDomestic.prepareStatement("SELECT ID FROM ENTITIES WHERE VariableId = ? AND Value = ?;");
 					PreparedStatement d22 = connDomestic.prepareStatement("UPDATE ATTRIBUTEVALUES SET AttributeValue = ? WHERE EntityId = ? AND AttributeVariableId = ?;");
 					PreparedStatement d23 = connDomestic.prepareStatement("SELECT AttributeValue FROM ATTRIBUTEVALUES WHERE EntityId = ? AND AttributeVariableId = ?;");
+				 	// PreparedStatement f16 = connForeign.prepareStatement("SELECT * FROM ROLES WHERE StatementTypeId = ?;");
+					// PreparedStatement d24 = connDomestic.prepareStatement("INSERT INTO ROLES (RoleName, StatementTypeId, Position, NumMin, NumMax, NumDefault, Red, Green, Blue, DefaultVariableId) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
 					SQLCloseable finish = connDomestic::rollback;) {
-				// TODO: update with roles
-				/*
-
 				LogEvent le1 = new LogEvent(Logger.MESSAGE,
 						"[SQL] Initializing thread to import data: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").",
 						"A new thread has been started to import data from another database into the current database in the background: " + Thread.currentThread().getName() + " (" + Thread.currentThread().getId() + ").");
@@ -980,7 +1241,7 @@ class Importer extends JDialog {
 					}
 				}
 				
-				if (Importer.this.version == 2) {
+				if (Importer.this.version.equals("2")) {
 					// get attributes vom DNA 2.0 dataset and check if the attribute is used in the dataset
 					f14V2 = connForeign.prepareStatement("SELECT A.*, " + 
 							"CASE WHEN EXISTS (SELECT ID from DATASHORTTEXT D WHERE D.Value = A.Value AND D.VariableId = A.VariableId) " + 
@@ -995,7 +1256,7 @@ class Importer extends JDialog {
 							+ "JOIN STATEMENTS S ON D.StatementId = S.ID WHERE A.ID = ? AND DocumentId IN (" + docIdString + ");";
 					f16V2 = connForeign.prepareStatement(s);
 				} else {
-					f5 = connForeign.prepareStatement("SELECT * FROM VARIABLELINKS;");
+					// f5 = connForeign.prepareStatement("SELECT * FROM VARIABLELINKS;");
 					f7 = connForeign.prepareStatement("SELECT * FROM ATTRIBUTEVARIABLES WHERE VariableId = ?;");
 					f12 = connForeign.prepareStatement("SELECT * FROM ATTRIBUTEVALUES;");
 					f13 = connForeign.prepareStatement("SELECT E.*, " + 
@@ -1008,8 +1269,8 @@ class Importer extends JDialog {
 							+ "FROM ENTITIES E JOIN DATASHORTTEXT D ON D.VariableId = E.VariableId AND D.Entity = E.ID "
 							+ "JOIN STATEMENTS S ON D.StatementId = S.ID WHERE E.ID = ? AND DocumentId IN (" + docIdString + ");";
 					f16 = connForeign.prepareStatement(s);
-					d9 = connDomestic.prepareStatement("SELECT COUNT(ID) FROM VARIABLELINKS WHERE SourceVariableId = ? AND TargetVariableId = ?;");
-					d10 = connDomestic.prepareStatement("INSERT INTO VARIABLELINKS (SourceVariableId, TargetVariableId) VALUES (?, ?);");
+					// d9 = connDomestic.prepareStatement("SELECT COUNT(ID) FROM VARIABLELINKS WHERE SourceVariableId = ? AND TargetVariableId = ?;");
+					// d10 = connDomestic.prepareStatement("INSERT INTO VARIABLELINKS (SourceVariableId, TargetVariableId) VALUES (?, ?);");
 				}
 				
 				// process regex keywords
@@ -1044,7 +1305,19 @@ class Importer extends JDialog {
 				// process statement types; first, create array list of foreign statement types
 				progressMonitor.setProgress(1);
 				progressMonitor.setNote("(2/5) Entities, attributes, statement types...");
-				
+
+				// TODO: statement types
+
+				// TODO: variables
+
+				// TODO: roles
+
+				// TODO: attribute variables
+
+				// TODO: attributes
+
+
+				/*
 				int statementTypeCount = 0;
 				int entityCount = 0;
 				ArrayList<StatementType> foreignStatementTypes = new ArrayList<StatementType>();
@@ -1086,7 +1359,7 @@ class Importer extends JDialog {
 							variables));
 				}
 				r1.close();
-				
+
 				// compare foreign and domestic types, save correspondence in a hash map, and add new statement types
 				HashMap<Integer, Integer> statementTypeMap = new HashMap<Integer, Integer>();
 				HashMap<Integer, StatementType> statementTypeIdToTypeMap = new HashMap<Integer, StatementType>(); // reference new domestic statement type by its ID
@@ -1492,8 +1765,10 @@ class Importer extends JDialog {
 						" The transaction has not been committed yet and will be rolled" +
 						" back in the event of an error during further processing of the transaction.");
 				Dna.logger.log(le3);
+				*/
 				
 				// process variable links
+				/*
 				progressMonitor.setProgress(2);
 				progressMonitor.setNote("(3/5) Variable links...");
 				
@@ -1515,12 +1790,14 @@ class Importer extends JDialog {
 					}
 					r1.close();
 				}
+				*/
 				
 				// process attribute values
+				/*
 				progressMonitor.setProgress(3);
 				progressMonitor.setNote("(4/5) Attribute values...");
 
-				if (Importer.this.version == 3) {
+				if (Importer.this.version.startsWith("3")) {
 					r1 = f12.executeQuery(); // select all attribute values
 					while (r1.next()) {
 						int foreignEntityId = r1.getInt("EntityId");
@@ -1563,6 +1840,7 @@ class Importer extends JDialog {
 						" in the SQL transaction. The transaction has not been committed yet and will be rolled" +
 						" back in the event of an error during further processing of the transaction.");
 				Dna.logger.log(le4);
+				*/
 				
 				// process documents and statements
 				progressMonitor.setProgress(4);
@@ -1579,7 +1857,7 @@ class Importer extends JDialog {
 						// check for duplicate title and text if necessary
 						boolean proceed = true;
 						if (skipDuplicatesBox.isSelected()) {
-							if (Importer.this.version == 3) {
+							if (Importer.this.version.startsWith("3")) {
 								d2.setString(1, r1.getString("Title"));
 							} else {
 								d2.setString(1, r1.getString("Title").substring(0, Math.min(190, r1.getString("Title").length())));
@@ -1609,7 +1887,7 @@ class Importer extends JDialog {
 						if (proceed) {
 							// fix date if necessary
 							LocalDateTime date;
-							if (Importer.this.version == 3) {
+							if (Importer.this.version.startsWith("3")) {
 								date = LocalDateTime.ofEpochSecond(r1.getLong("Date"), 0, ZoneOffset.UTC);
 							} else { // DNA 2.0: use old Date class and convert
 								Date dateV2 = new Date(r1.getLong("Date"));
@@ -1633,6 +1911,11 @@ class Importer extends JDialog {
 							d1.setString(7, r1.getString("Notes"));
 							d1.setString(8, r1.getString("Type").substring(0, Math.min(190, r1.getString("Type").length())));
 							d1.setLong(9, date.toEpochSecond(ZoneOffset.UTC));
+							if (Importer.this.version.equals("3.1")) {
+								d1.setInt(10, r1.getInt("Complete"));
+							} else {
+								d1.setInt(10, 0);
+							}
 							d1.executeUpdate();
 							
 							// get generated document ID
@@ -1644,6 +1927,7 @@ class Importer extends JDialog {
 							keySetDocument.close();
 							
 							// import statements contained in the document
+							/*
 							if (importStatementsBox.isSelected()) {
 								f6.setInt(1, r1.getInt("ID"));
 								r2 = f6.executeQuery();
@@ -1733,6 +2017,7 @@ class Importer extends JDialog {
 								}
 								r2.close();
 							}
+							*/
 						}
 						documentCount++;
 					}
@@ -1748,7 +2033,7 @@ class Importer extends JDialog {
 				}
 				
 				// close statements after use if not part of the try-with-resources header
-				if (Importer.this.version == 3) {
+				if (Importer.this.version.startsWith("3")) {
 					f5.close();
 					f7.close();
 					f12.close();
@@ -1760,6 +2045,7 @@ class Importer extends JDialog {
 				connDomestic.commit();
 				
 				// log the results
+				/*
 				long elapsed = System.nanoTime(); // measure time again for calculating difference
 				LogEvent le6 = new LogEvent(Logger.MESSAGE,
 						"[SQL]  └─ Successfully imported all data and committed to database.",

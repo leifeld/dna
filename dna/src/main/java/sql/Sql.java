@@ -194,11 +194,10 @@ public class Sql {
 				String msg = "";
 				if (version.startsWith("1")) {
 					msg = "Contents from databases that were created with DNA 1 can only be imported into the old DNA 2. See the release page online for old DNA 2 versions.";
-
 				} else if (version.startsWith("2")) {
 					msg = "Contents from databases that were created with DNA 2 can be imported into the current DNA version. To do so, create a new database, create coders that correspond to the coders in the old database (if required), and use the \"Import from DNA database\" dialog in the \"Documents\" menu.";
 				} else if (version.startsWith("3.0")) {
-					msg = "Contents from databases that were created with DNA 3.0 cannot be imported to the current DNA version at this time. Support for this will be added in the near future.";
+					msg = "Contents from databases that were created with DNA 3.0 can be imported into the current DNA version. To do so, create a new database, create coders that correspond to the coders in the old database (if required), and use the \"Import from DNA database\" dialog in the \"Documents\" menu.";
 				}
 				LogEvent l = new LogEvent(Logger.ERROR,
 						"[SQL] Wrong database version.",
@@ -4878,13 +4877,24 @@ public class Sql {
 		return entities;
 	}
 
+	/**
+	 * Get role-variable links from database.
+	 *
+	 * @param statementTypeId The statement type ID. Can be {@code -1} if the role variable links for all statement
+	 *                           types should be retrieved.
+	 * @return Array list with role-variable links.
+	 */
 	public ArrayList<RoleVariableLink> getRoleVariableLinks(int statementTypeId) {
 		ArrayList<RoleVariableLink> roleVariableLinks = new ArrayList<>();
+		String sql;
+		if (statementTypeId < 1) {
+			sql = "SELECT ROLEVARIABLELINKS.ID, RoleId, VariableId FROM ROLEVARIABLELINKS;";
+		} else {
+			sql = "SELECT ROLEVARIABLELINKS.ID, RoleId, VariableId FROM ROLEVARIABLELINKS INNER JOIN ROLES ON ROLEVARIABLELINKS.RoleId = ROLES.ID WHERE ROLES.StatementTypeId = " + statementTypeId + ";";
+		}
 		try (Connection conn = ds.getConnection();
-			 PreparedStatement s1 = conn.prepareStatement("SELECT ROLEVARIABLELINKS.ID, RoleId, VariableId FROM ROLEVARIABLELINKS INNER JOIN ROLES ON ROLEVARIABLELINKS.RoleId = ROLES.ID WHERE ROLES.StatementTypeId = ?;");) {
-			ResultSet r;
-			s1.setInt(1, statementTypeId);
-			r = s1.executeQuery();
+			 PreparedStatement s = conn.prepareStatement(sql);) {
+			ResultSet r = s.executeQuery();
 			while (r.next()) {
 				roleVariableLinks.add(new RoleVariableLink(r.getInt("ID"), r.getInt("RoleId"), r.getInt("VariableId")));
 			}

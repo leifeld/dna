@@ -701,8 +701,8 @@ public class PopupMulti extends JDialog {
                                     if (currentText.length() > 0 && currentText.matches("^\\s+$")) { // replace a (multiple) whitespace string by an empty string
                                         currentText = "";
                                     }
-                                    if (currentText.length() > 190) {
-                                        currentText = currentText.substring(0, 189);
+                                    if (currentText.length() > 191) {
+                                        currentText = currentText.substring(0, 190);
                                         box.setSelectedItem(currentText); // ensure the text in the box is never longer than 190 characters to comply with old MySQL requirements
                                     }
                                     entity = new Entity(-1, roleValue.getVariableId(), currentText, Color.BLACK);
