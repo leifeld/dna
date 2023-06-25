@@ -33,7 +33,7 @@ jobs:
       run: pandoc --version
 
     - name: Setup Gradle
-      uses: gradle/gradle-build-action@v2
+      uses: gradle/gradle-build-action@2.4.2
 
     - name: Execute Gradle build for bibliography
       run: ./gradlew :bibliography:build
@@ -56,7 +56,7 @@ jobs:
         cache: gradle
 
     - name: Setup Gradle
-      uses: gradle/gradle-build-action@v2
+      uses: gradle/gradle-build-action@2.4.2
     
     - name: Execute Gradle build for DNA
       run: ./gradlew :dna:build
@@ -85,7 +85,7 @@ jobs:
     - uses: gradle/wrapper-validation-action@v1
 
     - name: Setup Gradle
-      uses: gradle/gradle-build-action@v2
+      uses: gradle/gradle-build-action@2.4.2
 
     - name: Execute Gradle build for rDNA
       run: ./gradlew :rDNA:build
