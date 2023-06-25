@@ -30,9 +30,9 @@ remotes::install_github("leifeld/dna/rDNA/rDNA@*release",
 
 Note that the package relies on `rJava`, which needs to be installed first.
 
-If you require the latest (non-release) version of the DNA jar file from GitHub, you can clone the git repository to your computer and execute `./gradlew build` on your terminal or command line. This will build the jar file and store it in the directory `dna/build/libs/` of the cloned repository. Alternatively, you can try to download the latest artifact from the build process under [GitHub Actions](https://github.com/leifeld/dna/actions) by clicking on the latest build and scrolling down to "Artifacts". However, it is usually recommended to use the most recent [release](https://github.com/leifeld/dna/releases/) version.
+If you require the latest (non-release) version of the DNA jar file from GitHub, you can clone the git repository to your computer and execute `./gradlew build` on your terminal or command line. This will build the jar file and store it in the `build/` directory of the cloned repository. Alternatively, you can try to download the latest artifact from the build process under [GitHub Actions](https://github.com/leifeld/dna/actions) by clicking on the latest build and scrolling down to "Artifacts". However, it is usually recommended to use the most recent [release](https://github.com/leifeld/dna/releases/) version.
 
-## Documentation
+## Documentation and comunity
 
 - This **tutorial on YouTube** describes installation of DNA, basic data coding, network export, and network analysis using visone. The video clip is 18 minutes long.
   
@@ -45,6 +45,8 @@ If you require the latest (non-release) version of the DNA jar file from GitHub,
 - The previous version of DNA and rDNA came with a detailed [manual](https://github.com/leifeld/dna/releases/download/v2.0-beta.25/dna-manual.pdf) of more than 100 pages. It is outdated, but perhaps still useful.
 
 - If you have questions or want to report bugs, please create an issue in the [issue tracker](https://github.com/leifeld/dna/issues).
+
+- NEW: Join the the DNA community on [Matrix](https://matrix.to/#/#dna:yatrix.org). Matrix is a chat protocol. It's similar to Slack, Discord, or WhatsApp, but without the corporate shackles. It's free, open-source, decentralised, and secure. We have set up a public space called [#dna:yatrix.org](https://matrix.to/#/#dna:yatrix.org) with chat rooms for installation, research, and development chats. We are just starting out in the early stages. It's really easy to join: You create an account on one of the many Matrix [servers](https://joinmatrix.org/servers/) (we use [yatrix.org](https://element.yatrix.org/), download one of the many Matrix [clients](https://matrix.org/ecosystem/clients/) on your phone or computer (e.g., Element), and join [#dna:yatrix.org](https://matrix.to/#/#dna:yatrix.org). Or just start with a [web app](https://matrix.to/#/#dna:yatrix.org) for now. It's OK to create an anonymous account, though we encourage showing your real name. You can join any or all of the three public rooms.
 
 ## Support the project
 
