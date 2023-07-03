@@ -4,7 +4,7 @@ author:
 bibliography:
 - bibliography.bib
 csl: apa-numeric-superscript-brackets.csl
-date: 2023-06-25
+date: 2023-07-03
 title: "Discourse Network Analysis: Bibliography"
 ---
 
@@ -2410,9 +2410,18 @@ Student Succeeds act. *Education Policy Analysis Archives*, *28*(119),
 
 </div>
 
+<div id="ref-wesche2023influence" class="csl-entry">
+
+261\. Wesche, J. P., Negro, S. O., Brugger, H. I., Eichhammer, W., &
+Hekkert, M. P. (2023). The influence of visions on cooperation among
+interest organizations in fragmented socio-technical systems.
+*Environmental Policy and Governance*.
+
+</div>
+
 <div id="ref-westenberger2022soders" class="csl-entry">
 
-261\. Westenberger, G.-J., & Schneider, V. (2022). Söders Ökofeuerwerk
+262\. Westenberger, G.-J., & Schneider, V. (2022). Söders Ökofeuerwerk
 und die grünfärbung der CSU: Diskursnetzwerke im bayrischen
 Themenwettbewerb. *Zeitschrift für Vergleichende Politikwissenschaft*,
 *15*(4), 641–665. <https://doi.org/10.1007/s12286-021-00513-5>
@@ -2421,7 +2430,7 @@ Themenwettbewerb. *Zeitschrift für Vergleichende Politikwissenschaft*,
 
 <div id="ref-wibisono2023contestation" class="csl-entry">
 
-262\. Wibisono, H., Lovett, J. C., & Anindito, D. B. (2023). The
+263\. Wibisono, H., Lovett, J. C., & Anindito, D. B. (2023). The
 contestation of ideas behind Indonesia’s rural electrification policies:
 The influence of global and national institutional dynamics.
 *Development Policy Review*, *41*(1), e12650.
@@ -2431,7 +2440,7 @@ The influence of global and national institutional dynamics.
 
 <div id="ref-wu2020deception" class="csl-entry">
 
-263\. Wu, J., & Liu, Y. (2020). Deception detection methods
+264\. Wu, J., & Liu, Y. (2020). Deception detection methods
 incorporating discourse network metrics in synchronous computer-mediated
 communication. *Journal of Information Science*, *46*(1), 64–81.
 <https://doi.org/10.1177/0165551518823176>
@@ -2440,7 +2449,7 @@ communication. *Journal of Information Science*, *46*(1), 64–81.
 
 <div id="ref-wu2015dobnet" class="csl-entry">
 
-264\. Wu, J., & Zhou, L. (2015). DOBNet: Exploiting the discourse of
+265\. Wu, J., & Zhou, L. (2015). DOBNet: Exploiting the discourse of
 deception behaviour to uncover online deception strategies. *Behaviour &
 Information Technology*, *34*(9), 936–948.
 <https://doi.org/10.1080/0144929X.2015.1016116>
@@ -2449,7 +2458,7 @@ Information Technology*, *34*(9), 936–948.
 
 <div id="ref-yan2023college" class="csl-entry">
 
-265\. Yan, K., Wu, H., Bu, K., & Wu, L. (2023). The college admission
+266\. Yan, K., Wu, H., Bu, K., & Wu, L. (2023). The college admission
 policy evolution from 2003 to 2020 in China – a social network analysis.
 *Higher Education Policy*. <https://doi.org/10.1057/s41307-022-00300-1>
 
@@ -2457,7 +2466,7 @@ policy evolution from 2003 to 2020 in China – a social network analysis.
 
 <div id="ref-yap2023emerging" class="csl-entry">
 
-266\. Yap, X.-S., Heiberg, J., Truffer, B., David, E., & Kneib, J.-P.
+267\. Yap, X.-S., Heiberg, J., Truffer, B., David, E., & Kneib, J.-P.
 (2023). Emerging global socio-technical regimes for tackling space
 debris: A discourse network analysis. *Acta Astronautica*, *207*,
 445–454. <https://doi.org/10.1016/j.actaastro.2023.01.016>
@@ -2466,7 +2475,7 @@ debris: A discourse network analysis. *Acta Astronautica*, *207*,
 
 <div id="ref-you2021exploring" class="csl-entry">
 
-267\. You, J., Weible, C. M., & Heikkila, T. (2021). Exploring
+268\. You, J., Weible, C. M., & Heikkila, T. (2021). Exploring
 instigator and defender policy scenarios in the siting of energy
 infrastructure. *Politics & Policy*, *50*(1), 8–32.
 <https://doi.org/10.1111/polp.12442>
@@ -2475,7 +2484,7 @@ infrastructure. *Politics & Policy*, *50*(1), 8–32.
 
 <div id="ref-yordy2023exploring" class="csl-entry">
 
-268\. Yordy, J., Durnová, A., & Weible, C. M. (2023). Exploring
+269\. Yordy, J., Durnová, A., & Weible, C. M. (2023). Exploring
 emotional discourses: The case of COVID-19 protests in the US media.
 *Administrative Theory & Praxis*.
 <https://doi.org/10.1080/10841806.2023.2176074>
@@ -2484,7 +2493,7 @@ emotional discourses: The case of COVID-19 protests in the US media.
 
 <div id="ref-yordy2019framing" class="csl-entry">
 
-269\. Yordy, J., You, J., Park, K., Weible, C. M., & Heikkila, T.
+270\. Yordy, J., You, J., Park, K., Weible, C. M., & Heikkila, T.
 (2019). Framing contests and policy conflicts over gas pipelines.
 *Review of Policy Research*, *36*(6), 736–756.
 <https://doi.org/10.1111/ropr.12364>
@@ -2493,7 +2502,7 @@ emotional discourses: The case of COVID-19 protests in the US media.
 
 <div id="ref-you2020policy" class="csl-entry">
 
-270\. You, J., Yordy, J., Park, K., Heikkila, T., & Weible, C. M.
+271\. You, J., Yordy, J., Park, K., Heikkila, T., & Weible, C. M.
 (2020). Policy conflicts in the siting of natural gas pipelines.
 *Journal of Environmental Policy & Planning*, *22*(4), 501–517.
 <https://doi.org/10.1080/1523908X.2020.1778457>
@@ -2502,7 +2511,7 @@ emotional discourses: The case of COVID-19 protests in the US media.
 
 <div id="ref-you2021comparing" class="csl-entry">
 
-271\. You, J., Yordy, J., Weible, C. M., Park, K., Heikkila, T., &
+272\. You, J., Yordy, J., Weible, C. M., Park, K., Heikkila, T., &
 Gilchrist, D. (2021). Comparing policy conflict on electricity
 transmission line sitings. *Public Policy and Administration*, *38*(1),
 107--129. <https://doi.org/10.1177/09520767211036800>
@@ -2511,7 +2520,7 @@ transmission line sitings. *Public Policy and Administration*, *38*(1),
 
 <div id="ref-zakova2023expertization" class="csl-entry">
 
-272\. Žaková, K. (2023). *Expertization of the Czech climate policy
+273\. Žaková, K. (2023). *Expertization of the Czech climate policy
 network* \[Master’s thesis, Masaryk University, Faculty of Social
 Studies\]. <https://is.muni.cz/th/f9wdw/>
 
