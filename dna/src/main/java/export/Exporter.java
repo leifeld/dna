@@ -41,9 +41,10 @@ import java.util.stream.Stream;
  */
 public class Exporter {
 	private StatementType statementType;
-	private String networkType, variable1, variable2, qualifier, qualifierAggregation;
+	private String networkType, qualifierAggregation;
+	private Role role1, role2, qualifier;
 	private String normalization, duplicates, timeWindow;
-	private boolean variable1Document, variable2Document, qualifierDocument, isolates;
+	private boolean role1Document, role2Document, qualifierDocument, isolates;
 	private LocalDateTime startDateTime, stopDateTime;
 	private int windowSize;
 	private HashMap<String, ArrayList<String>> excludeValues;
@@ -60,17 +61,13 @@ public class Exporter {
 	 */
 	private HashMap<Integer, Integer> docMap;
 	/**
-	 * Holds a mapping of statement type variable names to data types for quick lookup.
-	 */
-	private HashMap<String, String> dataTypes;
-	/**
 	 * Holds all statements.
 	 */
-	private ArrayList<ExportStatement> originalStatements;
+	private ArrayList<ExportEvent> originalEvents;
 	/**
 	 * Holds the statements that remain after filtering by date, exclude filter, duplicates etc.
 	 */
-	private ArrayList<ExportStatement> filteredStatements;
+	private ArrayList<ExportEvent> filteredEvents;
 	/**
 	 * Holds the resulting matrices. Can have size 1.
 	 */
@@ -105,26 +102,20 @@ public class Exporter {
 	 *     <li>{@code "eventlist"} (to create an event list)</li>
 	 *   </ul>
 	 * @param statementType The statement type.
-	 * @param variable1 The name of the first variable, for example {@code
-	 *   "organization"}. In addition to the variables defined in the statement
+	 * @param role1 The name of the first role, for example {@code
+	 *   "organization"}. In addition to the roles defined in the statement
 	 *   type, the document variables {@code author}, {@code source}, {@code
 	 *   section}, {@code type}, {@code id}, and {@code title} are valid. If
-	 *   document-level variables are used, this must be declared using the
-	 *   {@code variable1Document} argument.
-	 * @param variable1Document Is the first variable defined at the document
-	 *   level, for instance the author or document ID?
-	 * @param variable2 The name of the second variable, for example {@code
+	 *   document-level roles are used, this must be declared using the
+	 *   {@code role1Document} argument.
+	 * @param role2 The name of the second variable, for example {@code
 	 *   "concept"}. In addition to the variables defined in the statement type,
 	 *   the document variables {@code author}, {@code source}, {@code section},
 	 *   {@code type}, {@code id}, and {@code title} are valid. If
 	 *   document-level variables are used, this must be declared using the
 	 *   {@code variable2Document} argument.
-	 * @param variable2Document Is the second variable defined at the document
-	 *   level, for instance the author or document ID?
-	 * @param qualifier The qualifier variable, for example {@code
+	 * @param qualifier The qualifier role, for example {@code
 	 *  "agreement"}.
-	 * @param qualifierDocument Is the qualifier variable defined at the
-	 *   document level, for instance the author or document ID?
 	 * @param qualifierAggregation The way in which the qualifier variable is
 	 *   used to aggregate ties in the network.<br/>
 	 *   Valid values if the {@code networkType} argument equals {@code
@@ -285,12 +276,9 @@ public class Exporter {
 	public Exporter(
 			String networkType,
 			StatementType statementType,
-			String variable1,
-			boolean variable1Document,
-			String variable2,
-			boolean variable2Document,
-			String qualifier,
-			boolean qualifierDocument,
+			Role role1,
+			Role role2,
+			Role qualifier,
 			String qualifierAggregation,
 			String normalization,
 			boolean isolates,
@@ -312,7 +300,6 @@ public class Exporter {
 			String fileFormat,
 			String outfile) {
 
-		/*
 		// create a list of document variables for easier if-condition checking below
 		ArrayList<String> documentVariables = new ArrayList<String>();
 		documentVariables.add("author");
@@ -336,74 +323,28 @@ public class Exporter {
 
 		// check statement type
 		this.statementType = statementType;
-		ArrayList<String> shortTextVariables = Stream.of(this.statementType.getVariablesList(false, true, false, false)).collect(Collectors.toCollection(ArrayList::new));
-		if (shortTextVariables.size() < 2) {
-			LogEvent le = new LogEvent(Logger.ERROR,
-					"Exporter: Statement type contains fewer than two short text variables.",
-					"When exporting a network, the statement type \"" + this.statementType.getLabel() + "\" (ID: " + this.statementType.getId() + ") was selected, but this statement type contains fewer than two short text variables. At least two short text variables are required for network construction.");
+
+		// check role1, role1Document, role2, and role22Document
+		this.role1Document = role1Document;
+		if (this.role1Document && !documentVariables.contains(role1.getRoleName())) {
+			this.role1Document = false;
+			LogEvent le = new LogEvent(Logger.WARNING,
+					"Exporter: Role 1 is not a document-level variable.",
+					"When exporting a network, Role 1 was set to be a document-level variable, but \"" + role1.getRoleName() + "\" does not exist as a document-level variable. Trying to interpret it as a statement-level role instead.");
 			Dna.logger.log(le);
 		}
 
-		// check variable1, variable1Document, variable2, and variable2Document
-		this.variable1Document = variable1Document;
-		if (this.variable1Document && !documentVariables.contains(variable1)) {
-			this.variable1Document = false;
+		this.role2Document = role2Document;
+		if (this.role2Document && !documentVariables.contains(role2)) {
+			this.role2Document = false;
 			LogEvent le = new LogEvent(Logger.WARNING,
-					"Exporter: Variable 1 is not a document-level variable.",
-					"When exporting a network, Variable 1 was set to be a document-level variable, but \"" + variable1 + "\" does not exist as a document-level variable. Trying to interpret it as a statement-level variable instead.");
+					"Exporter: Role 2 is not a document-level variable.",
+					"When exporting a network, Role 2 was set to be a document-level variable, but \"" + role2.getRoleName() + "\" does not exist as a document-level variable. Trying to interpret it as a statement-level role instead.");
 			Dna.logger.log(le);
 		}
 
-		this.variable2Document = variable2Document;
-		if (this.variable2Document && !documentVariables.contains(variable2)) {
-			this.variable2Document = false;
-			LogEvent le = new LogEvent(Logger.WARNING,
-					"Exporter: Variable 2 is not a document-level variable.",
-					"When exporting a network, Variable 2 was set to be a document-level variable, but \"" + variable2 + "\" does not exist as a document-level variable. Trying to interpret it as a statement-level variable instead.");
-			Dna.logger.log(le);
-		}
-
-		this.variable1 = variable1;
-		this.variable2 = variable2;
-		if (!variable1Document && !shortTextVariables.contains(this.variable1)) {
-			String var1 = this.variable1;
-			int counter = 0;
-			while (var1.equals(this.variable1) || var1.equals(this.variable2)) {
-				var1 = shortTextVariables.get(counter);
-				counter++;
-			}
-			LogEvent le = new LogEvent(Logger.WARNING,
-					"Exporter: Variable 1 does not exist in statement type.",
-					"When exporting a network, Variable 1 was set to be \"" + this.variable1 + "\", but this variable is undefined in the statement type \"" + this.statementType + "\" or is not a short text variable. Using variable \"" + var1 + "\" instead.");
-			Dna.logger.log(le);
-			this.variable1 = var1;
-		}
-		if (!variable2Document && !shortTextVariables.contains(this.variable2)) {
-			String var2 = this.variable2;
-			int counter = 0;
-			while (var2.equals(this.variable1) || var2.equals(this.variable2)) {
-				var2 = shortTextVariables.get(counter);
-				counter++;
-			}
-			LogEvent le = new LogEvent(Logger.WARNING,
-					"Exporter: Variable 2 does not exist in statement type.",
-					"When exporting a network, Variable 2 was set to be \"" + this.variable2 + "\", but this variable is undefined in the statement type \"" + this.statementType + "\" or is not a short text variable. Using variable \"" + var2 + "\" instead.");
-			Dna.logger.log(le);
-			this.variable2 = var2;
-		}
-		if (this.variable1.equals(this.variable2)) {
-			String var2 = this.variable2;
-			int counter = 0;
-			while (var2.equals(this.variable1)) {
-				var2 = shortTextVariables.get(counter);
-				counter++;
-			}
-			LogEvent le = new LogEvent(Logger.WARNING,
-					"Exporter: Variables 1 and 2 are identical.",
-					"When exporting a network, Variable 1 and Variable 2 were identical (\"" + this.variable1 + "\"). Changing Variable 2 to \"" + var2 + "\" instead.");
-			Dna.logger.log(le);
-			this.variable2 = var2;
-		}
+		this.role1 = role1;
+		this.role2 = role2;
 
 		// check qualifier, qualifierDocument, and qualifierAggregation
 		this.qualifierDocument = qualifierDocument;
@@ -419,17 +360,6 @@ public class Exporter {
 
 		this.qualifierAggregation = qualifierAggregation.toLowerCase();
 		this.qualifier = qualifier;
-		ArrayList<String> variables = Stream.of(this.statementType.getVariablesList(false, true, true, true)).collect(Collectors.toCollection(ArrayList::new));
-		if (this.qualifier != null && this.qualifierDocument == false && (!variables.contains(this.qualifier) || this.qualifier.equals(this.variable1) || this.qualifier.equals(this.variable2))) {
-			this.qualifier = null;
-			if (!this.qualifierAggregation.equals("ignore")) {
-				this.qualifierAggregation = "ignore";
-				LogEvent le = new LogEvent(Logger.WARNING,
-						"Exporter: Qualifier variable undefined or invalid.",
-						"When exporting a network, the qualifier variable was either not defined as a variable in the statement type \"" + this.statementType.getLabel() + "\" or was set to be identical to Variable 1 or Variable 2. Hence, no qualifier is used.");
-				Dna.logger.log(le);
-			}
-		}
 
 		if (!this.qualifierAggregation.equals("ignore") &&
 				!this.qualifierAggregation.equals("subtract") &&
@@ -577,196 +507,87 @@ public class Exporter {
 		this.invertSections = invertSections;
 		this.excludeTypes = excludeTypes;
 		this.invertTypes = invertTypes;
-
-		*/
 	}
 
-	/**
-	 * Constructor with reduced information for generating barplot data. A variable is specified for which frequency
-	 * counts by qualifier level are computed.
-	 *
-	 * @param statementType The statement type.
-	 * @param variable1 The name of the first variable, for example {@code
-	 *   "organization"}. In addition to the variables defined in the statement
-	 *   type, the document variables {@code author}, {@code source}, {@code
-	 *   section}, {@code type}, {@code id}, and {@code title} are valid. If
-	 *   document-level variables are used, this must be declared using the
-	 *   {@code variable1Document} argument.
-	 * @param qualifier The qualifier variable, for example {@code
-	 *  "agreement"}.
-	 * @param duplicates Setting for excluding duplicate statements before
-	 *   network construction. Valid values are:
-	 *   <ul>
-	 *     <li>{@code "include"} (for including all statements in network
-	 *       construction)</li>
-	 *     <li>{@code "document"} (for counting only one identical statement per
-	 *       document)</li>
-	 *     <li>{@code "week"} (for counting only one identical statement per
-	 *       calendar week as defined in the UK locale, i.e., Monday to Sunday)
-	 *       </li>
-	 *     <li>{@code "month"} (for counting only one identical statement per
-	 *       calendar month)</li>
-	 *     <li>{@code "year"} (for counting only one identical statement per
-	 *       calendar year)</li>
-	 *     <li>{@code "acrossrange"} (for counting only one identical statement
-	 *       across the whole time range)</li>
-	 *   </ul>
-	 * @param startDateTime The start date and time for network construction.
-	 *   All statements before this specified date/time will be excluded.
-	 * @param stopDateTime The stop date and time for network construction.
-	 *   All statements after this specified date/time will be excluded.
-	 * @param excludeValues A hash map that contains values which should be
-	 *   excluded during network construction. The hash map is indexed by
-	 *   variable name (for example, {@code "organization"} as the key, and
-	 *   the corresponding value is an array list of values to exclude, for
-	 *   example {@code "org A"} or {@code "org B"}. This is irrespective of
-	 *   whether these values appear in {@code variable1}, {@code variable2},
-	 *   or the {@code qualifier} variable. Note that only variables at the
-	 *   statement level can be used here. There are separate arguments for
-	 *   excluding statements nested in documents with certain meta-data.
-	 * @param excludeAuthors An array of authors. If a statement is nested in
-	 *   a document where one of these authors is set in the {@code author}
-	 *   meta-data field, the statement is excluded from network construction.
-	 * @param excludeSources An array of sources. If a statement is nested in
-	 *   a document where one of these sources is set in the {@code source}
-	 *   meta-data field, the statement is excluded from network construction.
-	 * @param excludeSections An array of sections. If a statement is nested
-	 *   in a document where one of these sections is set in the {@code
-	 *   section} meta-data field, the statement is excluded from network
-	 *   construction.
-	 * @param excludeTypes An array of types. If a statement is nested in a
-	 *   document where one of these types is set in the {@code type}
-	 *   meta-data field, the statement is excluded from network construction.
-	 * @param invertValues Indicates whether the entries provided by the
-	 *   {@code excludeValues} argument should be excluded from network
-	 *   construction ({@code false}) or if they should be the only values
-	 *   that should be included during network construction ({@code true}).
-	 * @param invertAuthors Indicates whether the values provided by the
-	 *   {@code excludeAuthors} argument should be excluded from network
-	 *   construction ({@code false}) or if they should be the only values
-	 *   that should be included during network construction ({@code true}).
-	 * @param invertSources Indicates whether the values provided by the
-	 *   {@code excludeSources} argument should be excluded from network
-	 *   construction ({@code false}) or if they should be the only values
-	 *   that should be included during network construction ({@code true}).
-	 * @param invertSections Indicates whether the values provided by the
-	 *   {@code excludeSections} argument should be excluded from network
-	 *   construction ({@code false}) or if they should be the only values
-	 *   that should be included during network construction ({@code true}).
-	 * @param invertTypes Indicates whether the values provided by the
-	 *   {@code excludeTypes} argument should be excluded from network
-	 *   construction ({@code false}) or if they should be the only values
-	 *   that should be included during network construction ({@code true}).
-	 */
-	public Exporter(
-			StatementType statementType,
-			String variable1,
-			String qualifier,
-			String duplicates,
-			LocalDateTime startDateTime,
-			LocalDateTime stopDateTime,
-			HashMap<String, ArrayList<String>> excludeValues,
-			ArrayList<String> excludeAuthors,
-			ArrayList<String> excludeSources,
-			ArrayList<String> excludeSections,
-			ArrayList<String> excludeTypes,
-			boolean invertValues,
-			boolean invertAuthors,
-			boolean invertSources,
-			boolean invertSections,
-			boolean invertTypes) {
+	private class ExportEvent {
+		LocalDateTime dateTime;
+		String variable1;
+		String variable2;
+		int qualifier;
+		int documentId;
 
-		/*
-		this.statementType = statementType;
-		ArrayList<String> shortTextVariables = Stream.of(this.statementType.getVariablesList(false, true, false, false)).collect(Collectors.toCollection(ArrayList::new));
-
-		// check variable1, variable1Document, variable2, and variable2Document
-		this.variable1 = variable1;
-		this.variable1Document = false;
-		if (!shortTextVariables.contains(this.variable1)) {
-			String var1 = this.variable1;
-			int counter = 0;
-			while (var1.equals(this.variable1)) {
-				var1 = shortTextVariables.get(counter);
-				counter++;
-			}
-			LogEvent le = new LogEvent(Logger.WARNING,
-					"Exporter: Variable does not exist in statement type.",
-					"When generating barplot data, the variable was set to be \"" + this.variable1 + "\", but this variable is undefined in the statement type \"" + this.statementType + "\" or is not a short text variable. Using variable \"" + var1 + "\" instead.");
-			Dna.logger.log(le);
-			this.variable1 = var1;
-		}
-
-		// check qualifier, qualifierDocument, and qualifierAggregation
-		this.qualifierDocument = false;
-		this.qualifierAggregation = "ignore";
-		if (qualifier != null) {
+		public ExportEvent(String variable1, String variable2, int qualifier, int documentId, LocalDateTime dateTime) {
+			this.variable1 = variable1;
+			this.variable2 = variable2;
 			this.qualifier = qualifier;
-			this.qualifierAggregation = "combine";
-		}
-		ArrayList<String> variables = Stream.of(this.statementType.getVariablesList(false, true, true, true)).collect(Collectors.toCollection(ArrayList::new));
-		if (this.qualifier != null && (!variables.contains(this.qualifier) || this.qualifier.equals(this.variable1))) {
-			this.qualifier = null;
-			this.qualifierAggregation = "ignore";
-			LogEvent le = new LogEvent(Logger.WARNING,
-					"Exporter: Qualifier variable undefined or invalid.",
-					"When generating barplot data, the qualifier variable was either not defined as a variable in the statement type \"" + this.statementType.getLabel() + "\" or was set to be identical to the barplot variable. Hence, no qualifier is used.");
-			Dna.logger.log(le);
+			this.documentId = documentId;
+			this.dateTime = dateTime;
 		}
 
-		// check duplicates setting (valid settings: 'include', 'document', 'week', 'month', 'year', or 'acrossrange')
-		this.duplicates = duplicates.toLowerCase();
-		if (!this.duplicates.equals("include") &&
-				!this.duplicates.equals("document") &&
-				!this.duplicates.equals("week") &&
-				!this.duplicates.equals("month") &&
-				!this.duplicates.equals("year") &&
-				!this.duplicates.equals("acrossrange")) {
-			LogEvent le = new LogEvent(Logger.WARNING,
-					"Exporter: Duplicates setting invalid.",
-					"When generating barplot data, the duplicates setting was \"" + duplicates + "\", which is invalid. The only valid values are \"include\", \"document\", \"week\", \"month\", \"year\", and \"acrossrange\". Using the default value \"include\" in this case.");
-			Dna.logger.log(le);
-			this.duplicates = "include";
+		public ExportEvent(ExportEvent other) {
+			this.variable1 = other.variable1;
+			this.variable2 = other.variable2;
+			this.qualifier = other.qualifier;
+			this.documentId = other.documentId;
+			this.dateTime = other.dateTime;
 		}
 
-		// remaining arguments
-		this.startDateTime = startDateTime;
-		this.stopDateTime = stopDateTime;
-		this.excludeValues = excludeValues;
-		this.invertValues = invertValues;
-		this.excludeAuthors = excludeAuthors;
-		this.invertAuthors = invertAuthors;
-		this.excludeSources = excludeSources;
-		this.invertSources = invertSources;
-		this.excludeSections = excludeSections;
-		this.invertSections = invertSections;
-		this.excludeTypes = excludeTypes;
-		this.invertTypes = invertTypes;
+		public LocalDateTime getDateTime() {
+			return dateTime;
+		}
 
-		*/
+		public void setDateTime(LocalDateTime dateTime) {
+			this.dateTime = dateTime;
+		}
+
+		public String getVariable1() {
+			return variable1;
+		}
+
+		public void setVariable1(String variable1) {
+			this.variable1 = variable1;
+		}
+
+		public String getVariable2() {
+			return variable2;
+		}
+
+		public void setVariable2(String variable2) {
+			this.variable2 = variable2;
+		}
+
+		public int getQualifier() {
+			return qualifier;
+		}
+
+		public void setQualifier(int qualifier) {
+			this.qualifier = qualifier;
+		}
+
+		public int getDocumentId() {
+			return documentId;
+		}
+
+		public void setDocumentId(int documentId) {
+			this.documentId = documentId;
+		}
 	}
 
 	/**
 	 * Load statements and documents from the database and pre-process them.
 	 */
-	/*
 	public void loadData() {
-		// put variable data types into a map for quick lookup
-		this.dataTypes = new HashMap<String, String>();
-		for (int i = 0; i < this.statementType.getVariables().size(); i++) {
-			this.dataTypes.put(this.statementType.getVariables().get(i).getKey(), this.statementType.getVariables().get(i).getDataType());
-		}
 
 		// get documents and create document hash map for quick lookup
 		this.documents = Dna.sql.getTableDocuments(new int[0]);
 		Collections.sort(documents);
-		this.docMap = new HashMap<Integer, Integer>();
+		this.docMap = new HashMap<Integer, Integer>(); // document ID to index in this.documents
 		for (int i = 0; i < documents.size(); i++) {
 			docMap.put(documents.get(i).getId(), i);
 		}
 
-		// get statements and convert to {@link ExportStatement} objects with additional information
-		this.originalStatements = Dna.sql.getStatements(new int[0],
+		// get original statements
+		ArrayList<TableStatement> statements = Dna.sql.getTableStatements(new int[0],
 				this.statementType.getId(),
 				this.startDateTime,
 				this.stopDateTime,
@@ -777,19 +598,54 @@ public class Exporter {
 				this.excludeSections,
 				this.invertSections,
 				this.excludeTypes,
-				this.invertTypes)
-		.stream()
-		.map(s -> {
-			int docIndex = docMap.get(s.getDocumentId());
-			return new ExportStatement(s,
-					documents.get(docIndex).getTitle(),
-					documents.get(docIndex).getAuthor(),
-					documents.get(docIndex).getSource(),
-					documents.get(docIndex).getSection(),
-					documents.get(docIndex).getType());
-		})
-		.collect(Collectors.toCollection(ArrayList::new));
-		if (this.originalStatements.size() == 0) {
+				this.invertTypes);
+
+		// filter excluded values
+		TableStatement s;
+		boolean contains;
+		for (int i = statements.size() - 1; i >= 0; i--) {
+			boolean select = true;
+			s = statements.get(i);
+			for (int j = 0; j < s.getRoleValues().size(); j++) {
+				if (this.excludeValues.containsKey(s.getRoleValues().get(j).getRoleName()) && this.excludeValues.get(s.getRoleValues().get(j).getRoleName()).contains(s.getRoleValues().get(j).toString())) {
+					contains = true;
+				} else {
+					contains = false;
+				}
+				if (contains && !this.invertValues || !contains && this.invertValues) {
+					select = false;
+				}
+			}
+			if (!select) {
+				statements.remove(i);
+			}
+		}
+
+		// create event list
+		this.originalEvents = new ArrayList<>();
+		RoleValue rv;
+		for (int i = 0; i < statements.size(); i++) {
+			String var1 = "";
+			String var2 = "";
+			Integer qual = null;
+			for (int j = 0; j < statements.get(i).getRoleValues().size(); j++) {
+				rv = statements.get(i).getRoleValues().get(j);
+				if (rv.getRoleId() == role1.getId()) {
+					var1 = rv.toString();
+				}
+				if (rv.getRoleId() == role2.getId()) {
+					var2 = rv.toString();
+				}
+				if (rv.getRoleId() == this.qualifier.getId()) {
+					qual = (Integer) rv.getValue();
+				}
+			}
+			if (!var1.equals("") && !var2.equals("") && qual != null) {
+				this.originalEvents.add(new ExportEvent(var1, var2, qual, statements.get(i).getDocumentId(), statements.get(i).getDateTime()));
+			}
+		}
+
+		if (this.originalEvents.size() == 0) {
 			Dna.logger.log(
 					new LogEvent(Logger.WARNING,
 							"No statements found.",
@@ -797,179 +653,41 @@ public class Exporter {
 			);
 		}
 	}
-	*/
-	
-	/**
-	 * Extract the labels for all nodes for a variable from the statements,
-	 * conditional on isolates settings.
-	 * 
-	 * @param processedStatements These are usually filtered statements, but
-	 *   could be more processed than just filtered, for example for
-	 *   constructing time window sequences of network matrices.
-	 * @param variable String indicating the variable for which labels should be
-	 *   extracted, for example {@code "organization"}.
-	 * @param variableDocument Is the variable a document-level variable?
-	 * @return String array containing all sorted node names.
-	 */
-	String[] extractLabels(
-			ArrayList<ExportStatement> processedStatements,
-			String variable,
-			boolean variableDocument) {
-		
-		// decide whether to use the original statements or the filtered statements
-		ArrayList<ExportStatement> finalStatements;
-		if (this.isolates) {
-			finalStatements = originalStatements;
-		} else {
-			finalStatements = processedStatements;
-		}
-		
-		// go through statements and extract names
-		ArrayList<String> names = new ArrayList<String>();
-		String n = null;
-		ExportStatement es;
-		for (int i = 0; i < finalStatements.size(); i++) {
-			es = finalStatements.get(i);
-			if (variableDocument) {
-				if (variable.equals("author")) {
-					n = es.getAuthor();
-				} else if (variable.equals("source")) {
-					n = es.getSource();
-				} else if (variable.equals("section")) {
-					n = es.getSection();
-				} else if (variable.equals("type")) {
-					n = es.getType();
-				} else if (variable.equals("id")) {
-					n = es.getDocumentIdAsString();
-				} else if (variable.equals("title")) {
-					n = es.getTitle();
-				}
-			} else {
-				n = (String) es.get(variable).toString();
-			}
-			if (!names.contains(n)) {
-				names.add(n);
-			}
-		}
-		
-		// sort and convert to array, then return
-		Collections.sort(names);
-		if (names.size() > 0 && names.get(0).equals("")) { // remove empty field
-			names.remove(0);
-		}
-		String[] nameArray = new String[names.size()];
-		if (names.size() > 0) {
-			for (int i = 0; i < names.size(); i++) {
-				nameArray[i] = names.get(i);
-			}
-		}
-		return nameArray;
-	}
 
-	public class ExportStatementComparator implements Comparator<ExportStatement> {
+	public class ExportEventComparator implements Comparator<ExportEvent> {
 		@Override
-		public int compare(ExportStatement firstExportStatement, ExportStatement secondExportStatement) {
-			if (firstExportStatement.getDateTime() != null && secondExportStatement.getDateTime() != null) {
-				if (firstExportStatement.getDateTime().isBefore(secondExportStatement.getDateTime())) {
-					return -1;
-				} else if (firstExportStatement.getDateTime().isAfter(secondExportStatement.getDateTime())) {
-					return 1;
-				}
-			}
-			if (firstExportStatement.getDocumentId() < secondExportStatement.getDocumentId()) {
-				return -1;
-			} else if (firstExportStatement.getDocumentId() > secondExportStatement.getDocumentId()) {
-				return 1;
-			}
-			if (firstExportStatement.getStart() < secondExportStatement.getStart()) {
-				return -1;
-			} else if (firstExportStatement.getStart() > secondExportStatement.getStart()) {
-				return 1;
-			}
-			if (firstExportStatement.getStop() < secondExportStatement.getStop()) {
-				return -1;
-			} else if (firstExportStatement.getStop() > secondExportStatement.getStop()) {
-				return 1;
-			}
-			if (firstExportStatement.getId() < secondExportStatement.getId()) {
-				return -1;
+		public int compare(ExportEvent event1, ExportEvent event2) {
+			int dateComparison = event1.getDateTime().compareTo(event2.getDateTime());
+			if (dateComparison != 0) {
+				return dateComparison;
 			} else {
-				return 1;
+				return Integer.compare(event1.getDocumentId(), event2.getDocumentId());
 			}
 		}
 	}
 
-	/**
-	 * Filter the statements based on the {@link #originalStatements} slot of
-	 * the class and create a filtered statement list, which is saved in the
-	 * {@link #filteredStatements} slot of the class. 
-	 */
-	public void filterStatements() {
-		try (ProgressBar pb = new ProgressBar("Filtering statements...", this.originalStatements.size())) {
+	public void filterExportEvents() {
+		try (ProgressBar pb = new ProgressBar("Filtering export events...", this.originalEvents.size())) {
 			pb.stepTo(0);
 
-			// create a deep copy of the original statements
-			this.filteredStatements = new ArrayList<ExportStatement>();
-			for (int i = 0; i < this.originalStatements.size(); i++) {
-				this.filteredStatements.add(new ExportStatement(this.originalStatements.get(i)));
+			// create a deep copy of the original statements and sort
+			this.filteredEvents = new ArrayList<>();
+			for (int i = 0; i < this.originalEvents.size(); i++) {
+				this.filteredEvents.add(new ExportEvent(this.originalEvents.get(i)));
 			}
+			Collections.sort(this.filteredEvents, new ExportEventComparator());
 
-			// sort statements by date and time
-
-			Collections.sort(this.filteredStatements, new ExportStatementComparator());
-
-			// Create arrays with variable values
-			String[] values1 = retrieveValues(this.filteredStatements, this.variable1, this.variable1Document);
-			String[] values2 = new String[0];
-			if (this.variable2 != null) {
-				values2 = retrieveValues(this.filteredStatements, this.variable2, this.variable2Document);
-			}
-			String[] qualifierValues = new String[0];
-			if (this.qualifierDocument || (!this.qualifierAggregation.equals("ignore") && dataTypes.get(this.qualifier).equals("short text"))) {
-				qualifierValues = retrieveValues(this.filteredStatements, this.qualifier, this.qualifierDocument);
-			}
-
-			// process and exclude statements
-			ExportStatement s;
-			ArrayList<ExportStatement> al = new ArrayList<ExportStatement>();
+			// process and exclude events
+			ExportEvent s;
+			ArrayList<ExportEvent> al = new ArrayList<>();
 			String previousVar1 = null;
 			String previousVar2 = null;
 			String previousQualifier = null;
 			LocalDateTime cal, calPrevious;
 			int year, month, week, yearPrevious, monthPrevious, weekPrevious;
-			for (int i = 0; i < this.filteredStatements.size(); i++) {
+			for (int i = 0; i < this.filteredEvents.size(); i++) {
+				s = this.filteredEvents.get(i);
 				boolean select = true;
-				s = this.filteredStatements.get(i);
-
-				// check against excluded values
-				Iterator<String> keyIterator = this.excludeValues.keySet().iterator();
-				while (keyIterator.hasNext()) {
-					String key = keyIterator.next();
-					String string = "";
-					if (dataTypes.get(key) == null) {
-						throw new NullPointerException("'" + key + "' is not a statement-level variable and cannot be excluded.");
-					} else if (dataTypes.get(key).equals("boolean") || dataTypes.get(key).equals("integer")) {
-						string = String.valueOf(s.get(key));
-					} else if (dataTypes.get(key).equals("short text")) {
-						string = ((Entity) s.get(key)).getValue();
-					} else if (dataTypes.get(key).equals("long text")) {
-						string = (String) s.get(key);
-					}
-					if ((this.excludeValues.get(key).contains(string) && !this.invertValues) ||
-							(!this.excludeValues.get(key).contains(string) && this.invertValues)) {
-						select = false;
-					}
-				}
-
-				// check against empty fields
-				if (select &&
-						this.networkType != null &&
-						!this.networkType.equals("eventlist") &&
-						(values1[i].equals("") || values2[i].equals("") || (!this.qualifierAggregation.equals("ignore") && (qualifierDocument || dataTypes.get(qualifier).equals("short text")) && qualifierValues[i].equals("")))) {
-					select = false;
-				} else if (select && this.networkType == null && values1[i].equals("")) { // barplot data because no network type defined
-					select = false;
-				}
 
 				// check for duplicates
 				cal = s.getDateTime();
@@ -980,72 +698,23 @@ public class Exporter {
 				week = cal.get(weekFields.weekOfWeekBasedYear());
 				if (!this.duplicates.equals("include")) {
 					for (int j = al.size() - 1; j >= 0; j--) {
-						if (!this.variable1Document) {
-							previousVar1 = ((Entity) al.get(j).get(this.variable1)).getValue();
-						} else if (this.variable1.equals("author")) {
-							previousVar1 = al.get(j).getAuthor();
-						} else if (this.variable1.equals("source")) {
-							previousVar1 = al.get(j).getSource();
-						} else if (this.variable1.equals("section")) {
-							previousVar1 = al.get(j).getSection();
-						} else if (this.variable1.equals("type")) {
-							previousVar1 = al.get(j).getType();
-						} else if (this.variable1.equals("id")) {
-							previousVar1 = al.get(j).getDocumentIdAsString();
-						} else if (this.variable1.equals("title")) {
-							previousVar1 = al.get(j).getTitle();
-						}
-						if (this.variable2 != null) {
-							if (!this.variable2Document) {
-								previousVar2 = ((Entity) al.get(j).get(this.variable2)).getValue();
-							} else if (this.variable2.equals("author")) {
-								previousVar2 = al.get(j).getAuthor();
-							} else if (this.variable2.equals("source")) {
-								previousVar2 = al.get(j).getSource();
-							} else if (this.variable2.equals("section")) {
-								previousVar2 = al.get(j).getSection();
-							} else if (this.variable2.equals("type")) {
-								previousVar2 = al.get(j).getType();
-							} else if (this.variable2.equals("id")) {
-								previousVar2 = al.get(j).getDocumentIdAsString();
-							} else if (this.variable2.equals("title")) {
-								previousVar2 = al.get(j).getTitle();
-							}
-						}
-						if (!this.qualifierAggregation.equals("ignore") && (qualifierDocument || dataTypes.get(this.qualifier).equals("short text"))) {
-							if (!this.qualifierDocument) {
-								previousQualifier = ((Entity) al.get(j).get(this.qualifier)).getValue();
-							} else if (this.qualifier.equals("author")) {
-								previousQualifier = al.get(j).getAuthor();
-							} else if (this.qualifier.equals("source")) {
-								previousQualifier = al.get(j).getSource();
-							} else if (this.qualifier.equals("section")) {
-								previousQualifier = al.get(j).getSection();
-							} else if (this.qualifier.equals("type")) {
-								previousQualifier = al.get(j).getType();
-							} else if (this.qualifier.equals("id")) {
-								previousQualifier = al.get(j).getDocumentIdAsString();
-							} else if (this.qualifier.equals("title")) {
-								previousQualifier = al.get(j).getTitle();
-							}
-						}
+						previousVar1 = al.get(j).getVariable1();
+						previousVar2 = al.get(j).getVariable2();
+						previousQualifier = String.valueOf(al.get(j).getQualifier());
 						calPrevious = al.get(j).getDateTime();
 						yearPrevious = calPrevious.getYear();
 						monthPrevious = calPrevious.getMonthValue();
 						@SuppressWarnings("static-access")
 						WeekFields weekFieldsPrevious = WeekFields.of(Locale.UK.getDefault()); // use UK definition of calendar weeks
 						weekPrevious = calPrevious.get(weekFieldsPrevious.weekOfWeekBasedYear());
-						if (s.getStatementTypeId() == al.get(j).getStatementTypeId()
-								&& ( (al.get(j).getDocumentId() == s.getDocumentId() && duplicates.equals("document"))
+						if (((al.get(j).getDocumentId() == s.getDocumentId() && duplicates.equals("document"))
 								|| duplicates.equals("acrossrange")
 								|| (duplicates.equals("year") && year == yearPrevious)
 								|| (duplicates.equals("month") && month == monthPrevious)
 								|| (duplicates.equals("week") && week == weekPrevious) )
-								&& values1[i].equals(previousVar1)
-								&& (values2.length == 0 /* for barplot data */ || values2[i].equals(previousVar2))
-								&& (this.qualifierAggregation.equals("ignore")
-									|| (dataTypes.get(this.qualifier).equals("short text") && qualifierValues[i].equals(previousQualifier))
-									|| (!dataTypes.get(this.qualifier).equals("short text") && (Integer) s.get(this.qualifier) == (Integer) al.get(j).get(this.qualifier)))) {
+								&& this.filteredEvents.get(i).getVariable1().equals(previousVar1)
+								&& this.filteredEvents.get(i).getVariable2().equals(previousVar2)
+								&& (this.qualifierAggregation.equals("ignore") || String.valueOf(this.filteredEvents.get(i).getQualifier()).equals(previousQualifier))) {
 							select = false;
 							break;
 						}
@@ -1059,50 +728,9 @@ public class Exporter {
 
 				pb.stepTo(i + 1);
 			}
-			this.filteredStatements = al;
-			pb.stepTo(this.originalStatements.size());
+			this.filteredEvents = al;
+			pb.stepTo(this.originalEvents.size());
 		}
-	}
-
-	/**
-	 * Retrieve the values across statements/documents given the name of the
-	 * variable. E.g., provide a variable name and information on whether the
-	 * variable is defined at the document level (e.g., author or section) or at
-	 * the statement level (e.g., organization), and return a one-dimensional
-	 * array of values (e.g., the organization names or authors for all
-	 * statements provided.
-	 * 
-	 * @param statements Original or filtered array list of statements.
-	 * @param variable String denoting the first variable (containing the row
-	 *   values).
-	 * @param documentLevel Indicates if the first variable is at the document
-	 *   level.
-	 * @return String array of values.
-	 */
-	private String[] retrieveValues(ArrayList<ExportStatement> statements, String variable, boolean documentLevel) {
-		ExportStatement s;
-		String[] values = new String[statements.size()];
-		for (int i = 0; i < statements.size(); i++) {
-			s = statements.get(i);
-			if (documentLevel) {
-				if (variable.equals("author")) {
-					values[i] = s.getAuthor();
-				} else if (variable.equals("source")) {
-					values[i] = s.getSource();
-				} else if (variable.equals("section")) {
-					values[i] = s.getSection();
-				} else if (variable.equals("type")) {
-					values[i] = s.getType();
-				} else if (variable.equals("id")) {
-					values[i] = s.getDocumentIdAsString();
-				} else if (variable.equals("title")) {
-					values[i] = s.getTitle();
-				}
-			} else {
-				values[i] = ((Entity) s.get(variable)).getValue();
-			}
-		}
-		return values;
 	}
 
 	/**
@@ -1157,85 +785,20 @@ public class Exporter {
 		}
 		return r;
 	}
-	
-	/**
-	 * Create a three-dimensional array (variable 1 x variable 2 x qualifier).
-	 * 
-	 * @param names1 {@link String} array containing the row labels.
-	 * @param names2 {@link String} array containing the column labels.
-	 * @return 3D double array.
-	 */
-	private double[][][] createArray(ArrayList<ExportStatement> processedStatements, String[] names1, String[] names2) {
 
-		// unique qualifier values (i.e., all of them found at least once in the dataset)
-		String[] qualifierString = null;
-		int[] qualifierInteger = new int[] { 0 };
-		int qualifierLength = 1;
-		if (qualifier == null) {
-			// do nothing; go with qualifierLength = 1
-		} else if (!this.qualifierDocument && dataTypes.get(qualifier).equals("boolean")) {
-			qualifierInteger = new int[] {0, 1};
-			qualifierLength = 2;
-		} else if (!qualifierDocument && dataTypes.get(qualifier).equals("integer")) {
-			qualifierInteger = this.originalStatements
-					.stream()
-					.mapToInt(s -> (int) s.get(qualifier))
-					.distinct()
-					.sorted()
-					.toArray();
-			qualifierLength = qualifierInteger.length;
-		} else if (!qualifierDocument && dataTypes.get(qualifier).equals("short text")) {
-			qualifierString = this.originalStatements
-					.stream()
-					.map(s -> (String) ((Entity) s.get(qualifier)).getValue())
-					.distinct()
-					.sorted()
-					.toArray(String[]::new);
-			qualifierLength = qualifierString.length;
-		} else if (qualifierDocument) {
-			qualifierString = Arrays.stream(retrieveValues(processedStatements, this.qualifier, this.qualifierDocument))
-					.distinct()
-					.sorted()
-					.toArray(String[]::new);
-			qualifierLength = qualifierString.length;
-		}
+	private double[][][] createArray(ArrayList<ExportEvent> processedEvents) {
 
-		// Create arrays with variable values
-		String[] values1 = retrieveValues(processedStatements, variable1, variable1Document);
-		String[] values2 = retrieveValues(processedStatements, variable2, variable2Document);
+		// unique values
+		int[] qualifier = new int[] {0, 1};
+		String[] names1 = processedEvents.stream().map(p -> p.getVariable1()).distinct().sorted().toArray(String[]::new);
+		String[] names2 = processedEvents.stream().map(p -> p.getVariable2()).distinct().sorted().toArray(String[]::new);
 		
 		// create and populate array
-		double[][][] array = new double[names1.length][names2.length][qualifierLength]; // 3D array: rows x cols x qualifier value
-		for (int i = 0; i < processedStatements.size(); i++) {
-			String n1 = values1[i]; // retrieve first value from statement
-			String n2 = values2[i]; // retrieve second value from statement
-			String qString = null;
-			int qInteger = -1;
-			if (qualifier != null) {
-				if (this.qualifierDocument) {
-					TableDocument d = documents.get(docMap.get(processedStatements.get(i).getDocumentId()));
-					if (qualifier.equals("id")) {
-						qString = String.valueOf(d.getId());
-					} else if (qualifier.equals("title")) {
-						qString = d.getTitle();
-					} else if (qualifier.equals("author")) {
-						qString = d.getAuthor();
-					} else if (qualifier.equals("source")) {
-						qString = d.getSource();
-					} else if (qualifier.equals("section")) {
-						qString = d.getSection();
-					} else if (qualifier.equals("type")) {
-						qString = d.getType();
-					}
-					qInteger = -1;
-				} else if (dataTypes.get(qualifier).equals("short text")) {
-					qString = ((Entity) processedStatements.get(i).get(qualifier)).getValue(); // retrieve short text qualifier value from statement (via Entity)
-					qInteger = -1;
-				} else {
-					qInteger = (int) processedStatements.get(i).get(qualifier); // retrieve integer or boolean qualifier value from statement
-					qString = null;
-				}
-			}
+		double[][][] array = new double[names1.length][names2.length][qualifier.length]; // 3D array: rows x cols x qualifier value
+		for (int i = 0; i < processedEvents.size(); i++) {
+			String n1 = processedEvents.get(i).getVariable1(); // retrieve first value from statement
+			String n2 = processedEvents.get(i).getVariable2(); // retrieve second value from statement
+			int q = processedEvents.get(i).getQualifier();
 			
 			// find out which matrix row corresponds to the first value
 			int row = -1;
@@ -1257,14 +820,10 @@ public class Exporter {
 			
 			// find out which qualifier level corresponds to the qualifier value
 			int qual = 0;
-			if (qualifierLength > 1) {
-				for (int j = 0; j < qualifierLength; j++) {
-					if (qualifierDocument && qualifierString[j].equals(qString) ||
-							(dataTypes.containsKey(qualifier) && dataTypes.get(qualifier).equals("short text") && qualifierString[j].equals(qString)) ||
-							(!qualifierDocument && !dataTypes.get(qualifier).equals("short text") && qualifierInteger[j] == qInteger)) {
-						qual = j;
-						break;
-					}
+			for (int j = 0; j < qualifier.length; j++) {
+				if (qualifier[j] == q) {
+					qual = j;
+					break;
 				}
 			}
 
@@ -1274,90 +833,42 @@ public class Exporter {
 		
 		return array;
 	}
-	
+
 	/**
 	 * Compute the results. Choose the right method based on the settings.
 	 */
 	public void computeResults() {
-		if (networkType.equals("onemode") && timeWindow.equals("no")) {
+		if (networkType.equals("onemode")) {
 			computeOneModeMatrix();
-		} else if (networkType.equals("twomode") && timeWindow.equals("no")) {
+		} else if (networkType.equals("twomode")) {
 			computeTwoModeMatrix();
-		} else if (!networkType.equals("eventlist") && !timeWindow.equals("no")) {
-			computeTimeWindowMatrices();
 		}
 	}
-	
+
 	/**
 	 * Wrapper method to compute one-mode network matrix with class settings and save within class.
 	 */
 	private void computeOneModeMatrix() {
-		ArrayList<Matrix> matrices = new ArrayList<Matrix>(); 
-		matrices.add(this.computeOneModeMatrix(this.filteredStatements,
-				this.qualifierAggregation, this.startDateTime, this.stopDateTime));
+		ArrayList<Matrix> matrices = new ArrayList<Matrix>();
+		matrices.add(this.computeOneModeMatrix(this.filteredEvents,	this.qualifierAggregation, this.startDateTime, this.stopDateTime));
 		this.matrixResults = matrices;
 	}
 
-	/**
-	 * Create a one-mode network {@link Matrix}.
-	 *
-	 * @param processedStatements Usually the filtered list of export
-	 *   statements, but it can be a more processed list of export statements,
-	 *   for example for use in constructing a time window sequence of networks.
-	 * @param aggregation Qualifier aggregation; usually the qualifier
-	 *   aggregation in the constructor/class field ({@link
-	 *   #qualifierAggregation}), but it can deviate from it, for example in the
-	 *   time window functionality, where multiple versions need to be created.
-	 * @param start Start date/time.
-	 * @param stop End date/time.
-	 * @return {@link Matrix Matrix} object containing a one-mode network
-	 *   matrix.
-	 */
-	Matrix computeOneModeMatrix(ArrayList<ExportStatement> processedStatements, String aggregation, LocalDateTime start, LocalDateTime stop) {
-		String[] names1 = this.extractLabels(processedStatements, this.variable1, this.variable1Document);
-		String[] names2 = this.extractLabels(processedStatements, this.variable2, this.variable2Document);
+	Matrix computeOneModeMatrix(ArrayList<ExportEvent> processedEvents, String aggregation, LocalDateTime start, LocalDateTime stop) {
 
-		if (processedStatements.size() == 0) {
+		// unique values
+		int[] qualifier = new int[] {0, 1};
+		String[] names1 = this.filteredEvents.stream().map(p -> p.getVariable1()).distinct().sorted().toArray(String[]::new);
+		String[] names2 = this.filteredEvents.stream().map(p -> p.getVariable2()).distinct().sorted().toArray(String[]::new);
+
+		if (processedEvents.size() == 0) {
 			double[][] m = new double[names1.length][names1.length];
 			Matrix mt = new Matrix(m, names1, names1, true, start, stop);
 			return mt;
 		}
 
-		String[] qualifierString;
-		int[] qualifierInteger = new int[] { 0 };
-		int qualifierLength = 1;
-		if (qualifier == null) {
-			// do nothing, go with qualifierLength = 1
-		} else if (!qualifierDocument && dataTypes.get(qualifier).equals("boolean")) {
-			qualifierInteger = new int[] {0, 1};
-			qualifierLength = 2;
-		} else if (!qualifierDocument && dataTypes.get(qualifier).equals("integer")) {
-			qualifierInteger = this.originalStatements
-					.stream()
-					.mapToInt(s -> (int) s.get(qualifier))
-					.distinct()
-					.sorted()
-					.toArray();
-			qualifierLength = qualifierInteger.length;
-		} else if (!qualifierDocument && dataTypes.get(qualifier).equals("short text")) {
-			qualifierString = this.originalStatements
-					.stream()
-					.map(s -> (String) ((Entity) s.get(qualifier)).getValue())
-					.distinct()
-					.sorted()
-					.toArray(String[]::new);
-			qualifierLength = qualifierString.length;
-		} else if (qualifierDocument) {
-			qualifierString = Arrays.stream(retrieveValues(processedStatements, this.qualifier, this.qualifierDocument))
-					.distinct()
-					.sorted()
-					.toArray(String[]::new);
-			qualifierLength = qualifierString.length;
-		}
-
-		double[][][] array = createArray(processedStatements, names1, names2);
+		double[][][] array = createArray(processedEvents);
 		double[][] mat1 = new double[names1.length][names1.length];  // square matrix for results
-		double range = Math.abs(qualifierInteger[qualifierInteger.length - 1] - qualifierInteger[0]);
 
 		double i1count = 0.0;
 		double i2count = 0.0;
@@ -1370,46 +881,25 @@ public class Exporter {
 						if (aggregation.equals("ignore")) {
 							i1count = 0.0;
 							i2count = 0.0;
-							for (int k = 0; k < qualifierLength; k++) {
+							for (int k = 0; k < qualifier.length; k++) {
 								i1count = i1count + array[i1][j][k];
 								i2count = i2count + array[i2][j][k];
 							}
 							mat1[i1][i2] = mat1[i1][i2] + i1count * i2count;
 						} else {
-							if (qualifierDocument || dataTypes.get(qualifier).equals("short text")) {
-								for (int k = 0; k < qualifierLength; k++) {
+							for (int k1 = 0; k1 < qualifier.length; k1++) {
+								for (int k2 = 0; k2 < qualifier.length; k2++) {
 									if (aggregation.equals("congruence")) {
-										mat1[i1][i2] = mat1[i1][i2] + (array[i1][j][k] * array[i2][j][k]); // multiply matches on the qualifier and add
+										// "congruence": sum up proximity of i1 and i2 per level of k, weighted by joint usage.
+										// In the binary case, this reduces to the sum of weighted matches per level of k
+										mat1[i1][i2] = mat1[i1][i2] + (array[i1][j][k1] * array[i2][j][k2] * (1.0 - ((Math.abs(qualifier[k1] - qualifier[k2])))));
 									} else if (aggregation.equals("conflict")) {
-										if (array[i1][j][k] > 0 && array[i2][j][k] == 0) {
-											mat1[i1][i2] = mat1[i1][i2] + array[i1][j][k]; // add counts where only i1 is active
-										} else if (array[i1][j][k] == 0 && array[i2][j][k] > 0) {
-											mat1[i1][i2] = mat1[i1][i2] + array[i2][j][k]; // add counts where only i2 is active
-										}
+										// "conflict": same as congruence, but distance instead of proximity
+										mat1[i1][i2] = mat1[i1][i2] + (array[i1][j][k1] * array[i2][j][k2] * ((Math.abs(qualifier[k1] - qualifier[k2]))));
 									} else if (aggregation.equals("subtract")) {
-										mat1[i1][i2] = mat1[i1][i2] + (array[i1][j][k] * array[i2][j][k]); // multiply matches on the qualifier and add
-										if (array[i1][j][k] > 0 && array[i2][j][k] == 0) {
-											mat1[i1][i2] = mat1[i1][i2] - array[i1][j][k]; // subtract counts where only i1 is active
-										} else if (array[i1][j][k] == 0 && array[i2][j][k] > 0) {
-											mat1[i1][i2] = mat1[i1][i2] - array[i2][j][k]; // subtract counts where only i2 is active
-										}
-									}
-								}
-							} else if (dataTypes.get(qualifier).equals("boolean") || dataTypes.get(qualifier).equals("integer")) {
-								for (int k1 = 0; k1 < qualifierLength; k1++) {
-									for (int k2 = 0; k2 < qualifierLength; k2++) {
-										if (aggregation.equals("congruence")) {
-											// "congruence": sum up proximity of i1 and i2 per level of k, weighted by joint usage.
-											// In the binary case, this reduces to the sum of weighted matches per level of k
-											mat1[i1][i2] = mat1[i1][i2] + (array[i1][j][k1] * array[i2][j][k2] * (1.0 - ((Math.abs(qualifierInteger[k1] - qualifierInteger[k2]) / range))));
-										} else if (aggregation.equals("conflict")) {
-											// "conflict": same as congruence, but distance instead of proximity
-											mat1[i1][i2] = mat1[i1][i2] + (array[i1][j][k1] * array[i2][j][k2] * ((Math.abs(qualifierInteger[k1] - qualifierInteger[k2]) / range)));
-										} else if (aggregation.equals("subtract")) {
-											// "subtract": congruence - conflict
-											mat1[i1][i2] = mat1[i1][i2] + (array[i1][j][k1] * array[i2][j][k2] * (1.0 - ((Math.abs(qualifierInteger[k1] - qualifierInteger[k2]) / range))));
-											mat1[i1][i2] = mat1[i1][i2] - (array[i1][j][k1] * array[i2][j][k2] * ((Math.abs(qualifierInteger[k1] - qualifierInteger[k2]) / range)));
-										}
+										// "subtract": congruence - conflict
+										mat1[i1][i2] = mat1[i1][i2] + (array[i1][j][k1] * array[i2][j][k2] * (1.0 - ((Math.abs(qualifier[k1] - qualifier[k2])))));
+										mat1[i1][i2] = mat1[i1][i2] - (array[i1][j][k1] * array[i2][j][k2] * ((Math.abs(qualifier[k1] - qualifier[k2]))));
 									}
 								}
 							}
@@ -1424,7 +914,7 @@ public class Exporter {
 						i1count = 0.0;
 						i2count = 0.0;
 						for (int j = 0; j < names2.length; j++) {
-							for (int k = 0; k < qualifierLength; k++) {
+							for (int k = 0; k < qualifier.length; k++) {
 								i1count = i1count + array[i1][j][k];
 								i2count = i2count + array[i2][j][k];
 							}
@@ -1435,7 +925,7 @@ public class Exporter {
 						double m01 = 0.0;
 						double m11 = 0.0;
 						for (int j = 0; j < names2.length; j++) {
-							for (int k = 0; k < qualifierLength; k++) {
+							for (int k = 0; k < qualifier.length; k++) {
 								if (array[i2][j][k] == 0) {
 									m10 = m10 + array[i1][j][k];
 								}
@@ -1452,7 +942,7 @@ public class Exporter {
 						i1count = 0.0;
 						i2count = 0.0;
 						for (int j = 0; j < names2.length; j++) {
-							for (int k = 0; k < qualifierLength; k++) {
+							for (int k = 0; k < qualifier.length; k++) {
 								i1count = i1count + array[i1][j][k];
 								i2count = i2count + array[i2][j][k];
 							}
@@ -1470,14 +960,14 @@ public class Exporter {
 
 		// does the matrix contain only integer values? (i.e., no normalization and boolean or short text qualifier)
 		boolean integerBoolean;
-		if (this.normalization.equals("no") && (aggregation.equals("ignore") || qualifierDocument || dataTypes.get(qualifier).equals("boolean") || dataTypes.get(qualifier).equals("short text"))) {
+		if (this.normalization.equals("no")) {
 			integerBoolean = true;
 		} else {
 			integerBoolean = false;
 		}
 
 		Matrix matrix = new Matrix(mat1, names1, names1, integerBoolean, start, stop);
-		matrix.setNumStatements(this.filteredStatements.size());
+		matrix.setNumStatements(this.filteredEvents.size());
 		return matrix;
 	}
 
@@ -1485,64 +975,35 @@ public class Exporter {
 	 * Wrapper method to compute two-mode network matrix with class settings.
 	 */
 	public void computeTwoModeMatrix() {
-		ArrayList<Matrix> matrices = new ArrayList<Matrix>(); 
-		matrices.add(this.computeTwoModeMatrix(this.filteredStatements,	this.startDateTime, this.stopDateTime));
+		ArrayList<Matrix> matrices = new ArrayList<Matrix>();
+		matrices.add(this.computeTwoModeMatrix(this.filteredEvents,	this.startDateTime, this.stopDateTime));
 		this.matrixResults = matrices;
 	}
 
 	/**
 	 * Create a two-mode network {@link Matrix}.
 	 *
-	 * @param processedStatements Usually the filtered list of export
+	 * @param processedEvents Usually the filtered list of export
 	 *   statements, but it can be a more processed list of export statements,
 	 *   for example for use in constructing a time window sequence of networks.
 	 * @param start Start date/time.
 	 * @param stop End date/time.
 	 * @return {@link Matrix Matrix} object containing a two-mode network matrix.
 	 */
-	private Matrix computeTwoModeMatrix(ArrayList<ExportStatement> processedStatements, LocalDateTime start, LocalDateTime stop) {
-		String[] names1 = this.extractLabels(processedStatements, this.variable1, this.variable1Document);
-		String[] names2 = this.extractLabels(processedStatements, this.variable2, this.variable2Document);
+	private Matrix computeTwoModeMatrix(ArrayList<ExportEvent> processedEvents, LocalDateTime start, LocalDateTime stop) {
 
-		if (processedStatements.size() == 0) {
+		// unique values
+		int[] qualifier = new int[] {0, 1};
+		String[] names1 = this.filteredEvents.stream().map(p -> p.getVariable1()).distinct().sorted().toArray(String[]::new);
+		String[] names2 = this.filteredEvents.stream().map(p -> p.getVariable2()).distinct().sorted().toArray(String[]::new);
+
+		if (processedEvents.size() == 0) {
 			double[][] m = new double[names1.length][names2.length];
 			Matrix mt = new Matrix(m, names1, names2, true, start, stop);
 			return mt;
 		}
 
-		String[] qualifierString = null;
-		int[] qualifierInteger = new int[] { 0 };
-		int qualifierLength = 1;
-		if (qualifier == null) {
-			// do nothing, go with qualifierLength = 1
-		} else if (!qualifierDocument && dataTypes.get(qualifier).equals("boolean")) {
-			qualifierInteger = new int[] {0, 1};
-			qualifierLength = 2;
-		} else if (!qualifierDocument && dataTypes.get(qualifier).equals("integer")) {
-			qualifierInteger = this.originalStatements
-					.stream()
-					.mapToInt(s -> (int) s.get(qualifier))
-					.distinct()
-					.sorted()
-					.toArray();
-			qualifierLength = qualifierInteger.length;
-		} else if (!qualifierDocument && dataTypes.get(qualifier).equals("short text")) {
-			qualifierString = this.originalStatements
-					.stream()
-					.map(s -> (String) ((Entity) s.get(qualifier)).getValue())
-					.distinct()
-					.sorted()
-					.toArray(String[]::new);
-			qualifierLength = qualifierString.length;
-		} else if (qualifierDocument) {
-			qualifierString = Arrays.stream(retrieveValues(processedStatements, this.qualifier, this.qualifierDocument))
-					.distinct()
-					.sorted()
-					.toArray(String[]::new);
-			qualifierLength = qualifierString.length;
-		}
-
-		double[][][] array = createArray(processedStatements, names1, names2);
+		double[][][] array = createArray(processedEvents);
 
 		// combine levels of the qualifier variable conditional on qualifier aggregation option
 		double[][] mat = new double[names1.length][names2.length];  // initialized with zeros
@@ -1553,46 +1014,25 @@ public class Exporter {
 					double[] vec = array[i][j]; // may be weighted, so create a second, binary vector vec2
 					int[] vec2 = new int[vec.length];
 					ArrayList qualVal;
-					if (qualifierDocument || dataTypes.get(qualifier).equals("short text")) {
-						qualVal = new ArrayList<String>();
-						for (int k = 0; k < vec.length; k++) {
-							if (vec[k] > 0) {
-								vec2[k] = 1;
-							}
-							assert qualifierString != null;
-							qualVal.add(qualifierString[k]);
+					qualVal = new ArrayList<Integer>();
+					for (int k = 0; k < vec.length; k++) {
+						if (vec[k] > 0) {
+							vec2[k] = 1;
 						}
-					} else {
-						qualVal = new ArrayList<Integer>();
-						for (int k = 0; k < vec.length; k++) {
-							if (vec[k] > 0) {
-								vec2[k] = 1;
-							}
-							qualVal.add(qualifierInteger[k]);
-						}
+						qualVal.add(qualifier[k]);
 					}
 					int lr = lexRank(vec2);
 					mat[i][j] = lr; // compute lexical rank, i.e., map the combination of values to a single integer
 					combinations.put(lr, qualVal); // the bijection needs to be stored for later reporting
 				} else {
-					for (int k = 0; k < qualifierLength; k++) {
+					for (int k = 0; k < qualifier.length; k++) {
 						if (this.qualifierAggregation.equals("ignore")) { // ignore
 							mat[i][j] = mat[i][j] + array[i][j][k]; // duplicates were already filtered out in the statement filter, so just add
 						} else if (this.qualifierAggregation.equals("subtract")) { // subtract
-							if (!qualifierDocument && dataTypes.get(qualifier).equals("integer")) {
-								if (qualifierInteger[k] < 0) { // subtract weighted absolute value
-									mat[i][j] = mat[i][j] - (Math.abs(qualifierInteger[k]) * array[i][j][k]);
-								} else if (qualifierInteger[k] >= 0) { // add weighted absolute value
-									mat[i][j] = mat[i][j] + (Math.abs(qualifierInteger[k]) * array[i][j][k]);
-								}
-							} else if (!qualifierDocument && dataTypes.get(qualifier).equals("boolean")) {
-								if (qualifierInteger[k] == 0) { // zero category: subtract number of times this happens from edge weight
-									mat[i][j] = mat[i][j] - array[i][j][k];
-								} else if (qualifierInteger[k] > 0) { // one category: add number of times this happens to edge weight
-									mat[i][j] = mat[i][j] + array[i][j][k];
-								}
-							} else if (qualifierDocument || dataTypes.get(qualifier).equals("short text")) {
-								mat[i][j] = mat[i][j] + array[i][j][k]; // nothing to subtract because there is no negative mention with short text variables
+							if (qualifier[k] == 0) { // zero category: subtract number of times this happens from edge weight
+								mat[i][j] = mat[i][j] - array[i][j][k];
+							} else if (qualifier[k] > 0) { // one category: add number of times this happens to edge weight
+								mat[i][j] = mat[i][j] + array[i][j][k];
 							}
 						}
 					}
@@ -1644,7 +1084,7 @@ public class Exporter {
 					}
 				} else if (qualifierAggregation.equals("subtract")) { // iterate through array and sum for different levels
 					for (int j = 0; j < names2.length; j++) {
-						for (int k = 0; k < qualifierLength; k++) {
+						for (int k = 0; k < qualifier.length; k++) {
 							currentDenominator = currentDenominator + array[i][j][k];
 						}
 					}
@@ -1678,7 +1118,7 @@ public class Exporter {
 					}
 				} else if (this.qualifierAggregation.equals("subtract")) { // iterate through array and sum for different levels
 					for (int j = 0; j < names1.length; j++) {
-						for (int k = 0; k < qualifierLength; k++) {
+						for (int k = 0; k < qualifier.length; k++) {
 							currentDenominator = currentDenominator + array[j][i][k];
 						}
 					}
@@ -1695,238 +1135,15 @@ public class Exporter {
 
 		// create Matrix object and return
 		Matrix matrix = new Matrix(mat, names1, names2, integerBoolean, start, stop); // assemble the Matrix object with labels
-		matrix.setNumStatements(this.filteredStatements.size());
+		matrix.setNumStatements(this.filteredEvents.size());
 		return matrix;
-	}
-
-	/**
-	 * Create a series of one-mode or two-mode networks using a moving time window.
-	 */
-	public void computeTimeWindowMatrices() {
-		ArrayList<Matrix> timeWindowMatrices = new ArrayList<Matrix>();
-		Collections.sort(this.filteredStatements, new ExportStatementComparator()); // probably not necessary, but can't hurt to have it
-		ArrayList<ExportStatement> currentWindowStatements = new ArrayList<ExportStatement>(); // holds all statements in the current time window
-		ArrayList<ExportStatement> startStatements = new ArrayList<ExportStatement>(); // holds all statements corresponding to the time stamp of the first statement in the window
-		ArrayList<ExportStatement> stopStatements = new ArrayList<ExportStatement>(); // holds all statements corresponding to the time stamp of the last statement in the window
-		ArrayList<ExportStatement> beforeStatements = new ArrayList<ExportStatement>(); // holds all statements between (and excluding) the time stamp of the first statement in the window and the focal statement
-		ArrayList<ExportStatement> afterStatements = new ArrayList<ExportStatement>(); // holds all statements between (and excluding) the focal statement and the time stamp of the last statement in the window
-		if (this.timeWindow.equals("events")) {
-			try (ProgressBar pb = new ProgressBar("Time window matrices...", this.filteredStatements.size())) {
-				pb.stepTo(0);
-				if (this.windowSize < 2) {
-					LogEvent l = new LogEvent(Logger.WARNING,
-							"Time window size < 2 was chosen.",
-							"When exporting a network, the time window size must be at least two events. With one statement event, there can be no ties in the network.");
-					Dna.logger.log(l);
-				}
-				int iteratorStart, iteratorStop, i, j;
-				int samples;
-				for (int t = 0; t < this.filteredStatements.size(); t++) {
-					int halfDuration = (int) Math.floor(this.windowSize / 2);
-					iteratorStart = t - halfDuration;
-					iteratorStop = t + halfDuration;
-
-					startStatements.clear();
-					stopStatements.clear();
-					beforeStatements.clear();
-					afterStatements.clear();
-					if (iteratorStart >= 0 && iteratorStop < this.filteredStatements.size()) {
-						for (i = 0; i < this.filteredStatements.size(); i++) {
-							if (this.filteredStatements.get(i).getDateTime().equals(this.filteredStatements.get(iteratorStart).getDateTime())) {
-								startStatements.add(this.filteredStatements.get(i));
-							}
-							if (this.filteredStatements.get(i).getDateTime().equals(this.filteredStatements.get(iteratorStop).getDateTime())) {
-								stopStatements.add(this.filteredStatements.get(i));
-							}
-							if (this.filteredStatements.get(i).getDateTime().isAfter(this.filteredStatements.get(iteratorStart).getDateTime()) && i < t) {
-								beforeStatements.add(this.filteredStatements.get(i));
-							}
-							if (this.filteredStatements.get(i).getDateTime().isBefore(this.filteredStatements.get(iteratorStop).getDateTime()) && i > t) {
-								afterStatements.add(this.filteredStatements.get(i));
-							}
-						}
-						if (startStatements.size() + beforeStatements.size() > halfDuration || stopStatements.size() + afterStatements.size() > halfDuration) {
-							samples = 1; // this number should be larger than the one below, for example 10 (for 10 random combinations of start and stop statements)
-						} else {
-							samples = 1;
-						}
-
-						for (j = 0; j < samples; j++) {
-							// add statements from start, before, after, and stop set to current window
-							currentWindowStatements.clear();
-							Collections.shuffle(startStatements);
-							for (i = 0; i < halfDuration - beforeStatements.size(); i++) {
-								currentWindowStatements.add(startStatements.get(i));
-							}
-							currentWindowStatements.addAll(beforeStatements);
-							currentWindowStatements.add(this.filteredStatements.get(t));
-							currentWindowStatements.addAll(afterStatements);
-							Collections.shuffle(stopStatements);
-							for (i = 0; i < halfDuration - afterStatements.size(); i++) {
-								currentWindowStatements.add(stopStatements.get(i));
-							}
-
-							// convert time window to network and add to list
-							if (currentWindowStatements.size() > 0) {
-								int firstDocId = currentWindowStatements.get(0).getDocumentId();
-								LocalDateTime first = null;
-								for (i = 0; i < this.documents.size(); i++) {
-									if (firstDocId == this.documents.get(i).getId()) {
-										first = documents.get(i).getDateTime();
-										break;
-									}
-								}
-								int lastDocId = currentWindowStatements.get(currentWindowStatements.size() - 1).getDocumentId();
-								LocalDateTime last = null;
-								for (i = this.documents.size() - 1; i > -1; i--) {
-									if (lastDocId == this.documents.get(i).getId()) {
-										last = this.documents.get(i).getDateTime();
-										break;
-									}
-								}
-								Matrix m;
-								if (this.networkType.equals("twomode")) {
-									m = computeTwoModeMatrix(currentWindowStatements, first, last);
-									m.setDateTime(this.filteredStatements.get(t).getDateTime());
-									m.setNumStatements(currentWindowStatements.size());
-									timeWindowMatrices.add(m);
-								} else {
-									if (qualifierAggregation.equals("congruence & conflict")) { // note: the networks are saved in alternating order and need to be disentangled
-										m = computeOneModeMatrix(currentWindowStatements, "congruence", first, last);
-										m.setDateTime(this.filteredStatements.get(t).getDateTime());
-										m.setNumStatements(currentWindowStatements.size());
-										timeWindowMatrices.add(m);
-										m = computeOneModeMatrix(currentWindowStatements, "conflict", first, last);
-										m.setDateTime(this.filteredStatements.get(t).getDateTime());
-										m.setNumStatements(currentWindowStatements.size());
-										timeWindowMatrices.add(m);
-									} else {
-										m = computeOneModeMatrix(currentWindowStatements, this.qualifierAggregation, first, last);
-										m.setDateTime(this.filteredStatements.get(t).getDateTime());
-										m.setNumStatements(currentWindowStatements.size());
-										timeWindowMatrices.add(m);
-									}
-
-								}
-							}
-						}
-					}
-					pb.stepTo(t + 1);
-				}
-			}
-		} else {
-			try (ProgressBar pb = new ProgressBar("Time window matrices...", 100)) {
-				long percent = 0;
-				pb.stepTo(percent);
-				LocalDateTime startCalendar = this.startDateTime; // start of statement list
-				LocalDateTime stopCalendar = this.stopDateTime; // end of statement list
-				LocalDateTime currentTime = this.startDateTime; // current time while progressing through list of statements
-				LocalDateTime windowStart; // start of the time window
-				LocalDateTime windowStop; // end of the time window
-				LocalDateTime iTime; // time of the statement to be potentially added to the time slice
-				int addition = 0;
-				while (!currentTime.isAfter(stopCalendar)) {
-					LocalDateTime matrixTime = currentTime;
-					windowStart = matrixTime;
-					windowStop = matrixTime;
-					currentWindowStatements.clear();
-					addition = (int) Math.round(((double) windowSize - 1) / 2);
-					if (timeWindow.equals("seconds")) {
-						windowStart = windowStart.minusSeconds(addition);
-						windowStop = windowStop.plusSeconds(addition);
-						currentTime = currentTime.plusSeconds(1);
-					} else if (timeWindow.equals("minutes")) {
-						windowStart = windowStart.minusMinutes(addition);
-						windowStop = windowStop.plusMinutes(addition);
-						currentTime = currentTime.plusMinutes(1);
-					} else if (timeWindow.equals("hours")) {
-						windowStart = windowStart.minusHours(addition);
-						windowStop = windowStop.plusHours(addition);
-						currentTime = currentTime.plusHours(1);
-					} else if (timeWindow.equals("days")) {
-						windowStart = windowStart.minusDays(addition);
-						windowStop = windowStop.plusDays(addition);
-						currentTime = currentTime.plusDays(1);
-					} else if (timeWindow.equals("weeks")) {
-						windowStart = windowStart.minusWeeks(addition);
-						windowStop = windowStop.plusWeeks(addition);
-						currentTime = currentTime.plusWeeks(1);
-					} else if (timeWindow.equals("months")) {
-						windowStart = windowStart.minusMonths(addition);
-						windowStop = windowStop.plusMonths(addition);
-						currentTime = currentTime.plusMonths(1);
-					} else if (timeWindow.equals("years")) {
-						windowStart = windowStart.minusYears(addition);
-						windowStop = windowStop.plusYears(addition);
-						currentTime = currentTime.plusYears(1);
-					}
-					if (!windowStart.isBefore(startCalendar) && !windowStop.isAfter(stopCalendar)) {
-						for (int i = 0; i < this.filteredStatements.size(); i++) {
-							iTime = this.filteredStatements.get(i).getDateTime();
-							if (!iTime.isBefore(windowStart) && !iTime.isAfter(windowStop)) {
-								currentWindowStatements.add(this.filteredStatements.get(i));
-							}
-						}
-						if (currentWindowStatements.size() > 0) {
-							Matrix m;
-							if (this.networkType.equals("twomode")) {
-								m = computeTwoModeMatrix(currentWindowStatements, windowStart, windowStop);
-							} else {
-								m = computeOneModeMatrix(currentWindowStatements, this.qualifierAggregation, windowStart, windowStop);
-							}
-							m.setDateTime(matrixTime);
-							m.setNumStatements(currentWindowStatements.size());
-							timeWindowMatrices.add(m);
-						}
-					}
-					percent = 100 * (currentTime.toEpochSecond(ZoneOffset.UTC) - startCalendar.toEpochSecond(ZoneOffset.UTC)) / (stopCalendar.toEpochSecond(ZoneOffset.UTC) - startCalendar.toEpochSecond(ZoneOffset.UTC));
-					pb.stepTo(percent);
-				}
-			}
-		}
-		this.matrixResults = timeWindowMatrices;
-	}
-	
-	/**
-	 * Get the computed network matrix results as an array list.
-	 * 
-	 * @return An array list of {@link Matrix Matrix} objects. If time window functionality was used, there are
-	 * multiple matrices in the list, otherwise just one.
-	 */
-	public ArrayList<Matrix> getMatrixResults() {
-		if (this.matrixResults == null) {
-			LogEvent l = new LogEvent(Logger.ERROR,
-					"Results have not been computed and could not be returned.",
-					"The network matrix results were not computed and cannot be returned. A null object will be returned instead.");
-			Dna.logger.log(l);
-		}
-		return this.matrixResults;
-	}
-
-	/**
-	 * Get the computed network matrix results as an array.
-	 *
-	 * @return An array of {@link Matrix Matrix} objects. If time window functionality was used, there are
-	 * multiple matrices in the list, otherwise just one.
-	 */
-	public Matrix[] getMatrixResultsArray() {
-		if (this.matrixResults == null) {
-			LogEvent l = new LogEvent(Logger.ERROR,
-					"Results have not been computed and could not be returned.",
-					"The network matrix results were not computed and cannot be returned. A null object will be returned instead.");
-			Dna.logger.log(l);
-		}
-		return this.matrixResults.stream().toArray(Matrix[]::new);
 	}
 
 	/**
 	 * Write results to file.
 	 */
-	/*
 	public void exportToFile() {
-		if (networkType.equals("eventlist") && fileFormat.equals("csv")) {
-			eventCSV();
-		} else if (fileFormat.equals("csv")) {
+		if (fileFormat.equals("csv")) {
 			exportCSV();
 		} else if (fileFormat.equals("dl")) {
 			exportDL();
@@ -1934,71 +1151,6 @@ public class Exporter {
 			exportGraphml();
 		}
 	}
-	*/
-
-	/**
-	 * Write an event list to a CSV file. The event list contains all filtered
-	 * statements including their IDs, date/time stamps, variable values, text,
-	 * and document meta-data. There is one statement per row. The event list
-	 * can be used for estimating relational event models.
-	 */
-	/*
-	private void eventCSV() {
-		try (ProgressBar pb = new ProgressBar("Exporting events...", this.filteredStatements.size())) {
-			pb.stepTo(0);
-			String key;
-			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-			try {
-				BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(this.outfile), "UTF-8"));
-				out.write("\"statement_id\";\"time\"");
-				for (int i = 0; i < statementType.getVariables().size(); i++) {
-					out.write(";\"" + statementType.getVariables().get(i).getKey() + "\"");
-				}
-				out.write(";\"start_position\";\"stop_position\";\"text\";\"coder\";\"document_id\";\"document_title\";\"document_author\";\"document_source\";\"document_section\";\"document_type\"");
-				ExportStatement s;
-				for (int i = 0; i < this.filteredStatements.size(); i++) {
-					s = this.filteredStatements.get(i);
-					out.newLine();
-					out.write(Integer.valueOf(s.getId()).toString()); // statement ID as a string
-					out.write(";" + s.getDateTime().format(formatter));
-					for (int j = 0; j < statementType.getVariables().size(); j++) {
-						key = statementType.getVariables().get(j).getKey();
-						if (this.dataTypes.get(key).equals("short text")) {
-							out.write(";\"" + (((Entity) s.get(key)).getValue()).replaceAll(";", ",").replaceAll("\"", "'") + "\"");
-						} else if (this.dataTypes.get(key).equals("long text")) {
-							out.write(";\"" + ((String) s.get(key)).replaceAll(";", ",").replaceAll("\"", "'") + "\"");
-						} else {
-							out.write(";" + s.get(key));
-						}
-					}
-					out.write(";" + Integer.valueOf(s.getStart()).toString());
-					out.write(";" + Integer.valueOf(s.getStop()).toString());
-					out.write(";\"" + s.getText().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
-					out.write(";" + Integer.valueOf(s.getCoderId()).toString());
-					out.write(";" + s.getDocumentIdAsString());
-					out.write(";\"" + s.getTitle().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
-					out.write(";\"" + s.getAuthor().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
-					out.write(";\"" + s.getSource().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
-					out.write(";\"" + s.getSection().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
-					out.write(";\"" + s.getType().replaceAll(";", ",").replaceAll("\"", "'") + "\"");
-					pb.stepTo(i + 1);
-				}
-				out.close();
-				LogEvent l = new LogEvent(Logger.MESSAGE,
-						"Event list has been exported.",
-						"Event list has been exported to \"" + this.outfile + "\".");
-				Dna.logger.log(l);
-			} catch (IOException e) {
-				LogEvent l = new LogEvent(Logger.ERROR,
-						"Error while saving event list as CSV file.",
-						"Tried to save an event list to CSV file \"" + this.outfile + "\", but an error occurred. See stack trace.",
-						e);
-				Dna.logger.log(l);
-			}
-			pb.stepTo(this.filteredStatements.size());
-		}
-	}
-	*/
 
 	/**
 	 * Export {@link Matrix Matrix} to a CSV matrix file.
@@ -2139,7 +1291,6 @@ public class Exporter {
 	/**
 	 * Export filter for graphML files.
 	 */
-	/*
 	private void exportGraphml() {
 		try (ProgressBar pb = new ProgressBar("Exporting networks...", this.matrixResults.size())) {
 			pb.stepTo(0);
@@ -2151,32 +1302,36 @@ public class Exporter {
 			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
 			// get variable IDs for variable 1 and variable 2
-			int variable1Id = this.statementType.getVariables()
-					.stream()
-					.filter(v -> v.getKey().equals(this.variable1))
-					.mapToInt(v -> v.getVariableId())
-					.findFirst()
-					.getAsInt();
-			int variable2Id = this.statementType.getVariables()
-					.stream()
-					.filter(v -> v.getKey().equals(this.variable2))
-					.mapToInt(v -> v.getVariableId())
-					.findFirst()
-					.getAsInt();
+			int variable1Id = role1.getId();
+			int variable2Id = role2.getId();
 
 			// get attribute variable names for variable 1 and variable 2
 			ArrayList<String> attributeVariables1 = Dna.sql.getAttributeVariables(variable1Id);
 			ArrayList<String> attributeVariables2 = Dna.sql.getAttributeVariables(variable2Id);
 
 			// get entities with attribute values for variable 1 and variable 2 and save in hash maps
-			ArrayList<Integer> variableIds = new ArrayList<Integer>();
-			variableIds.add(variable1Id);
-			variableIds.add(variable2Id);
-			ArrayList<ArrayList<Entity>> entities = Dna.sql.getEntities(variableIds, true);
-			HashMap<String, Entity> entityMap1 = new HashMap<String, Entity>();
-			HashMap<String, Entity> entityMap2 = new HashMap<String, Entity>();
-			entities.get(0).stream().forEach(entity -> entityMap1.put(entity.getValue(), entity));
-			entities.get(1).stream().forEach(entity -> entityMap2.put(entity.getValue(), entity));
+			ArrayList<RoleVariableLink> rvl = Dna.sql.getRoleVariableLinks(this.statementType.getId());
+			ArrayList<Integer> var1IDs = new ArrayList<Integer>();
+			ArrayList<Integer> var2IDs = new ArrayList<Integer>();
+			for (int i = 0; i < rvl.size(); i++) {
+				if (rvl.get(i).getRoleId() == Exporter.this.role1.getId()) {
+					var1IDs.add(rvl.get(i).getVariableId());
+				}
+				if (rvl.get(i).getRoleId() == Exporter.this.role2.getId()) {
+					var2IDs.add(rvl.get(i).getVariableId());
+				}
+			}
+			ArrayList<Entity> entities = Dna.sql.getEntities(this.statementType.getId());
+			HashMap<String, Entity> entityMap1 = new HashMap<>();
+			HashMap<String, Entity> entityMap2 = new HashMap<>();
+			for (int i = 0; i < entities.size(); i++) {
+				if (var1IDs.contains(entities.get(i).getVariableId())) {
+					entityMap1.put(entities.get(i).getValue(), entities.get(i));
+				}
+				if (var2IDs.contains(entities.get(i).getVariableId())) {
+					entityMap2.put(entities.get(i).getValue(), entities.get(i));
+				}
+			}
 
 			Matrix m;
 			for (int k = 0; k < this.matrixResults.size(); k++) {
@@ -2190,8 +1345,8 @@ public class Exporter {
 				}
 
 				// frequencies
-				String[] values1 = this.retrieveValues(this.filteredStatements, this.variable1, this.variable1Document);
-				String[] values2 = this.retrieveValues(this.filteredStatements, this.variable2, this.variable2Document);
+				String[] values1 = this.filteredEvents.stream().map(e -> e.getVariable1()).toArray(String[]::new);
+				String[] values2 = this.filteredEvents.stream().map(e -> e.getVariable2()).toArray(String[]::new);
 				int[] frequencies1 = this.countFrequencies(values1, m.getRowNames());
 				int[] frequencies2 = this.countFrequencies(values2, m.getColumnNames());
 
@@ -2212,13 +1367,13 @@ public class Exporter {
 				}
 				for (int i = 0; i < rn.length; i++) {
 					names[i] = rn[i];
-					variables[i] = this.variable1;
+					variables[i] = this.role1.getRoleName();
 					frequencies[i] = frequencies1[i];
 				}
 				if (this.networkType.equals("twomode")) {
 					for (int i = 0; i < cn.length; i++) {
 						names[i + rn.length] = cn[i];
-						variables[i + rn.length] = this.variable2;
+						variables[i + rn.length] = this.role2.getRoleName();
 						frequencies[i + rn.length] = frequencies2[i];
 					}
 				}
@@ -2479,7 +1634,7 @@ public class Exporter {
 							Element yPolyLineEdge = new Element("PolyLineEdge", yNs);
 
 							Element yLineStyle = new Element("LineStyle", yNs);
-							if (qualifierAggregation.equals("combine") && dataTypes.get(qualifier).equals("boolean")) {
+							if (qualifierAggregation.equals("combine")) {
 								if (m.getMatrix()[i][j] == 1.0) {
 									yLineStyle.setAttribute("color", "#00ff00");
 								} else if (m.getMatrix()[i][j] == 2.0) {
@@ -2535,495 +1690,6 @@ public class Exporter {
 				pb.stepTo(k + 1);
 			}
 			pb.stepTo(this.matrixResults.size());
-		}
-	}
-	*/
-
-	/**
-	 * Return original (unfiltered) statements.
-	 *
-	 * @return Original (unfiltered) statements.
-	 */
-	public ArrayList<ExportStatement> getOriginalStatements() {
-		return this.originalStatements;
-	}
-
-	/**
-	 * Return filtered statements.
-	 *
-	 * @return Filtered statements.
-	 */
-	public ArrayList<ExportStatement> getFilteredStatements() {
-		return this.filteredStatements;
-	}
-
-	/**
-	 * Compute data for creating a barplot with value frequencies by qualifier value.
-	 *
-	 * @return Barplot data for the filtered statements.
-	 */
-	/*
-	public BarplotResult generateBarplotData() {
-		// what variable ID corresponds to variable 1?
-		int variableId = this.statementType.getVariables()
-				.stream()
-				.filter(v -> v.getKey().equals(this.variable1))
-				.mapToInt(v -> v.getVariableId())
-				.findFirst()
-				.getAsInt();
-
-		// what attribute variables exist for this variable?
-		String[] attributeVariables = Stream.concat(Stream.of("Color"), Dna.sql.getAttributeVariables(variableId).stream()).toArray(String[]::new); // include "color" as first element
-
-		// extract distinct entities from filtered statements
-		Set<Integer> nameSet = new HashSet<>();
-		ArrayList<Entity> entities = this.filteredStatements
-				.stream()
-				.map(s -> (Entity) s.get(this.variable1))
-				.filter(e -> nameSet.add(e.getId())) // .distinct() has a bug, so add to a name set instead
-				.sorted()
-				.collect(Collectors.toCollection(ArrayList::new));
-		String[] values = entities
-				.stream()
-				.map(e -> e.getValue())
-				.toArray(String[]::new);
-
-		// create attribute 2D String array (entity label x (color + attribute variable))
-		String[][] attributes = new String[entities.size()][attributeVariables.length]; // attribute variables including "color" as first element
-		String[] colors = entities
-				.stream()
-				.map(e -> String.format("#%02X%02X%02X", e.getColor().getRed(), e.getColor().getGreen(), e.getColor().getBlue()))
-				.toArray(String[]::new);
-		for (int i = 0; i < entities.size(); i ++) {
-			attributes[i][0] = colors[i];
-			for (int j = 1; j < attributeVariables.length; j++) {
-				attributes[i][j] = entities.get(i).getAttributeValues().get(attributeVariables[j]);
-			}
-		}
-
-		// create an int array of all distinct qualifier values that occur in at least one statement
-		int[] intScale = new int[] {1};
-		if (this.qualifier != null) {
-			intScale = new int[] {0, 1};
-			boolean integer = this.statementType.getVariables()
-					.stream()
-					.filter(v -> v.getKey().equals(this.qualifier))
-					.map(v -> v.getDataType().equals("integer"))
-					.findFirst()
-					.get();
-			if (integer) {
-				intScale = this.filteredStatements
-						.stream()
-						.mapToInt(s -> (int) s.get(this.qualifier))
-						.distinct()
-						.sorted()
-						.toArray();
-			}
-		}
-
-
-		// count qualifier occurrences per value
-		int[][] counts = new int[entities.size()][intScale.length];
-		for (int i = 0; i < entities.size(); i++) {
-			for (int j = 0; j < intScale.length; j++) {
-				final int entityId = entities.get(i).getId();
-				final int q = intScale[j];
-				counts[i][j] = (int) this.filteredStatements
-						.stream()
-						.filter(s -> ((Entity) s.get(this.variable1)).getId() == entityId && (this.qualifier == null || (int) s.get(this.qualifier) == q))
-						.count();
-			}
-		}
-
-		// assemble and return data
-		return new BarplotResult(this.variable1, values, counts, attributes, intScale, attributeVariables);
-	}
-	*/
-
-	/**
-	 * Partition the discourse network into a backbone and redundant set of second-mode entities using penalised
-	 * spectral distances and simulated annealing. This method prepares the data before the algorithm starts.
-	 *
-	 * @param p Penalty parameter.
-	 * @param T Number of iterations.
-	 */
-	public void backbone(double p, int T) {
-		this.p = p;
-		this.T = T;
-		this.isolates = false; // no isolates initially for full matrix; will be set to true after full matrix has been computed
-
-		// initial values before iterations start
-		this.originalStatements = this.filteredStatements; // to ensure not all isolates are included later
-
-		// full set of concepts C
-		fullConcepts = this.extractLabels(this.filteredStatements, this.variable2, this.variable2Document);
-
-		// full network matrix Y against which we compare in every iteration
-		fullMatrix = this.computeOneModeMatrix(this.filteredStatements, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
-		this.isolates = true; // include isolates in the iterations; will be adjusted to full matrix without isolates manually each time
-
-		// compute normalised eigenvalues for the full matrix; no need to recompute every time as they do not change
-		eigenvaluesFull = computeNormalizedEigenvalues(fullMatrix.getMatrix());
-
-		// pick a random concept c_j from C and save its index
-		int randomConceptIndex = ThreadLocalRandom.current().nextInt(0, fullConcepts.length);
-
-		// final backbone list B, which contains only one random concept initially but will contain the final backbone set in the end
-		finalBackboneList = new ArrayList<String>();
-
-		// add the one uniformly sampled concept c_j to the backbone as the initial solution at t = 0: B <- {c_j}
-		finalBackboneList.add(fullConcepts[randomConceptIndex]);
-
-		// final redundant set R, which is initially C without c_j
-		finalRedundantList = Arrays
-				.stream(fullConcepts)
-				.filter(c -> !c.equals(fullConcepts[randomConceptIndex]))
-				.collect(Collectors.toCollection(ArrayList::new));
-
-		// final statement list: filter the statement list by only retaining those statements that are in the final backbone set B
-		finalStatementList = this.filteredStatements
-				.stream()
-				.filter(s -> finalBackboneList.contains(((Entity) s.get(this.variable2)).getValue()))
-				.collect(Collectors.toCollection(ArrayList::new));
-
-		// final matrix based on the initial final backbone set, Y^B, which is initially identical to the previous matrix
-		finalMatrix = this.computeOneModeMatrix(finalStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
-
-		// create an initial current backbone set B_0, also with the one c_j concept like in B: B_0 <- {c_j}
-		currentBackboneList = new ArrayList<String>();
-		currentBackboneList.add(fullConcepts[randomConceptIndex]);
-
-		// create an initial current redundant set R_t, which is C without c_j
-		currentRedundantList = Arrays
-				.stream(fullConcepts)
-				.filter(c -> !c.equals(fullConcepts[randomConceptIndex]))
-				.collect(Collectors.toCollection(ArrayList::new));
-
-		// filter the statement list by only retaining those statements that are in the initial current backbone set B_0
-		currentStatementList = this.filteredStatements
-				.stream()
-				.filter(s -> currentBackboneList.contains(((Entity) s.get(this.variable2)).getValue()))
-				.collect(Collectors.toCollection(ArrayList::new));
-
-		// create initial current matrix at t = 0
-		currentMatrix = this.computeOneModeMatrix(currentStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
-
-		// initialise (empty) action set S
-		this.actionList = new ArrayList<String>();
-
-		// initialise selected action s
-		selectedAction = "";
-
-		// initialise the candidate backbone set at t, B^*_t
-		candidateBackboneList = new ArrayList<String>();
-
-		// initialise the candidate redundant set at t, R^*_t
-		candidateRedundantList = new ArrayList<String>();
-
-		// declare loss comparison result variables
-		oldLoss = 0.0;
-		newLoss = 0.0;
-		finalLoss = 0.0;
-		accept = false;
-
-		// reporting
-		temperatureLog = new ArrayList<Double>();
-		acceptanceProbabilityLog = new ArrayList<Double>();
-		acceptedLog = new ArrayList<Integer>();
-		penalizedBackboneLossLog = new ArrayList<Double>();
-		proposedBackboneSizeLog = new ArrayList<Integer>();
-		acceptedBackboneSizeLog = new ArrayList<Integer>();
-		finalBackboneSizeLog = new ArrayList<Integer>();
-		acceptanceRatioLastHundredIterationsLog = new ArrayList<Double>();
-
-		// matrix algebra declarations
-		eigenvaluesCurrent = new double[0];
-
-		// set to first iteration and start simulated annealing
-		t = 1;
-	}
-
-	/**
-	 * Get the current iteration {@code t} of the simulated annealing algorithm.
-	 *
-	 * @return Current iteration {@code t}.
-	 */
-	public int getCurrentT() {
-		return this.t;
-	}
-
-	/**
-	 * Set the current iteration {@code t} of the simulated annealing algorithm.
-	 *
-	 * @return Current iteration {@code t}.
-	 */
-	public void setCurrentT(int t) {
-		this.t = t;
-	}
-
-	/**
-	 * Execute the next iteration of the simulated annealing backbone algorithm.
-	 */
-	public void iterateBackbone() {
-		// first step: make a random move by adding, removing, or swapping a concept and computing a new candidate
-		actionList.clear(); // clear the set of possible actions and repopulate, depending on solution size
-		if (currentBackboneList.size() < 2) { // if there is only one concept, don't remove it because empty backbones do not work
-			actionList.add("add");
-			actionList.add("swap");
-		} else if (currentBackboneList.size() > fullConcepts.length - 2) { // do not create a backbone with all concepts because it would be useless
-			actionList.add("remove");
-			actionList.add("swap");
-		} else { // everything in between one and |C| - 1 concepts: add all three possible moves to the action set
-			actionList.add("add");
-			actionList.add("remove");
-			actionList.add("swap");
-		}
-		Collections.shuffle(actionList); // randomly re-order the action set...
-		selectedAction = actionList.get(0); // and draw the first action (i.e., pick a random action)
-		candidateBackboneList.clear(); // create a candidate copy of the current backbone list, to be modified
-		candidateBackboneList.addAll(currentBackboneList);
-		candidateRedundantList.clear(); // create a candidate copy of the current redundant list, to be modified
-		candidateRedundantList.addAll(currentRedundantList);
-		if (selectedAction.equals("add")) { // if we add a concept...
-			Collections.shuffle(candidateRedundantList); // randomly re-order the current redundant list...
-			candidateBackboneList.add(candidateRedundantList.get(0)); // add the first concept from the redundant list to the backbone...
-			candidateRedundantList.remove(0); // and delete it in turn from the redundant list
-		} else if (selectedAction.equals("remove")) { // if we remove a concept...
-			Collections.shuffle(candidateBackboneList); // randomly re-order the backbone list to pick a random concept for removal as the first element...
-			candidateRedundantList.add(candidateBackboneList.get(0)); // add the selected concept to the redundant list...
-			candidateBackboneList.remove(0); // and remove it from the backbone list
-		} else if (selectedAction.equals("swap")) { //if we swap out a concept...
-			Collections.shuffle(candidateBackboneList); // re-order the backbone list...
-			Collections.shuffle(candidateRedundantList); // re-order the redundant list...
-			candidateBackboneList.add(candidateRedundantList.get(0)); // add the first (random) redundant concept to the backbone list...
-			candidateRedundantList.remove(0); // then remove it from the redundant list...
-			candidateRedundantList.add(candidateBackboneList.get(0)); // add the first (random) backbone concept to the redundant list...
-			candidateBackboneList.remove(0); // then remove it from the backbone list
-		}
-		proposedBackboneSizeLog.add(candidateBackboneList.size()); // log number of concepts in candidate backbone in the current iteration
-		// after executing the action, filter the statement list based on the candidate backbone set B^*_t in order to create the candidate matrix
-		candidateStatementList = this.filteredStatements
-				.stream()
-				.filter(s -> candidateBackboneList.contains(((Entity) s.get(this.variable2)).getValue()))
-				.collect(Collectors.toCollection(ArrayList::new));
-		// create candidate matrix after filtering the statements based on the action that was executed
-		candidateMatrix = this.computeOneModeMatrix(candidateStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
-		candidateMatrix = this.reduceCandidateMatrix(candidateMatrix, fullMatrix.getRowNames()); // ensure it has the right dimensions by purging isolates relative to the full matrix
-
-		// second step: compare loss between full and previous matrix to loss between full and candidate matrix and accept or reject candidate
-		temperature = 1 - (1 / (1 + Math.exp(-(-5 + (12.0 / T) * t)))); // temperature
-		temperatureLog.add(temperature);
-		eigenvaluesCurrent = computeNormalizedEigenvalues(currentMatrix.getMatrix()); // normalised eigenvalues for the current matrix
-		eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix()); // normalised eigenvalues for the candidate matrix
-		oldLoss = penalizedLoss(eigenvaluesFull, eigenvaluesCurrent, p, currentBackboneList.size(), fullConcepts.length); // spectral distance between full and previous matrix
-		newLoss = penalizedLoss(eigenvaluesFull, eigenvaluesCandidate, p, candidateBackboneList.size(), fullConcepts.length); // spectral distance between full and candidate matrix
-		penalizedBackboneLossLog.add(newLoss); // log the penalised spectral distance between full and candidate solution
-		accept = false;
-		if (newLoss < oldLoss) { // if candidate is better than previous matrix, adopt it as current solution
-			accept = true; // flag this solution for acceptance
-			acceptanceProbabilityLog.add(-1.0); // log the acceptance probability as -1.0; technically it should be 1.0 because the solution was better and hence accepted, but it would be useless for plotting the acceptance probabilities as a diagnostic tool
-			eigenvaluesFinal = computeNormalizedEigenvalues(currentMatrix.getMatrix()); // normalised eigenvalues for the current matrix
-			finalLoss = penalizedLoss(eigenvaluesFull, eigenvaluesFinal, p, finalBackboneList.size(), fullConcepts.length); // test if also better than global optimum so far
-			if (newLoss <= finalLoss) { // if better than the best solution, adopt candidate as new final backbone solution
-				finalBackboneList.clear(); // clear the best solution list
-				finalBackboneList.addAll(candidateBackboneList); // and populate it with the concepts from the candidate solution instead
-				finalRedundantList.clear(); // same with the redundant list
-				finalRedundantList.addAll(candidateRedundantList);
-				finalStatementList.clear(); // same with the final list of statements
-				finalStatementList.addAll(candidateStatementList);
-				finalMatrix = new Matrix(candidateMatrix); // save the candidate matrix as best solution matrix
-			}
-		} else { // if the solution is worse than the previous one, apply Hastings ratio and temperature and compare with random number
-			r = Math.random(); // random double between 0 and 1
-			acceptance = Math.exp(-(newLoss - oldLoss)) * temperature; // acceptance probability
-			acceptanceProbabilityLog.add(acceptance); // log the acceptance probability
-			if (r < acceptance) { // apply probability rule
-				accept = true;
-			}
-		}
-		if (accept) { // if candidate is better than previous matrix...
-			currentBackboneList.clear(); // create candidate copy and save as new current matrix
-			currentBackboneList.addAll(candidateBackboneList);
-			currentRedundantList.clear(); // also save the redundant candidate as new current redundant list
-			currentRedundantList.addAll(candidateRedundantList);
-			currentStatementList.clear(); // save candidate statement list as new current statement list
-			currentStatementList.addAll(candidateStatementList);
-			currentMatrix = new Matrix(candidateMatrix); // save candidate matrix as new current matrix
-			acceptedLog.add(1); // log the acceptance of the proposed candidate
-		} else {
-			acceptedLog.add(0); // log the non-acceptance of the proposed candidate
-		}
-		acceptedBackboneSizeLog.add(currentBackboneList.size()); // log how many concepts are in the current iteration after the decision
-		finalBackboneSizeLog.add(finalBackboneList.size()); // log how many concepts are in the final backbone solution in the current iteration
-		log = 0.0; // compute ratio of acceptances in last up to 100 iterations
-		for (int i = t - 1; i >= t - Math.min(100, t); i--) {
-			log = log + acceptedLog.get(i);
-		}
-		acceptanceRatioLastHundredIterationsLog.add(log / Math.min(100, t)); // log ratio of accepted candidates in the last 100 iterations
-		t = t + 1; // go to next iteration
-	}
-
-	/**
-	 * Reduce the dimensions of a candidate matrix with all isolate nodes to the dimensions of the full matrix, which
-	 * does not contain isolate nodes.
-	 *
-	 * @param candidateMatrix The candidate matrix with isolates (to be reduced to smaller dimensions).
-	 * @param fullLabels The node labels of the full matrix without isolates.
-	 * @return A reduced candidate matrix with the same dimensions as the full matrix and the same node order.
-	 */
-	private Matrix reduceCandidateMatrix(Matrix candidateMatrix, String[] fullLabels) {
-		HashMap<Integer, Integer> map = new HashMap<Integer, Integer>();
-		for (int i = 0; i < fullLabels.length; i++) {
-			for (int j = 0; j < candidateMatrix.getRowNames().length; j++) {
-				if (fullLabels[i].equals(candidateMatrix.getRowNames()[j])) {
-					map.put(i, j);
-				}
-			}
-		}
-		double[][] mat = new double[fullLabels.length][fullLabels.length];
-		for (int i = 0; i < fullLabels.length; i++) {
-			for (int j = 0; j < fullLabels.length; j++) {
-				mat[i][j] = candidateMatrix.getMatrix()[map.get(i)][map.get(j)];
-			}
-		}
-		candidateMatrix.setMatrix(mat);
-		candidateMatrix.setRowNames(fullLabels);
-		candidateMatrix.setColumnNames(fullLabels);
-		return candidateMatrix;
-	}
-
-	/**
-	 * Compute matrix after final backbone iteration, collect results, and save in class.
-	 */
-	public void saveBackboneResult() {
-		Collections.sort(finalBackboneList);
-		Collections.sort(finalRedundantList);
-
-		// create redundant matrix
-		ArrayList<ExportStatement> redundantStatementList = this.filteredStatements
-				.stream()
-				.filter(s -> currentRedundantList.contains(((Entity) s.get(this.variable2)).getValue()))
-				.collect(Collectors.toCollection(ArrayList::new));
-		Matrix redundantMatrix = this.computeOneModeMatrix(redundantStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
-
-		this.backboneResult = new BackboneResult(finalBackboneList.toArray(String[]::new),
-				finalRedundantList.toArray(String[]::new),
-				penalizedLoss(eigenvaluesFull, eigenvaluesCurrent, 0, currentBackboneList.size(), fullConcepts.length),
-				penalizedLoss(eigenvaluesFull, computeNormalizedEigenvalues(redundantMatrix.getMatrix()), 0, currentBackboneList.size(), fullConcepts.length),
-				p,
-				T,
-				temperatureLog.stream().mapToDouble(v -> v.doubleValue()).toArray(),
-				acceptanceProbabilityLog.stream().mapToDouble(v -> v.doubleValue()).toArray(),
-				acceptedLog.stream().mapToInt(v -> v.intValue()).toArray(),
-				penalizedBackboneLossLog.stream().mapToDouble(v -> v.doubleValue()).toArray(),
-				proposedBackboneSizeLog.stream().mapToInt(v -> v.intValue()).toArray(),
-				acceptedBackboneSizeLog.stream().mapToInt(v -> v.intValue()).toArray(),
-				finalBackboneSizeLog.stream().mapToInt(v -> v.intValue()).toArray(),
-				acceptanceRatioLastHundredIterationsLog.stream().mapToDouble(v -> v.doubleValue()).toArray(),
-				fullMatrix.getMatrix(),
-				currentMatrix.getMatrix(),
-				redundantMatrix.getMatrix(),
-				fullMatrix.getRowNames(),
-				fullMatrix.getStart().toEpochSecond(ZoneOffset.UTC),
-				fullMatrix.getStop().toEpochSecond(ZoneOffset.UTC),
-				fullMatrix.getNumStatements());
-	}
-
-	/**
-	 * Get the backbone result that is saved in the class.
-	 *
-	 * @return The backbone result (can be null if backbone function has not been executed).
-	 */
-	public BackboneResult getBackboneResult() {
-		return this.backboneResult;
-	}
-
-	/**
-	 * Use tools from the {@code ojalgo} library to compute eigenvalues of a symmetric matrix.
-	 *
-	 * @param matrix The matrix as a two-dimensional double array.
-	 * @return One-dimensional double array of eigenvalues.
-	 */
-	private double[] computeNormalizedEigenvalues(double[][] matrix) {
-		for (int i = 0; i < matrix.length; i++) {
-			for (int j = 0; j < matrix[0].length; j++) {
-				if (matrix[i][j] < 0) {
-					matrix[i][j] = 0.0;
-				}
-			}
-		}
-		Primitive64Matrix matrixPrimitive = Primitive64Matrix.FACTORY.rows(matrix); // create matrix
-		DenseArray<Double> rowSums = Primitive64Array.FACTORY.make(matrix.length); // container for row sums
-		matrixPrimitive.reduceRows(Aggregator.SUM, rowSums); // populate row sums into rowSums
-		Primitive64Matrix.SparseReceiver sr = Primitive64Matrix.FACTORY.makeSparse(matrix.length, matrix.length); // container for degree matrix
-		sr.fillDiagonal(rowSums); // put row sums onto diagonal
-		Primitive64Matrix laplacian = sr.get(); // put row sum container into a new degree matrix (the future Laplacian matrix)
-		laplacian.subtract(matrixPrimitive); // subtract adjacency matrix from degree matrix to create Laplacian matrix
-		Eigenvalue<Double> eig = Eigenvalue.PRIMITIVE.make(laplacian); // eigenvalues
-		eig.decompose(laplacian); // decomposition
-		double[] eigenvalues = eig.getEigenvalues().toRawCopy1D(); // extract eigenvalues and convert to double[]
-		double eigenvaluesSum = Arrays.stream(eigenvalues).sum(); // compute sum of eigenvalues
-		if (eigenvaluesSum > 0.0) {
-			eigenvalues = DoubleStream.of(eigenvalues).map(v -> v / eigenvaluesSum).toArray(); // normalise/scale to one
-		}
-
-		return eigenvalues;
-	}
-
-	/**
-	 * Compute penalized Euclidean spectral distance.
-	 *
-	 * @param eigenvalues1 Normalized eigenvalues of the full matrix.
-	 * @param eigenvalues2 Normalized eigenvalues of the current or candidate matrix.
-	 * @param p The penalty parameter. Typical values could be {@code 5.5}, {@code 7.5}, or {@code 12}, for example.
-	 * @param candidateBackboneSize The number of entities in the current or candidate backbone.
-	 * @param numEntitiesTotal The number of second-mode entities (e.g., concepts) in total.
-	 * @return Penalized loss.
-	 */
-	private double penalizedLoss(double[] eigenvalues1, double[] eigenvalues2, double p, int candidateBackboneSize, int numEntitiesTotal) {
-		double distance = 0.0; // Euclidean spectral distance
-		for (int i = 0; i < eigenvalues1.length; i++) {
-			distance = distance + Math.sqrt((eigenvalues1[i] - eigenvalues2[i]) * (eigenvalues1[i] - eigenvalues2[i]));
-		}
-		double penalty = Math.exp(-p * (((double) (numEntitiesTotal - candidateBackboneSize)) / ((double) numEntitiesTotal))); // compute penalty factor
-		return distance * penalty; // return penalised distance
-	}
-
-	/**
-	 * Write the backbone results to a JSON or XML file
-	 *
-	 * @param filename File name with absolute path as a string.
-	 */
-	public void writeBackboneToFile(String filename) {
-		File file = new File(filename);
-		String s = "";
-
-		if (filename.toLowerCase().endsWith(".xml")) {
-			XStream xstream = new XStream(new StaxDriver());
-			xstream.processAnnotations(BackboneResult.class);
-			StringWriter stringWriter = new StringWriter();
-			xstream.marshal(this.backboneResult, new PrettyPrintWriter(stringWriter));
-			s = stringWriter.toString();
-		} else if (filename.toLowerCase().endsWith(".json")) {
-			Gson prettyGson = new GsonBuilder()
-					.setPrettyPrinting()
-					.serializeNulls()
-					.disableHtmlEscaping()
-					.create();
-			s = prettyGson.toJson(this.backboneResult);
-		}
-		try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-			writer.write(s);
-			LogEvent l = new LogEvent(Logger.MESSAGE,
-					"Backbone result was saved to disk.",
-					"Backbone result was saved to file: " + filename + ".");
-			Dna.logger.log(l);
-		} catch (IOException exception) {
-			LogEvent l = new LogEvent(Logger.ERROR,
-					"Backbone result could not be saved to disk.",
-					"Attempted to save backbone results to file: \"" + filename + "\". The file saving operation did not work, possibly because the file could not be written to disk or because the results could not be converted to the final data format.",
-					exception);
-			Dna.logger.log(l);
 		}
 	}
 }

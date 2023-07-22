@@ -7,8 +7,7 @@ import dna.Dna;
 import export.Exporter;
 import logger.LogEvent;
 import logger.Logger;
-import model.StatementType;
-import model.TableDocument;
+import model.*;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -16,9 +15,7 @@ import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.io.File;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.*;
 import java.util.List;
 
 /**
@@ -26,16 +23,17 @@ import java.util.List;
  * various kinds of networks.
  */
 public class NetworkExporter extends JDialog {
-	private static final long serialVersionUID = 373799108570299434L;
 	private LocalDateTime[] dateTimeRange = Dna.sql.getDateTimeRange();
 	private DateTimePicker startPicker, stopPicker;
 	private JCheckBox helpBox;
 	private JButton exportButton;
-	private JComboBox<String> networkModesBox, fileFormatBox, var1Box, var2Box, qualifierBox, aggregationBox, normalizationBox,	isolatesBox, duplicatesBox, timeWindowBox;
+	private JComboBox<String> networkModesBox, fileFormatBox, aggregationBox, normalizationBox, isolatesBox, duplicatesBox, timeWindowBox;
+	private JComboBox<Role> role1Box, role2Box, qualifierBox;
+	private ArrayList<Role> roles;
 	private StatementType[] statementTypes;
 	private JComboBox<StatementType> statementTypeBox;
 	private JSpinner timeWindowSpinner;
-	private JList<String> excludeVariableList, excludeValueList;
+	private JList<String> excludeRoleList, excludeValueList;
 	private HashMap<String, ArrayList<String>> excludeValues;
 	private ArrayList<String> excludeAuthor, excludeSource, excludeSection, excludeType;
 	private JTextArea excludePreviewArea;
@@ -50,8 +48,6 @@ public class NetworkExporter extends JDialog {
 		ImageIcon networkIcon = new ImageIcon(getClass().getResource("/icons/tabler-icon-affiliate.png"));
 		this.setIconImage(networkIcon.getImage());
 		this.setLayout(new java.awt.BorderLayout());
-
-		/*
 
 		JPanel settingsPanel = new JPanel();
 		java.awt.GridBagLayout g = new java.awt.GridBagLayout();
@@ -70,9 +66,7 @@ public class NetworkExporter extends JDialog {
 		String networkModesToolTip = "<html><p width=\"500\">Select the type of network to export. A <strong>one-mode "
 				+ "network</strong> has the same nodes in the rows and columns of the resulting matrix (e.g., "
 				+ "organizations x organizations). A <strong>two-mode network</strong> has different sets of nodes in the "
-				+ "rows and columns of the resulting matrix (e.g., organizations x concepts). An <strong>event list</strong> "
-				+ "is a time-stamped list of edges, with each row of the resulting table containing all variables of a "
-				+ "statement including the time.</p></html>";
+				+ "rows and columns of the resulting matrix (e.g., organizations x concepts).</p></html>";
 		networkModesLabel.setToolTipText(networkModesToolTip);
 		settingsPanel.add(networkModesLabel, gbc);
 		
@@ -96,7 +90,7 @@ public class NetworkExporter extends JDialog {
 		
 		gbc.gridx = 0;
 		gbc.gridy = 1;
-		String[] networkModesItems = new String[] {"Two-mode network", "One-mode network", "Event list"};
+		String[] networkModesItems = new String[] {"Two-mode network", "One-mode network"};
 		networkModesBox = new JComboBox<>(networkModesItems);
 		networkModesBox.setSelectedIndex(1);
 		networkModesBox.setToolTipText(networkModesToolTip);
@@ -164,30 +158,33 @@ public class NetworkExporter extends JDialog {
 					isolatesBox.removeAllItems();
 					isolatesBox.addItem("only current nodes");
 					isolatesBox.addItem("include isolates");
-				} else if (selected.equals("Event list")) {
-					fileFormatBox.removeAllItems();
-					fileFormatBox.addItem(".csv");
-					
-					aggregationBox.removeAllItems();
-					aggregationBox.addItem("ignore");
-					
-					normalizationBox.removeAllItems();
-					normalizationBox.addItem("no");
-					
-					isolatesBox.removeAllItems();
-					isolatesBox.addItem("only current nodes");
 				}
 			}
 		});
 
 		gbc.gridx = 1;
+		this.roles = Dna.sql.getRoles();
+		ArrayList<Variable> variables = Dna.sql.getVariables();
+		ArrayList<RoleVariableLink> roleVariableLinks = Dna.sql.getRoleVariableLinks(-1); // -1 means all of them
+
+		HashMap<Integer, ArrayList<Variable>> roleVariablesMap = new HashMap<>();
+		for (int i = 0; i < this.roles.size(); i++) {
+			for (int j = 0; j < roleVariableLinks.size(); j++) {
+				for (int k = 0; k < variables.size(); k++) {
+					if (roleVariableLinks.get(j).getRoleId() == this.roles.get(i).getId()) {
+						if (roleVariablesMap.containsKey(this.roles.get(i).getId())) {
+							roleVariablesMap.get(this.roles.get(i).getId()).add(variables.get(k));
+						} else {
+							roleVariablesMap.put(this.roles.get(i).getId(), new ArrayList<>());
+						}
+					}
+				}
+			}
+		}
+
 		this.statementTypes = Dna.sql.getStatementTypes()
 				.stream()
-				.filter(s -> s.getVariables()
-						.stream()
-						.filter(v -> v.getDataType().equals("short text"))
-						.count() > 1)
-				.sorted((s1, s2) -> Integer.valueOf(s1.getId()).compareTo(Integer.valueOf(s2.getId())))
+				.sorted(Comparator.comparing(s -> Integer.valueOf(s.getId())))
 				.toArray(StatementType[]::new);
 		if (statementTypes.length < 1) {
 			LogEvent l = new LogEvent(Logger.ERROR,
@@ -195,8 +192,34 @@ public class NetworkExporter extends JDialog {
 					"The network export dialog window has tried to populate the statement type combo box with statement types, but there was not a single statement type containing at least two short text variables that could be used for network construction.");
 			Dna.logger.log(l);
 		}
+
+		HashMap<Integer, ArrayList<Role>> statementTypeStringRolesMap = new HashMap<>();
+		HashMap<Integer, ArrayList<Role>> statementTypeQualifierRolesMap = new HashMap<>();
+		for (int i = 0; i < statementTypes.length; i++) {
+			for (int j = 0; j < this.roles.size(); j++) {
+				for (int k = 0; k < roleVariablesMap.get(this.roles.get(j).getId()).size(); k++) {
+					if (this.roles.get(j).getStatementTypeId() == statementTypes[i].getId() && roleVariablesMap.get(this.roles.get(j).getId()).get(k).getDataType().equals("short text")) {
+						if (!statementTypeStringRolesMap.containsKey(statementTypes[i].getId())) {
+							statementTypeStringRolesMap.put(statementTypes[i].getId(), new ArrayList<>());
+						}
+						if (!statementTypeStringRolesMap.get(statementTypes[i].getId()).contains(this.roles.get(j))) {
+							statementTypeStringRolesMap.get(statementTypes[i].getId()).add(this.roles.get(j));
+						}
+					}
+					if (this.roles.get(j).getStatementTypeId() == statementTypes[i].getId() && roleVariablesMap.get(this.roles.get(j).getId()).get(k).getDataType().equals("boolean")) {
+						if (!statementTypeQualifierRolesMap.containsKey(statementTypes[i].getId())) {
+							statementTypeQualifierRolesMap.put(statementTypes[i].getId(), new ArrayList<>());
+						}
+						if (!statementTypeQualifierRolesMap.get(statementTypes[i].getId()).contains(this.roles.get(j))) {
+							statementTypeQualifierRolesMap.get(statementTypes[i].getId()).add(this.roles.get(j));
+						}
+					}
+				}
+			}
+		}
+
 		StatementTypeComboBoxRenderer cbrenderer = new StatementTypeComboBoxRenderer();
-		statementTypeBox = new JComboBox<StatementType>(statementTypes);
+		statementTypeBox = new JComboBox<>(statementTypes);
 		statementTypeBox.setRenderer(cbrenderer);
 		statementTypeBox.setSelectedIndex(0);
 		statementTypeBox.setToolTipText(statementTypeToolTip);
@@ -208,53 +231,35 @@ public class NetworkExporter extends JDialog {
 		statementTypeBox.addActionListener(new java.awt.event.ActionListener() {
 			public void actionPerformed(java.awt.event.ActionEvent e) {
 				StatementType selected = (StatementType) statementTypeBox.getSelectedItem();
-				String[] varItems = selected.getVariablesList(false, true, false, false);
-				String[] qualifierItems = selected.getVariablesList(false, true, true, true);
-				var1Box.removeAllItems();
-				var2Box.removeAllItems();
+				Role[] stringRoleItems = statementTypeStringRolesMap.get(selected.getId()).stream().toArray(Role[]::new);
+				Role[] qualifierRoleItems = statementTypeQualifierRolesMap.get(selected.getId()).stream().toArray(Role[]::new);
+				role1Box.removeAllItems();
+				role2Box.removeAllItems();
 				qualifierBox.removeAllItems();
-				if (varItems.length > 0) {
-					for (int i = 0; i < varItems.length; i++) {
-						var1Box.addItem(varItems[i]);
-						var2Box.addItem(varItems[i]);
+				if (stringRoleItems.length > 0) {
+					for (int i = 0; i < stringRoleItems.length; i++) {
+						role1Box.addItem(stringRoleItems[i]);
+						role2Box.addItem(stringRoleItems[i]);
 					}
-					int varIndex = ((DefaultComboBoxModel) var1Box.getModel()).getIndexOf("organization");
-					if (varIndex > -1) {
-						var1Box.setSelectedIndex(varIndex);
+					role1Box.setSelectedIndex(0);
+					if (stringRoleItems.length > 1) {
+						role1Box.setSelectedIndex(1);
 					} else {
-						var1Box.setSelectedIndex(0);
-					}
-					varIndex = ((DefaultComboBoxModel) var2Box.getModel()).getIndexOf("concept");
-					if (varIndex > -1) {
-						var2Box.setSelectedIndex(varIndex);
-					} else {
-						var2Box.setSelectedIndex(1);
-					}
-					if (var1Box.getSelectedIndex() == var2Box.getSelectedIndex()) {
-						var1Box.setSelectedIndex(0);
-						var2Box.setSelectedIndex(1);
+						role1Box.setSelectedIndex(0);
 					}
 				}
-				if (qualifierItems.length > 0) {
-					for (int i = 0; i < qualifierItems.length; i++) {
-						qualifierBox.addItem(qualifierItems[i]);
-					}
-					String[] nonTextItems = ((StatementType) statementTypeBox.getSelectedItem()).getVariablesList(false, false, true, true);
-					if (nonTextItems.length > 0) {
-						qualifierBox.setSelectedItem(nonTextItems[0]);
-					} else {
-						int newIndex = 0;
-						for (int i = 0; i < qualifierItems.length; i++) {
-							if (!qualifierItems[i].equals(((String) var1Box.getSelectedItem())) && !qualifierItems[i].equals(((String) var2Box.getSelectedItem()))) {
-								newIndex = i;
-								break;
-							}
+				if (qualifierRoleItems.length > 0) {
+					int initialIndex = 0;
+					for (int i = 0; i < qualifierRoleItems.length; i++) {
+						qualifierBox.addItem(qualifierRoleItems[i]);
+						if (qualifierRoleItems[i].getRoleName().equals("agreement")) {
+							initialIndex = i;
 						}
-						qualifierBox.setSelectedIndex(newIndex);
 					}
+					qualifierBox.setSelectedIndex(initialIndex);
 				}
-				populateExcludeVariableList();
-				excludeVariableList.setSelectedIndex(0);
+				populateExcludeRoleList();
+				excludeRoleList.setSelectedIndex(0);
 				excludePreviewArea.setText("");
 			}
 		});
@@ -273,33 +278,33 @@ public class NetworkExporter extends JDialog {
 		gbc.gridwidth = 1;
 		gbc.gridx = 0;
 		gbc.gridy = 2;
-		JLabel var1Label = new JLabel("Variable 1");
+		JLabel role1Label = new JLabel("Role 1");
 
-		String var1ToolTip = "<html><p width=\"500\">In a one-mode network, the first variable denotes the node class used "
-				+ "both for the rows and columns of the matrix. For example, select the variable for organizations in order "
-				+ "to export an organization x organization network. In a two-mode network, the first variable denotes the "
-				+ "node class for the rows. For example, select the variable for organizations here if you want to export "
+		String role1ToolTip = "<html><p width=\"500\">In a one-mode network, the first role denotes the node class used "
+				+ "both for the rows and columns of the matrix. For example, select the role for organizations in order "
+				+ "to export an organization x organization network. In a two-mode network, the first role denotes the "
+				+ "node class for the rows. For example, select the role for organizations here if you want to export "
 				+ "an organization x concept two-mode network.</p></html>";
-		var1Label.setToolTipText(var1ToolTip);
-		settingsPanel.add(var1Label, gbc);
+		role1Label.setToolTipText(role1ToolTip);
+		settingsPanel.add(role1Label, gbc);
 		
 		gbc.gridx = 1;
-		JLabel var2Label = new JLabel("Variable 2");
-		String var2ToolTip = "<html><p width=\"500\">In a one-mode network, the second variable denotes the variable through "
+		JLabel role2Label = new JLabel("Role 2");
+		String role2ToolTip = "<html><p width=\"500\">In a one-mode network, the second role denotes the role through "
 				+ "which the edges are aggregated. For example, if you export a one-mode network of organizations and the "
 				+ "edge weight that connects any two organizations should denote the two organizations' number of joint "
-				+ "concepts, then the second variable should denote the concepts. In a two-mode network, the second variable "
+				+ "concepts, then the second role should denote the concepts. In a two-mode network, the second role "
 				+ "denotes the node class used for the columns of the resulting network matrix. For example, one would select "
-				+ "the variable for concepts here in order to export an organization x concept network.</p></html>";
-		var2Label.setToolTipText(var2ToolTip);
-		settingsPanel.add(var2Label, gbc);
+				+ "the role for concepts here in order to export an organization x concept network.</p></html>";
+		role2Label.setToolTipText(role2ToolTip);
+		settingsPanel.add(role2Label, gbc);
 		
 		gbc.gridx = 2;
 		JLabel qualifierLabel = new JLabel("Qualifier");
-		String qualifierToolTip = "<html><p width=\"500\">The qualifier is a binary or integer variable which indicates "
-				+ "different qualities or levels of association between variable 1 and variable 2. If a binary qualifier "
-				+ "variable is used, this amounts to positive versus negative relations or agreement versus disagreement. "
-				+ "For example, in an organization x concept two-mode network, a qualifier variable could indicate whether "
+		String qualifierToolTip = "<html><p width=\"500\">The qualifier is a binary or integer role which indicates "
+				+ "different qualities or levels of association between role 1 and role 2. If a binary qualifier "
+				+ "role is used, this amounts to positive versus negative relations or agreement versus disagreement. "
+				+ "For example, in an organization x concept two-mode network, a qualifier role could indicate whether "
 				+ "an organization supports or rejects a concept. The qualifier would indicate support or rejection in this "
 				+ "case. The qualifier is also preserved in a one-mode network. For example, in an organization x organization "
 				+ "network, any two organizations can be connected if they either co-support or co-reject the same concept. "
@@ -315,11 +320,11 @@ public class NetworkExporter extends JDialog {
 		gbc.gridx = 3;
 		JLabel aggregationLabel = new JLabel("Qualifier aggregation");
 		String aggregationToolTip = "<html><p width=\"500\">The choices differ between one-mode and two-mode networks. <strong>"
-				+ "ignore</strong> is available in both cases and means that the agreement qualifier variable is ignored, i.e., "
-				+ "the network is constructed as if all values on the qualifier variable were the same. In the two-mode network "
-				+ "case, <strong>subtract</strong> means that negative absolute values on the qualifier variable are subtracted from "
+				+ "ignore</strong> is available in both cases and means that the agreement qualifier role is ignored, i.e., "
+				+ "the network is constructed as if all values on the qualifier role were the same. In the two-mode network "
+				+ "case, <strong>subtract</strong> means that negative absolute values on the qualifier role are subtracted from "
 				+ "positive values (if an integer qualifier is selected) or that 0 values are subtracted from 1 values (if a "
-				+ "binary qualifier variable is selected). For example, if an organization mentions a concept two times in a "
+				+ "binary qualifier is selected). For example, if an organization mentions a concept two times in a "
 				+ "positive way and three times in a negative way, there will be an edge weight of -1 between the organization "
 				+ "and the concept. In the one-mode case, <strong>subtract</strong> means that a congruence network and a "
 				+ "conflict network are created separately and then the (potentially normalized) conflict network ties are "
@@ -329,11 +334,11 @@ public class NetworkExporter extends JDialog {
 				+ "the values of the qualifier are treated as qualitative categories. In this case, DNA creates all possible "
 				+ "combinations of edges (e.g., in the binary case, these are support, rejection, and both/mixed/ambiguous). "
 				+ "Integer values are then used as edge weights, as in a multiplex network. E.g., 1 represents support, 2 "
-				+ "represents rejection, and 3 represents both. With an integer variable, this may become more complex. In "
-				+ "one-mode networks, <strong>congruence</strong> means that similarity or matches on the qualifier variable "
-				+ "are counted in order to construct an edge. With a binary variable, matches are used. For example, if "
+				+ "represents rejection, and 3 represents both. With an integer role, this may become more complex. In "
+				+ "one-mode networks, <strong>congruence</strong> means that similarity or matches on the qualifier "
+				+ "are counted in order to construct an edge. With a binary role, matches are used. For example, if "
 				+ "organizations A and B both co-support or both co-reject concept C, they are connected, and the number of "
-				+ "co-supported and co-rejected concepts is used as the edge weight. With an integer qualifier variable, "
+				+ "co-supported and co-rejected concepts is used as the edge weight. With an integer qualifier, "
 				+ "the inverse of the absolute distance plus one (i.e., the proximity) is used instead of a match. In one-mode "
 				+ "networks, <strong>conflict</strong> constructs the network by recording disagreements between actors, rather "
 				+ "than agreements, as in the congruence case. With a binary qualifier, this means that organizations A and B "
@@ -345,73 +350,48 @@ public class NetworkExporter extends JDialog {
 		gbc.insets = new java.awt.Insets(3, 3, 3, 3);
 		gbc.gridx = 0;
 		gbc.gridy = 3;
-		String[] varItems = ((StatementType) statementTypeBox.getSelectedItem()).getVariablesList(false, true, false, false);
-		var1Box = new JComboBox<String>(varItems);
-		var1Box.setToolTipText(var1ToolTip);
-		var1Box.setSelectedIndex(0);
-		settingsPanel.add(var1Box, gbc);
-		int HEIGHT2 = (int) var1Box.getPreferredSize().getHeight();
-		var1Box.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
+		Role[] roleItems = statementTypeStringRolesMap.get(((StatementType) statementTypeBox.getSelectedItem()).getId()).stream().toArray(Role[]::new);
+		role1Box = new JComboBox<>(roleItems);
+		role1Box.setToolTipText(role1ToolTip);
+		role1Box.setSelectedIndex(0);
+		settingsPanel.add(role1Box, gbc);
+		int HEIGHT2 = (int) role1Box.getPreferredSize().getHeight();
+		role1Box.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
+		role1Box.setSelectedIndex(0);
 		
 		gbc.gridx = 1;
-		var2Box = new JComboBox<String>(varItems);
-		var2Box.setToolTipText(var2ToolTip);
-		var2Box.setSelectedIndex(1);
-		settingsPanel.add(var2Box, gbc);
-		if (var1Box.getItemCount() > 1) {
-			int varIndex = ((DefaultComboBoxModel) var1Box.getModel()).getIndexOf("organization");
-			if (varIndex > -1) {
-				var1Box.setSelectedIndex(varIndex);
-			} else {
-				var1Box.setSelectedIndex(0);
-			}
-			varIndex = ((DefaultComboBoxModel) var2Box.getModel()).getIndexOf("concept");
-			if (varIndex > -1) {
-				var2Box.setSelectedIndex(varIndex);
-			} else {
-				var2Box.setSelectedIndex(1);
-			}
-			if (var1Box.getSelectedIndex() == var2Box.getSelectedIndex()) {
-				var1Box.setSelectedIndex(0);
-				var2Box.setSelectedIndex(1);
-			}
+		role2Box = new JComboBox<>(roleItems);
+		role2Box.setToolTipText(role2ToolTip);
+		role2Box.setSelectedIndex(1);
+		settingsPanel.add(role2Box, gbc);
+		if (role1Box.getItemCount() > 1) {
+			role2Box.setSelectedIndex(1);
+		} else {
+			role2Box.setSelectedIndex(0);
 		}
-		var2Box.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
-		java.awt.event.ActionListener varActionListener = new java.awt.event.ActionListener() {
-			public void actionPerformed(java.awt.event.ActionEvent e) {
-				if (var1Box.getItemCount() < 1 || var2Box.getItemCount() < 1) {
-					var1Box.setBorder(null);
-					var2Box.setBorder(null);
-				} else if (var1Box.getSelectedItem().equals(var2Box.getSelectedItem())) {
-					var1Box.setBorder(BorderFactory.createLineBorder(java.awt.Color.RED));
-					var2Box.setBorder(BorderFactory.createLineBorder(java.awt.Color.RED));
-				} else {
-					var1Box.setBorder(null);
-					var2Box.setBorder(null);
-				}
+		role2Box.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
+		java.awt.event.ActionListener varActionListener = e -> {
+			if (role1Box.getItemCount() < 1 || role2Box.getItemCount() < 1) {
+				role1Box.setBorder(null);
+				role2Box.setBorder(null);
+			} else if (role1Box.getSelectedItem().equals(role2Box.getSelectedItem())) {
+				role1Box.setBorder(BorderFactory.createLineBorder(Color.RED));
+				role2Box.setBorder(BorderFactory.createLineBorder(Color.RED));
+			} else {
+				role1Box.setBorder(null);
+				role2Box.setBorder(null);
 			}
 		};
-		var1Box.addActionListener(varActionListener);
-		var2Box.addActionListener(varActionListener);
+		role1Box.addActionListener(varActionListener);
+		role2Box.addActionListener(varActionListener);
 		
 		gbc.gridx = 2;
-		String[] qualifierItems = ((StatementType) statementTypeBox.getSelectedItem()).getVariablesList(false, true, true, true);
+		Role[] qualifierItems = statementTypeQualifierRolesMap.get(((StatementType) statementTypeBox.getSelectedItem()).getId()).stream().toArray(Role[]::new);
 		qualifierBox = new JComboBox<>(qualifierItems);
-		if (qualifierItems.length > 0) {
-			String[] nonTextItems = ((StatementType) statementTypeBox.getSelectedItem()).getVariablesList(false, false, true, true);
-			if (nonTextItems.length > 0) {
-				qualifierBox.setSelectedItem(nonTextItems[0]);
-			} else {
-				int newIndex = 0;
-				for (int i = 0; i < qualifierItems.length; i++) {
-					if (!qualifierItems[i].equals(((String) var1Box.getSelectedItem())) && !qualifierItems[i].equals(((String) var2Box.getSelectedItem()))) {
-						newIndex = i;
-						break;
-					}
-				}
-				qualifierBox.setSelectedIndex(newIndex);
-			}
+		if (qualifierBox.getItemCount() > 0) {
+			qualifierBox.setSelectedIndex(0);
 		}
+
 		qualifierBox.setToolTipText(qualifierToolTip);
 		settingsPanel.add(qualifierBox, gbc);
 		qualifierBox.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
@@ -433,9 +413,6 @@ public class NetworkExporter extends JDialog {
 					aggregationBox.addItem("conflict");
 					aggregationBox.addItem("subtract");
 					aggregationBox.setSelectedItem("subtract");
-				} else if (networkModesBox.getSelectedItem().equals("Event list")) {
-					aggregationBox.removeAllItems();
-					aggregationBox.addItem("ignore");
 				}
 			}
 		});
@@ -447,28 +424,23 @@ public class NetworkExporter extends JDialog {
 		aggregationBox.setToolTipText(aggregationToolTip);
 		settingsPanel.add(aggregationBox, gbc);
 		aggregationBox.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
-		aggregationBox.addActionListener(new java.awt.event.ActionListener() {
-			public void actionPerformed(java.awt.event.ActionEvent e) {
-				if (aggregationBox.getItemCount() > 0) {
-					if (aggregationBox.getSelectedItem().equals("combine")) {
+		aggregationBox.addActionListener(e -> {
+			if (aggregationBox.getItemCount() > 0) {
+				if (aggregationBox.getSelectedItem().equals("combine")) {
+					normalizationBox.removeAllItems();
+					normalizationBox.addItem("no");
+				} else {
+					if (networkModesBox.getSelectedItem().equals("Two-mode network")) {
 						normalizationBox.removeAllItems();
 						normalizationBox.addItem("no");
-					} else {
-						if (networkModesBox.getSelectedItem().equals("Two-mode network")) {
-							normalizationBox.removeAllItems();
-							normalizationBox.addItem("no");
-							normalizationBox.addItem("activity");
-							normalizationBox.addItem("prominence");
-						} else if (networkModesBox.getSelectedItem().equals("One-mode network")) {
-							normalizationBox.removeAllItems();
-							normalizationBox.addItem("no");
-							normalizationBox.addItem("average");
-							normalizationBox.addItem("jaccard");
-							normalizationBox.addItem("cosine");
-						} else if (networkModesBox.getSelectedItem().equals("Event list")) {
-							normalizationBox.removeAllItems();
-							normalizationBox.addItem("no");
-						}
+						normalizationBox.addItem("activity");
+						normalizationBox.addItem("prominence");
+					} else if (networkModesBox.getSelectedItem().equals("One-mode network")) {
+						normalizationBox.removeAllItems();
+						normalizationBox.addItem("no");
+						normalizationBox.addItem("average");
+						normalizationBox.addItem("jaccard");
+						normalizationBox.addItem("cosine");
 					}
 				}
 			}
@@ -551,6 +523,10 @@ public class NetworkExporter extends JDialog {
 		isolatesBox.setToolTipText(isolatesToolTip);
 		settingsPanel.add(isolatesBox, gbc);
 		isolatesBox.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
+		isolatesBox.setVisible(false);
+		isolatesBox.setEnabled(false);
+		isolatesLabel.setVisible(false);
+		isolatesLabel.setEnabled(false);
 
 		gbc.gridx = 2;
 		String[] duplicatesItems = new String[] {"include all duplicates", "ignore per document", "ignore per calendar week", 
@@ -661,18 +637,26 @@ public class NetworkExporter extends JDialog {
 		timeWindowBox.setToolTipText(timeWindowToolTip);
 		settingsPanel.add(timeWindowBox, gbc);
 		timeWindowBox.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
+		timeWindowBox.setVisible(false);
+		timeWindowBox.setEnabled(false);
+		timeWindowLabel.setVisible(false);
+		timeWindowLabel.setEnabled(false);
 		
 		gbc.gridx = 3;
 		timeWindowSpinner = new JSpinner(new SpinnerNumberModel(100, 0, 100000, 1));
 		timeWindowSpinner.setToolTipText(timeWindowToolTip);
 		settingsPanel.add(timeWindowSpinner, gbc);
 		timeWindowSpinner.setPreferredSize(new java.awt.Dimension(WIDTH, HEIGHT2));
+		timeWindowSpinner.setVisible(false);
+		timeWindowSpinner.setEnabled(false);
+		timeWindowNumberLabel.setVisible(false);
+		timeWindowNumberLabel.setEnabled(false);
 		
 		// fifth row of options: exclude values from variables
 		gbc.insets = new java.awt.Insets(10, 3, 3, 3);
 		gbc.gridx = 0;
 		gbc.gridy = 8;
-		JLabel excludeVariableLabel = new JLabel("Exclude from variable");
+		JLabel excludeVariableLabel = new JLabel("Exclude from role");
 		String excludeToolTip = "<html><p width=\"500\">By default, all nodes from all statements are included in the "
 				+ "network, given the type of network and the statement type and variables selected. Often, however, "
 				+ "one wishes to exclude certain nodes or statements from the analysis. For example, in an "
@@ -702,13 +686,13 @@ public class NetworkExporter extends JDialog {
 		gbc.insets = new java.awt.Insets(3, 3, 3, 3);
 		gbc.gridx = 0;
 		gbc.gridy = 9;
-		excludeVariableList = new JList<String>();
-		excludeVariableList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		excludeVariableList.setLayoutOrientation(JList.VERTICAL);
-		excludeVariableList.setVisibleRowCount(10);
-		JScrollPane excludeVariableScroller = new JScrollPane(excludeVariableList);
+		excludeRoleList = new JList<String>();
+		excludeRoleList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		excludeRoleList.setLayoutOrientation(JList.VERTICAL);
+		excludeRoleList.setVisibleRowCount(10);
+		JScrollPane excludeVariableScroller = new JScrollPane(excludeRoleList);
 		excludeVariableScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-		excludeVariableList.setToolTipText(excludeToolTip);
+		excludeRoleList.setToolTipText(excludeToolTip);
 		settingsPanel.add(excludeVariableScroller, gbc);
 		excludeVariableScroller.setPreferredSize(new java.awt.Dimension(WIDTH, (int) excludeVariableScroller.getPreferredSize().getHeight()));
 		excludeAuthor = new ArrayList<String>();
@@ -716,15 +700,15 @@ public class NetworkExporter extends JDialog {
 		excludeSection = new ArrayList<String>();
 		excludeType = new ArrayList<String>();
 		excludeValues = new HashMap<String, ArrayList<String>>();
-		NetworkExporter.this.populateExcludeVariableList();
-		excludeVariableList.addListSelectionListener(new ListSelectionListener() {
+		NetworkExporter.this.populateExcludeRoleList();
+		excludeRoleList.addListSelectionListener(new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent e) {
-				String selectedValue = excludeVariableList.getSelectedValue();
+				String selectedValue = excludeRoleList.getSelectedValue();
 				if (!e.getValueIsAdjusting() && selectedValue != null) {
 					String[] entriesArray;
 					int[] indices;
 					ArrayList<TableDocument> documents = Dna.sql.getTableDocuments(new int[0]);
-					if (excludeVariableList.getSelectedIndex() == excludeVariableList.getModel().getSize() - 1) { // document type variable
+					if (excludeRoleList.getSelectedIndex() == excludeRoleList.getModel().getSize() - 1) { // document "type" variable
 						entriesArray = documents
 								.stream()
 								.map(d -> d.getType())
@@ -740,7 +724,7 @@ public class NetworkExporter extends JDialog {
 								}
 							}
 						}
-					} else if (excludeVariableList.getSelectedIndex() == excludeVariableList.getModel().getSize() - 2) { // document section variable
+					} else if (excludeRoleList.getSelectedIndex() == excludeRoleList.getModel().getSize() - 2) { // document "section" variable
 						entriesArray = documents
 								.stream()
 								.map(d -> d.getSection())
@@ -756,7 +740,7 @@ public class NetworkExporter extends JDialog {
 								}
 							}
 						}
-					} else if (excludeVariableList.getSelectedIndex() == excludeVariableList.getModel().getSize() - 3) { // document source variable
+					} else if (excludeRoleList.getSelectedIndex() == excludeRoleList.getModel().getSize() - 3) { // document "source" variable
 						entriesArray = documents
 								.stream()
 								.map(d -> d.getSource())
@@ -772,7 +756,7 @@ public class NetworkExporter extends JDialog {
 								}
 							}
 						}
-					} else if (excludeVariableList.getSelectedIndex() == excludeVariableList.getModel().getSize() - 4) { // document author variable
+					} else if (excludeRoleList.getSelectedIndex() == excludeRoleList.getModel().getSize() - 4) { // document "author" variable
 						entriesArray = documents
 								.stream()
 								.map(d -> d.getAuthor())
@@ -789,9 +773,14 @@ public class NetworkExporter extends JDialog {
 							}
 						}
 					} else {
-						entriesArray = Dna.sql.getUniqueValues(((StatementType) statementTypeBox.getSelectedItem()).getId(), selectedValue)
+						String excludeRoleString = excludeRoleList.getSelectedValue();
+						int roleId = NetworkExporter.this.roles
 								.stream()
-								.toArray(String[]::new);
+								.filter(r -> r.getRoleName().equals(excludeRoleString) && r.getStatementTypeId() == ((StatementType) statementTypeBox.getSelectedItem()).getId())
+								.findFirst()
+								.get()
+								.getId();
+						entriesArray = Dna.sql.getUniqueRoleValues(roleId).stream().toArray(String[]::new);
 						excludeValueList.setListData(entriesArray);
 						indices = new int[excludeValues.get(selectedValue).size()];
 						for (int i = 0; i < entriesArray.length; i++) {
@@ -819,7 +808,7 @@ public class NetworkExporter extends JDialog {
 		excludeValueScroller.setPreferredSize(new java.awt.Dimension(WIDTH, (int) excludeValueScroller.getPreferredSize().getHeight()));
 		excludeValueList.addListSelectionListener(new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent e) {
-				String selectedVariable = excludeVariableList.getSelectedValue();
+				String selectedVariable = excludeRoleList.getSelectedValue();
 				List<String> selectedValues = excludeValueList.getSelectedValuesList();
 				if (!e.getValueIsAdjusting()) {
 					if (selectedValues != null) {
@@ -850,22 +839,22 @@ public class NetworkExporter extends JDialog {
 					if (excludeAuthor.size() > 0) {
 						for (int i = 0; i < excludeAuthor.size(); i++) {
 							excludePreviewText = excludePreviewText + "author: " + excludeAuthor.get(i) + "\n";
-						} 
+						}
 					}
 					if (excludeSource.size() > 0) {
 						for (int i = 0; i < excludeSource.size(); i++) {
 							excludePreviewText = excludePreviewText + "source: " + excludeSource.get(i) + "\n";
-						} 
+						}
 					}
 					if (excludeSection.size() > 0) {
 						for (int i = 0; i < excludeSection.size(); i++) {
 							excludePreviewText = excludePreviewText + "section: " + excludeSection.get(i) + "\n";
-						} 
+						}
 					}
 					if (excludeType.size() > 0) {
 						for (int i = 0; i < excludeType.size(); i++) {
 							excludePreviewText = excludePreviewText + "type: " + excludeType.get(i) + "\n";
-						} 
+						}
 					}
 					excludePreviewArea.setText(excludePreviewText);
 				}
@@ -900,6 +889,7 @@ public class NetworkExporter extends JDialog {
 		gbc.gridx = 1;
 		gbc.anchor = java.awt.GridBagConstraints.EAST;
 		JPanel buttonPanel = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT));
+		/*
 		JButton revertButton = new JButton("Revert", new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-backspace.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH)));
 		
 		String revertToolTip = "<html><p>Reset all settings to their default values.</p></html>";
@@ -970,6 +960,7 @@ public class NetworkExporter extends JDialog {
 				helpBox.setSelected(false);
 			}
 		});
+		*/
 
 		JButton cancelButton = new JButton("Cancel", new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-x.png")).getImage().getScaledInstance(18, 18, Image.SCALE_SMOOTH)));
 		String cancelToolTip = "<html><p>Reset and close this window.</p></html>";
@@ -1000,25 +991,11 @@ public class NetworkExporter extends JDialog {
 						networkType = "twomode";
 					} else if (networkType.equals("One-mode network")) {
 						networkType = "onemode";
-					} else if (networkType.equals("Event list")) {
-						networkType = "eventlist";
 					}
 					StatementType statementType = (StatementType) statementTypeBox.getSelectedItem();
-					String variable1Name = (String) var1Box.getSelectedItem();
-					boolean variable1Document = false;
-					if (var1Box.getSelectedIndex() > var1Box.getItemCount() - 7) {
-						variable1Document = true;
-					}
-					String variable2Name = (String) var2Box.getSelectedItem();
-					boolean variable2Document = false;
-					if (var2Box.getSelectedIndex() > var2Box.getItemCount() - 7) {
-						variable2Document = true;
-					}
-					String qualifier = (String) qualifierBox.getSelectedItem();
-					boolean qualifierDocument = false;
-					if (qualifierBox.getSelectedIndex() > qualifierBox.getItemCount() - 7) {
-						qualifierDocument = true;
-					}
+					Role role1 = (Role) role1Box.getSelectedItem();
+					Role role2 = (Role) role2Box.getSelectedItem();
+					Role qualifier = (Role) qualifierBox.getSelectedItem();
 					String qualifierAggregation = (String) aggregationBox.getSelectedItem();
 					String normalization = (String) normalizationBox.getSelectedItem();
 					boolean isolates = false;
@@ -1072,8 +1049,7 @@ public class NetworkExporter extends JDialog {
 					}
 
 					// start export thread
-					Thread exportThread = new Thread( new GuiExportThread(networkType, statementType, variable1Name,
-							variable1Document, variable2Name, variable2Document, qualifier, qualifierDocument,
+					Thread exportThread = new Thread( new GuiExportThread(networkType, statementType, role1, role2, qualifier,
 							qualifierAggregation, normalization, isolates, duplicates, startDateTime, stopDateTime,
 							timeWindow, windowSize,	NetworkExporter.this.excludeValues, NetworkExporter.this.excludeAuthor,
 							NetworkExporter.this.excludeSource, NetworkExporter.this.excludeSection,
@@ -1089,7 +1065,6 @@ public class NetworkExporter extends JDialog {
 
 		this.add(settingsPanel, java.awt.BorderLayout.CENTER);
 
-		*/
 		this.pack();
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);
@@ -1098,23 +1073,29 @@ public class NetworkExporter extends JDialog {
 	/**
 	 * Sets a new {@link DefaultListModel} in the excludeVariableList and adds variables conditional on the statement type selected
 	 */
-	/*
-	public void populateExcludeVariableList() {
+	public void populateExcludeRoleList() {
 		excludeValues.clear();
 		StatementType selected = (StatementType) statementTypeBox.getSelectedItem();
-		String[] excludeVariableItems = selected.getVariablesList(true, true, true, true);
-		DefaultListModel<String> excludeVariableModel = new DefaultListModel<String>();
-		for (int i = 0; i < excludeVariableItems.length - 6; i++) {
-			excludeVariableModel.addElement(excludeVariableItems[i]);
-			excludeValues.put(excludeVariableItems[i], new ArrayList<String>());
+		String[] excludeRoleItems = roles
+				.stream()
+				.filter(r -> r.getStatementTypeId() == selected.getId())
+				.map(r -> r.getRoleName())
+				.toArray(String[]::new);
+		DefaultListModel<String> excludeRoleModel = new DefaultListModel<>();
+		for (int i = 0; i < excludeRoleItems.length; i++) {
+			excludeRoleModel.addElement(excludeRoleItems[i]);
+			excludeValues.put(excludeRoleItems[i], new ArrayList<String>());
 		}
-		excludeVariableModel.addElement("author");
-		excludeVariableModel.addElement("source");
-		excludeVariableModel.addElement("section");
-		excludeVariableModel.addElement("type");
-		excludeVariableList.setModel(excludeVariableModel);
+		excludeRoleModel.addElement("author");
+		excludeRoleModel.addElement("source");
+		excludeRoleModel.addElement("section");
+		excludeRoleModel.addElement("type");
+		excludeValues.put("author", new ArrayList<String>());
+		excludeValues.put("source", new ArrayList<String>());
+		excludeValues.put("section", new ArrayList<String>());
+		excludeValues.put("type", new ArrayList<String>());
+		this.excludeRoleList.setModel(excludeRoleModel);
 	}
-	*/
 
 	/**
 	 * Show or hide tool tips with instructions depending on whether helpBox is checked
@@ -1143,12 +1124,9 @@ public class NetworkExporter extends JDialog {
 		public GuiExportThread(
 				String networkType,
 				StatementType statementType,
-				String variable1,
-				boolean variable1Document,
-				String variable2,
-				boolean variable2Document,
-				String qualifier,
-				boolean qualifierDocument,
+				Role role1,
+				Role role2,
+				Role qualifier,
 				String qualifierAggregation,
 				String normalization,
 				boolean isolates,
@@ -1173,12 +1151,9 @@ public class NetworkExporter extends JDialog {
 			this.exporter = new Exporter(
 					networkType,
 					statementType,
-					variable1,
-					variable1Document,
-					variable2,
-					variable2Document,
+					role1,
+					role2,
 					qualifier,
-					qualifierDocument,
 					qualifierAggregation,
 					normalization,
 					isolates,
@@ -1215,15 +1190,14 @@ public class NetworkExporter extends JDialog {
 			
 			// step 1: load and pre-process data
 			progressMonitor.setNote("(1/4) Loading and processing data...");
-			// TODO: add back in
-			// exporter.loadData();
+			exporter.loadData();
 			// System.out.println("Export was launched: " + statements.size() + " out of " + Dna.data.getStatements().size() 
 			// 		+ " statements retained after filtering.");
 			progressMonitor.setProgress(1);
 			
 			// step 2: filter statements
 			progressMonitor.setNote("(2/4) Filtering statements...");
-			exporter.filterStatements();
+			exporter.filterExportEvents();
 			progressMonitor.setProgress(2);
 			
 			// step 3: create network data structure
@@ -1241,8 +1215,7 @@ public class NetworkExporter extends JDialog {
 			
 			// step 4: write to file
 			progressMonitor.setNote("(4/4) Writing to file...");
-			// TODO: add back in
-			// exporter.exportToFile();
+			exporter.exportToFile();
 			progressMonitor.setProgress(4);
 			JOptionPane.showMessageDialog(NetworkExporter.this, "Data were exported to \"" + fileName + "\".");
 		}

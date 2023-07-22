@@ -92,6 +92,10 @@ public class Role {
         this.defaultVariableId = defaultVariableId;
     }
 
+    public String toString() {
+        return this.getRoleName();
+    }
+
     /**
      * Is this role equal to another object?
      *

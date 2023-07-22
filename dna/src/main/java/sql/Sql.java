@@ -3154,8 +3154,9 @@ public class Sql {
 	}
 
 	/**
-	 * Get statements, potentially filtered by statement IDs, statement type
-	 * IDs, document meta-data, date/time range, and duplicates setting.
+	 * Get table statements, potentially filtered by statement IDs, statement type
+	 * IDs, document meta-data, date/time range, and duplicates setting. Used for
+	 * network export.
 	 *
 	 * @param statementIds Array of statement IDs to retrieve. Can be empty or
 	 *   {@code null}, in which case all statements are selected.
@@ -3178,8 +3179,7 @@ public class Sql {
 	 * @param typeInclude Include types instead of excluding them?
 	 * @return Array list of statements with all details.
 	 */
-	/*
-	public ArrayList<Statement> getStatements(
+	public ArrayList<TableStatement> getTableStatements(
 			int[] statementIds,
 			int statementTypeId,
 			LocalDateTime startDateTime,
@@ -3321,7 +3321,7 @@ public class Sql {
 				+ "AND STATEMENTTYPES.ID = " + statementTypeId + " "
 				+ "ORDER BY DOCUMENTS.DATE ASC;";
 
-		String q4a = "SELECT DATASHORTTEXT.StatementId, ROLEVARIABLELINKS.RoleId, ROLES.RoleName, ROLEVARIABLELINKS.VariableId, Variable AS VariableName, ENTITIES.ID AS EntityId, ENTITIES.Value AS Value, ENTITIES.Red AS Red, ENTITIES.Green AS Green, ENTITIES.Blue AS Blue, ENTITIES.ChildOf AS ChildOf FROM DATASHORTTEXT " +
+		String q4a = "SELECT DATASHORTTEXT.StatementId, ROLEVARIABLELINKS.RoleId, ROLEVARIABLELINKS.ID AS RoleVariableLinkId, ROLES.RoleName, ROLEVARIABLELINKS.VariableId, Variable AS VariableName, ENTITIES.ID AS EntityId, ENTITIES.Value AS Value, ENTITIES.Red AS Red, ENTITIES.Green AS Green, ENTITIES.Blue AS Blue, ENTITIES.ChildOf AS ChildOf FROM DATASHORTTEXT " +
 				"INNER JOIN ROLEVARIABLELINKS ON DATASHORTTEXT.RoleVariableLinkId = ROLEVARIABLELINKS.ID " +
 				"INNER JOIN ROLES ON ROLEVARIABLELINKS.RoleId = ROLES.ID " +
 				"INNER JOIN VARIABLES ON ROLEVARIABLELINKS.VariableId = VARIABLES.ID " +
@@ -3329,21 +3329,21 @@ public class Sql {
 				"INNER JOIN STATEMENTS ON STATEMENTS.ID = DATASHORTTEXT.StatementId " +
 				"INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId " +
 				"WHERE ROLES.StatementTypeId = " + statementTypeId + " " + whereShortText + "ORDER BY 1, 2, 4 ASC;";
-		String q4b = "SELECT DATALONGTEXT.StatementId, ROLEVARIABLELINKS.RoleId, ROLES.RoleName, ROLEVARIABLELINKS.VariableId, Variable AS VariableName, DATALONGTEXT.Value FROM DATALONGTEXT " +
+		String q4b = "SELECT DATALONGTEXT.StatementId, ROLEVARIABLELINKS.RoleId, ROLEVARIABLELINKS.ID AS RoleVariableLinkId, ROLES.RoleName, ROLEVARIABLELINKS.VariableId, Variable AS VariableName, DATALONGTEXT.Value FROM DATALONGTEXT " +
 				"INNER JOIN ROLEVARIABLELINKS ON DATALONGTEXT.RoleVariableLinkId = ROLEVARIABLELINKS.ID " +
 				"INNER JOIN ROLES ON ROLEVARIABLELINKS.RoleId = ROLES.ID " +
 				"INNER JOIN VARIABLES ON ROLEVARIABLELINKS.VariableId = VARIABLES.ID " +
 				"INNER JOIN STATEMENTS ON STATEMENTS.ID = DATALONGTEXT.StatementId " +
 				"INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId " +
 				"WHERE ROLES.StatementTypeId = " + statementTypeId + " " + whereLongText + "ORDER BY 1, 2, 4 ASC;";
-		String q4c = "SELECT DATABOOLEAN.StatementId, ROLEVARIABLELINKS.RoleId, ROLES.RoleName, ROLEVARIABLELINKS.VariableId, Variable AS VariableName, DATABOOLEAN.Value FROM DATABOOLEAN " +
+		String q4c = "SELECT DATABOOLEAN.StatementId, ROLEVARIABLELINKS.RoleId, ROLEVARIABLELINKS.ID AS RoleVariableLinkId, ROLES.RoleName, ROLEVARIABLELINKS.VariableId, Variable AS VariableName, DATABOOLEAN.Value FROM DATABOOLEAN " +
 				"INNER JOIN ROLEVARIABLELINKS ON DATABOOLEAN.RoleVariableLinkId = ROLEVARIABLELINKS.ID " +
 				"INNER JOIN ROLES ON ROLEVARIABLELINKS.RoleId = ROLES.ID " +
 				"INNER JOIN VARIABLES ON ROLEVARIABLELINKS.VariableId = VARIABLES.ID " +
 				"INNER JOIN STATEMENTS ON STATEMENTS.ID = DATABOOLEAN.StatementId " +
 				"INNER JOIN DOCUMENTS ON DOCUMENTS.ID = STATEMENTS.DocumentId " +
 				"WHERE ROLES.StatementTypeId = " + statementTypeId + " " + whereBoolean + "ORDER BY 1, 2, 4 ASC;";
-		String q4d = "SELECT DATAINTEGER.StatementId, ROLEVARIABLELINKS.RoleId, ROLES.RoleName, ROLEVARIABLELINKS.VariableId, Variable AS VariableName, DATAINTEGER.Value FROM DATAINTEGER " +
+		String q4d = "SELECT DATAINTEGER.StatementId, ROLEVARIABLELINKS.RoleId, ROLEVARIABLELINKS.ID AS RoleVariableLinkId, ROLES.RoleName, ROLEVARIABLELINKS.VariableId, Variable AS VariableName, DATAINTEGER.Value FROM DATAINTEGER " +
 				"INNER JOIN ROLEVARIABLELINKS ON DATAINTEGER.RoleVariableLinkId = ROLEVARIABLELINKS.ID " +
 				"INNER JOIN ROLES ON ROLEVARIABLELINKS.RoleId = ROLES.ID " +
 				"INNER JOIN VARIABLES ON ROLEVARIABLELINKS.VariableId = VARIABLES.ID " +
@@ -3358,11 +3358,11 @@ public class Sql {
 				+ "INNER JOIN ROLES ON ROLES.ID = ROLEVARIABLELINKS.RoleId "
 				+ "WHERE ROLES.StatementTypeId = " + statementTypeId + ";";
 
-		ArrayList<Statement> listOfStatements = null;
-		int statementId, variableId, roleId, entityId;
+		ArrayList<TableStatement> listOfStatements = null;
+		int statementId, variableId, roleId, entityId, roleVariableLinkId;
 		String variableName, roleName;
 		Color sColor, cColor;
-		HashMap<Integer, Statement> statementMap = new HashMap<Integer, Statement>(); // statement ID to Statement
+		HashMap<Integer, TableStatement> statementMap = new HashMap<Integer, TableStatement>(); // statement ID to TableStatement
 		ResultSet r4, r5;
 		try (Connection conn = Dna.sql.getDataSource().getConnection();
 				PreparedStatement s1 = conn.prepareStatement(q1);
@@ -3379,19 +3379,19 @@ public class Sql {
 			    statementTypeId = r1.getInt("StatementTypeId");
 			    sColor = new Color(r1.getInt("StatementTypeRed"), r1.getInt("StatementTypeGreen"), r1.getInt("StatementTypeBlue"));
 			    cColor = new Color(r1.getInt("CoderRed"), r1.getInt("CoderGreen"), r1.getInt("CoderBlue"));
-			    Statement statement = new Statement(statementId,
+			    TableStatement statement = new TableStatement(statementId,
 			    		r1.getInt("Start"),
 			    		r1.getInt("Stop"),
 			    		statementTypeId,
+						r1.getInt("CoderId"),
+						r1.getInt("DocumentId"),
+						LocalDateTime.ofEpochSecond(r1.getLong("Date"), 0, ZoneOffset.UTC),
+						r1.getString("Text"),
+						r1.getString("CoderName"),
+						cColor,
 			    		r1.getString("StatementTypeLabel"),
 			    		sColor,
-			    		r1.getInt("CoderId"),
-			    		r1.getString("CoderName"),
-			    		cColor,
-			    		new ArrayList<Value>(),
-			    		r1.getInt("DocumentId"),
-			    		r1.getString("Text"),
-			    		LocalDateTime.ofEpochSecond(r1.getLong("Date"), 0, ZoneOffset.UTC));
+			    		new ArrayList<RoleValue>());
 			    statementMap.put(statementId, statement);
 			}
 
@@ -3418,6 +3418,7 @@ public class Sql {
 				roleId = r4.getInt("RoleId");
 				roleName = r4.getString("RoleName");
 				entityId = r4.getInt("EntityId");
+				roleVariableLinkId = r4.getInt("RoleVariableLinkId");
 				Entity e = new Entity(entityId,
 						variableId,
 						r4.getString("Value"),
@@ -3425,7 +3426,7 @@ public class Sql {
 						r4.getInt("ChildOf"),
 						true,
 						attributeMap.get(entityId));
-				statementMap.get(r4.getInt("StatementId")).getValues().add(new Value(variableId, variableName, "short text", e, roleId, roleName));
+				statementMap.get(r4.getInt("StatementId")).getRoleValues().add(new RoleValue(variableId, variableName, "short text", e, roleVariableLinkId, roleId, roleName, r4.getInt("StatementId")));
 			}
 			r4 = s4b.executeQuery();
 			while (r4.next()) {
@@ -3433,8 +3434,9 @@ public class Sql {
 				variableName = r4.getString("VariableName");
 				roleId = r4.getInt("RoleId");
 				roleName = r4.getString("RoleName");
+				roleVariableLinkId = r4.getInt("RoleVariableLinkId");
 				String value = r4.getString("Value");
-				statementMap.get(r4.getInt("StatementId")).getValues().add(new Value(variableId, variableName, "long text", value, roleId, roleName));
+				statementMap.get(r4.getInt("StatementId")).getRoleValues().add(new RoleValue(variableId, variableName, "long text", value, roleVariableLinkId, roleId, roleName, r4.getInt("StatementId")));
 			}
 			r4 = s4c.executeQuery();
 			while (r4.next()) {
@@ -3442,8 +3444,9 @@ public class Sql {
 				variableName = r4.getString("VariableName");
 				roleId = r4.getInt("RoleId");
 				roleName = r4.getString("RoleName");
+				roleVariableLinkId = r4.getInt("RoleVariableLinkId");
 				int value = r4.getInt("Value");
-				statementMap.get(r4.getInt("StatementId")).getValues().add(new Value(variableId, variableName, "boolean", value, roleId, roleName));
+				statementMap.get(r4.getInt("StatementId")).getRoleValues().add(new RoleValue(variableId, variableName, "boolean", value, roleVariableLinkId, roleId, roleName, r4.getInt("StatementId")));
 			}
 			r4 = s4d.executeQuery();
 			while (r4.next()) {
@@ -3451,13 +3454,14 @@ public class Sql {
 				variableName = r4.getString("VariableName");
 				roleId = r4.getInt("RoleId");
 				roleName = r4.getString("RoleName");
+				roleVariableLinkId = r4.getInt("RoleVariableLinkId");
 				int value = r4.getInt("Value");
-				statementMap.get(r4.getInt("StatementId")).getValues().add(new Value(variableId, variableName, "integer", value, roleId, roleName));
+				statementMap.get(r4.getInt("StatementId")).getRoleValues().add(new RoleValue(variableId, variableName, "integer", value, roleVariableLinkId, roleId, roleName, r4.getInt("StatementId")));
 			}
 
 			// assemble and sort all statements
-			Collection<Statement> s = statementMap.values();
-	        listOfStatements = new ArrayList<Statement>(s);
+			Collection<TableStatement> s = statementMap.values();
+	        listOfStatements = new ArrayList<>(s);
 			Collections.sort(listOfStatements);
 		} catch (SQLException e) {
 			LogEvent l = new LogEvent(Logger.WARNING,
@@ -3468,7 +3472,21 @@ public class Sql {
 		}
 		return listOfStatements;
 	}
-	*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	/**
 	 * Get a shallow representation of all statements in a specific document for
@@ -3796,70 +3814,45 @@ public class Sql {
 		}
 	}
 
+
 	/**
-	 * Retrieve unique values for a specific variable.
+	 * Retrieve unique string values over all variables associated with a role provided as input.
 	 *
-	 * @param statementTypeId  Statement type ID to which the variable belongs.
-	 * @param variable         The name of the variable.
-	 * @return                 Array list of unique String values.
+	 * @param roleId The role ID for which all values (for all associated variables) should be returned as an array list of strings.
+	 * @return Array list of strings with the unique and sorted values for all variables associated with the input role.
 	 */
-	/*
-	public ArrayList<String> getUniqueValues(int statementTypeId, String variable) {
-		ArrayList<String> values = new ArrayList<String>();
+	public ArrayList<String> getUniqueRoleValues(int roleId) {
+		ArrayList<String> values = new ArrayList<>();
 		try (Connection conn = ds.getConnection();
-				//PreparedStatement s1 = conn.prepareStatement("SELECT DISTINCT Value FROM DATAINTEGER INNER JOIN VARIABLES ON VARIABLES.ID = DATAINTEGER.VariableId WHERE VARIABLES.Variable = ? AND VARIABLES.StatementTypeId = ?;");
-			 	PreparedStatement s1 = conn.prepareStatement("SELECT DISTINCT Value FROM DATAINTEGER INNER JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.ID = DATAINTEGER.RoleVariableLinkId WHERE ROLEVARIABLELINKS.VariableId = ?;");
-				PreparedStatement s2 = conn.prepareStatement("SELECT DISTINCT Value FROM DATABOOLEAN INNER JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.ID = DATABOOLEAN.RoleVariableLinkId WHERE ROLEVARIABLELINKS.VariableId = ?;");
-				PreparedStatement s3 = conn.prepareStatement("SELECT DISTINCT Value FROM DATALONGTEXT INNER JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.ID = DATALONGTEXT.RoleVariableLinkId WHERE ROLEVARIABLELINKS.VariableId = ?;");
-			 	PreparedStatement s4 = conn.prepareStatement("SELECT DISTINCT Value FROM ENTITIES INNER JOIN DATASHORTTEXT ON DATASHORTTEXT.Entity = ENTITIES.ID INNER JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.ID = DATASHORTTEXT.RoleVariableLinkId WHERE ROLEVARIABLELINKS.VariableId = ?;");
-				PreparedStatement s5 = conn.prepareStatement("SELECT DataType FROM VARIABLES WHERE Variable = ?;")) { // TODO: input used to be a variable label, not ID; merge with VARIABLES table each time to get it? Or do we actually need this for roles, not variables?
-			ResultSet r1, r2;
-			s5.setString(1, variable);
-			s5.setInt(2, statementTypeId);
-			r1 = s5.executeQuery();
+			 PreparedStatement s1 = conn.prepareStatement("SELECT DISTINCT Value FROM DATAINTEGER INNER JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.ID = DATAINTEGER.RoleVariableLinkId WHERE ROLEVARIABLELINKS.RoleId = ?;");
+			 PreparedStatement s2 = conn.prepareStatement("SELECT DISTINCT Value FROM DATABOOLEAN INNER JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.ID = DATABOOLEAN.RoleVariableLinkId WHERE ROLEVARIABLELINKS.RoleId = ?;");
+			 PreparedStatement s3 = conn.prepareStatement("SELECT DISTINCT ENTITIES.Value FROM ENTITIES INNER JOIN DATASHORTTEXT ON DATASHORTTEXT.Entity = ENTITIES.ID INNER JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.ID = DATASHORTTEXT.RoleVariableLinkId WHERE ROLEVARIABLELINKS.RoleId = ?;")) {
+			ResultSet r1;
+			s1.setInt(1, roleId);
+			r1 = s1.executeQuery();
 			while (r1.next()) {
-				String dataType = r1.getString("DataType");
-				if (dataType.equals("integer")) {
-					s1.setString(1, variable);
-					s1.setInt(2, statementTypeId);
-					r2 = s1.executeQuery();
-					while (r2.next()) {
-						values.add(String.valueOf(r2.getInt("Value")));
-					}
-				} else if (dataType.equals("boolean")) {
-					s2.setString(1, variable);
-					s2.setInt(2, statementTypeId);
-					r2 = s2.executeQuery();
-					while (r2.next()) {
-						values.add(String.valueOf(r2.getInt("Value")));
-					}
-				} else if (dataType.equals("long text")) {
-					s3.setString(1, variable);
-					s3.setInt(2, statementTypeId);
-					r2 = s3.executeQuery();
-					while (r2.next()) {
-						values.add(r2.getString("Value"));
-					}
-				} else {
-					s4.setString(1, variable);
-					s4.setInt(2, statementTypeId);
-					r2 = s4.executeQuery();
-					while (r2.next()) {
-						values.add(r2.getString("Value"));
-					}
-				}
+				values.add(String.valueOf(r1.getInt("Value")));
+			}
+			s2.setInt(1, roleId);
+			r1 = s2.executeQuery();
+			while (r1.next()) {
+				values.add(String.valueOf(r1.getInt("Value")));
+			}
+			s3.setInt(1, roleId);
+			r1 = s3.executeQuery();
+			while (r1.next()) {
+				values.add(r1.getString("Value"));
 			}
 		} catch (SQLException e1) {
-        	LogEvent e = new LogEvent(Logger.WARNING,
-        			"[SQL] Values could not be retrieved.",
-        			"The unique values for variable \"" + variable + "\" (statement type ID " + statementTypeId + ") could not be retrieved from the database.",
-        			e1);
-        	Dna.logger.log(e);
+			LogEvent e = new LogEvent(Logger.WARNING,
+					"[SQL] Values could not be retrieved.",
+					"The unique values for role " + roleId + " could not be retrieved from the database.",
+					e1);
+			Dna.logger.log(e);
 		}
 		Collections.sort(values);
 		return values;
 	}
-	*/
 
 	/**
 	 * Update/set an attribute value for an entity.

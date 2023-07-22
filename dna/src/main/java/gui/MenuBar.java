@@ -204,7 +204,6 @@ public class MenuBar extends JMenuBar {
 
 		// export menu: open network exporter
 		JMenuItem networkExporterItem = new JMenuItem(actionNetworkExporter);
-		networkExporterItem.setVisible(false); // TODO: make visible once finalized
 		exportMenu.add(networkExporterItem);
 
 		// export menu: open backbone exporter
