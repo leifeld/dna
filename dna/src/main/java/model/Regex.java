@@ -47,9 +47,9 @@ public class Regex implements Comparable<Regex> {
 	 *   order, {@code 0} if it is equal, or {@code 1} if it is higher.
 	 */
 	public int compareTo(Regex regex) {
-		if (this.getLabel().compareTo(regex.getLabel()) < 0) {
+		if (this.getLabel().compareTo(regex.getLabel().toLowerCase()) < 0) {
 			return -1;
-		} else if (this.getLabel().compareTo(regex.getLabel()) > 0) {
+		} else if (this.getLabel().compareTo(regex.getLabel().toLowerCase()) > 0) {
 			return 1;
 		} else {
 			return 0;

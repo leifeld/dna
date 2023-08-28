@@ -32,6 +32,7 @@ import dna.Dna;
 import logger.LogEvent;
 import logger.Logger;
 import logger.LoggerDialog;
+import org.jdesktop.swingx.JXTreeTable;
 import sql.ConnectionProfile;
 import sql.Sql;
 
@@ -52,6 +53,7 @@ public class MainWindow extends JFrame {
 	private MenuBar menuBar;
 	private ToolbarPanel toolbar;
 	private StatusBar statusBar;
+	private RegexPanel regexPanel;
 	private CoderSelectionPanel coderSelectionPanel;
 	private ActionOpenDatabase actionOpenDatabase;
 	private ActionCreateDatabase actionCreateDatabase;
@@ -307,9 +309,90 @@ public class MainWindow extends JFrame {
 		rightSplitPane.setBorder(new EmptyBorder(0, 5, 0, 0));
 		rightSplitPane.setResizeWeight(0.9); // right pane gets 10% of any extra space if resized (e.g., maximized)
 
+
+		/*
+		JPanel leftPanel = new JPanel(new BorderLayout());
+		JToolBar leftToolBar = new JToolBar(JToolBar.VERTICAL);
+		leftToolBar.setFloatable(false);
+
+		ImageIcon entityIcon = new SvgIcon("/icons/tabler_text_plus.svg", 18).getImageIcon();
+		JToggleButton entityButton = new JToggleButton(entityIcon);
+		entityButton.setToolTipText("display entity tree");
+		entityButton.setMargin(new Insets(0, 0, 0, 0));
+		leftToolBar.add(entityButton);
+
+		ImageIcon searchIcon = new SvgIcon("/icons/tabler_filter_plus.svg", 18).getImageIcon();
+		JToggleButton searchButton = new JToggleButton(searchIcon);
+		searchButton.setToolTipText("display search function");
+		searchButton.setMargin(new Insets(0, 0, 0, 0));
+		leftToolBar.add(searchButton);
+
+		ButtonGroup toolBarButtonGroup = new ButtonGroup(){
+			@Override
+			public void setSelected(ButtonModel model, boolean selected) {
+				if (selected) {
+					super.setSelected(model, selected);
+				} else {
+					clearSelection();
+				}
+			}
+		};
+		toolBarButtonGroup.add(entityButton);
+		toolBarButtonGroup.add(searchButton);
+
+		JPanel cardPanel = new JPanel(new CardLayout());
+		leftPanel.add(leftToolBar, BorderLayout.WEST);
+		*/
+
+		JPanel leftPanel = new JPanel(new BorderLayout());
+		JTabbedPane tabbedPane = new JTabbedPane();
+
+		// Remove the white line under a tab button
+		Insets insets = UIManager.getInsets("TabbedPane.contentBorderInsets");
+		insets.top = -1;
+		insets.right = -1;
+		insets.bottom = -1;
+		insets.left = -1;
+		UIManager.put("TabbedPane.contentBorderInsets", insets);
+
+		leftPanel.add(tabbedPane, BorderLayout.CENTER);
+
+		// entity panel
+		EntityPanel entityPanel = new EntityPanel();
+		tabbedPane.addTab("Entities", entityPanel);
+
+		// regex panel
+		this.regexPanel = new RegexPanel();
+		this.regexPanel.getAddButton().addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				MainWindow.this.regexPanel.addRegex();
+				MainWindow.this.textPanel.adjustToChangedCoder();
+			}
+		});
+		this.regexPanel.getRemoveButton().addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				int dialog = JOptionPane.showConfirmDialog(null, "Delete selected regular expression(s) for all coders?", "Confirmation", JOptionPane.YES_NO_OPTION);
+				if (dialog == 0) {
+					MainWindow.this.regexPanel.removeRegexes();
+					MainWindow.this.textPanel.adjustToChangedCoder();
+				}
+			}
+		});
+		tabbedPane.addTab("Regex", regexPanel);
+
+
+
+
+
+
+
+
+		JSplitPane leftSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, rightSplitPane);
+		leftSplitPane.setDividerSize(3);
+
 		JPanel mainPanel = new JPanel(new BorderLayout());
 		mainPanel.add(menuBar, BorderLayout.NORTH);
-		mainPanel.add(rightSplitPane, BorderLayout.CENTER);
+		mainPanel.add(leftSplitPane, BorderLayout.CENTER); // rightSplitPane
 		mainPanel.add(statusBar, BorderLayout.SOUTH);
 		
 		// selection listener for the statement table; select statement or enable recode and remove statements actions
@@ -1408,11 +1491,14 @@ public class MainWindow extends JFrame {
 		actionCreateDatabase.setEnabled(true);
 		actionOpenProfile.setEnabled(true);
 		actionSaveProfile.setEnabled(true);
+		this.regexPanel.refresh();
+		/*
 		if (Dna.sql.getActiveCoder() != null && Dna.sql.getActiveCoder().isPermissionEditRegex()) {
 			actionRegexEditor.setEnabled(true);
 		} else {
 			actionRegexEditor.setEnabled(false);
 		}
+		*/
 		if (Dna.sql.getActiveCoder() != null && Dna.sql.getActiveCoder().isPermissionEditCoders()) {
 			actionCoderManager.setEnabled(true);
 		} else {
@@ -1479,6 +1565,7 @@ public class MainWindow extends JFrame {
 				statementPanel.adjustToChangedConnection();
 				menuBar.adjustToChangedCoder();
 				coderSelectionPanel.changeCoderBadge();
+				MainWindow.this.regexPanel.refresh();
 			}
 			
 			if (cp == null) {
@@ -1538,6 +1625,7 @@ public class MainWindow extends JFrame {
 			statementPanel.adjustToChangedConnection();
 			menuBar.adjustToChangedCoder();
 			coderSelectionPanel.changeCoderBadge();
+			MainWindow.this.regexPanel.refresh();
 			
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Action executed: closed database.",
@@ -1575,6 +1663,7 @@ public class MainWindow extends JFrame {
 				statementPanel.adjustToChangedConnection();
 				menuBar.adjustToChangedCoder();
 				coderSelectionPanel.changeCoderBadge();
+				MainWindow.this.regexPanel.refresh();
 			}
 			
 			if (cp == null) {
@@ -1651,6 +1740,7 @@ public class MainWindow extends JFrame {
 										statementPanel.adjustToChangedConnection();
 										menuBar.adjustToChangedCoder();
 										coderSelectionPanel.changeCoderBadge();
+										MainWindow.this.regexPanel.refresh();
 									} else {
 										cp = null;
 									}
@@ -2146,6 +2236,7 @@ public class MainWindow extends JFrame {
 		public void actionPerformed(ActionEvent e) {
 	    	refreshDocumentTable();
 			refreshStatementTable(new int[0]);
+			MainWindow.this.regexPanel.refresh();
 		}
 	}
 
