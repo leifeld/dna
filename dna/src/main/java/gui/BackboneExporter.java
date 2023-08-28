@@ -1088,6 +1088,7 @@ public class BackboneExporter extends JDialog {
 			// step 3: simulated annealing
 			if (proceed) {
 				progressMonitor.setNote("Simulated annealing...");
+				/*
 				try (ProgressBar pb = new ProgressBar("Simulated annealing...", T)) {
 					while (exporter.getCurrentT() <= T && !progressMonitor.isCanceled()) { // run up to upper bound of iterations T, provided by the user
 						if (progressMonitor.isCanceled()) {
@@ -1110,6 +1111,9 @@ public class BackboneExporter extends JDialog {
 						System.err.println("Canceled.");
 					}
 				}
+				*/
+				// TODO: use progress monitor for computing nested backbone results!
+				exporter.nestedBackbone();
 			}
 			if (progressMonitor.isCanceled()) {
 				JOptionPane.showMessageDialog(BackboneExporter.this, "Backbone finder was canceled.");

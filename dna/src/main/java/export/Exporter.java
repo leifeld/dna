@@ -2976,4 +2976,79 @@ public class Exporter {
 			Dna.logger.log(l);
 		}
 	}
+
+	/* NEW BACKBONE ATTEMPT FROM HERE */
+
+	/**
+	 * Compute penalized Euclidean spectral distance.
+	 *
+	 * @param eigenvalues1 Normalized eigenvalues of the full matrix.
+	 * @param eigenvalues2 Normalized eigenvalues of the current or candidate matrix.
+	 * @return Spectral loss.
+	 */
+	private double spectralLoss(double[] eigenvalues1, double[] eigenvalues2) {
+		double distance = 0.0; // Euclidean spectral distance
+		for (int i = 0; i < eigenvalues1.length; i++) {
+			distance = distance + Math.sqrt((eigenvalues1[i] - eigenvalues2[i]) * (eigenvalues1[i] - eigenvalues2[i]));
+		}
+		return distance;
+	}
+
+	public void nestedBackbone() {
+
+		// initial values before iterations start
+		this.originalStatements = this.filteredStatements; // to ensure not all isolates are included later
+
+		// full set of concepts C
+		fullConcepts = this.extractLabels(this.filteredStatements, this.variable2, this.variable2Document);
+
+		// full network matrix Y against which we compare in every iteration
+		fullMatrix = this.computeOneModeMatrix(this.filteredStatements, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
+		//this.isolates = true; // include isolates in the iterations; will be adjusted to full matrix without isolates manually each time
+
+		// compute normalised eigenvalues for the full matrix; no need to recompute every time as they do not change
+		eigenvaluesFull = computeNormalizedEigenvalues(fullMatrix.getMatrix());
+
+		ArrayList<Integer> addedIteration = new ArrayList<>();
+		ArrayList<Double> addedLoss = new ArrayList<>();
+		ArrayList<String> addedRedundantConcept = new ArrayList<>();
+		ArrayList<String> allConcepts = new ArrayList<>();
+		for (int i = 0; i < fullConcepts.length; i++) {
+			allConcepts.add(fullConcepts[i]);
+		}
+		ArrayList<String> backboneConcepts = new ArrayList<>(allConcepts);
+		ArrayList<String> redundantConcepts = new ArrayList<>();
+		double currentLoss = 999999.99;
+		while (backboneConcepts.size() > 0) {
+			double[] currentLosses = new double[backboneConcepts.size()];
+			for (int i = 0; i < backboneConcepts.size(); i++) {
+				ArrayList<String> candidate = new ArrayList<>(backboneConcepts);
+				candidate.remove(i);
+				final ArrayList<String> finalCandidate = new ArrayList<String>(candidate); // make it final, so it can be used in a stream
+				candidateStatementList = this.filteredStatements
+						.stream()
+						.filter(s -> finalCandidate.contains(((Entity) s.get(this.variable2)).getValue()))
+						.collect(Collectors.toCollection(ArrayList::new));
+				candidateMatrix = this.computeOneModeMatrix(candidateStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
+				candidateMatrix = this.reduceCandidateMatrix(candidateMatrix, fullMatrix.getRowNames()); // ensure it has the right dimensions by purging isolates relative to the full matrix
+				eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix()); // normalised eigenvalues for the candidate matrix
+				currentLosses[i] = spectralLoss(eigenvaluesFull, eigenvaluesCandidate);
+			}
+			double smallestLoss = 0.0;
+			if (backboneConcepts.size() > 0) {
+				smallestLoss = Arrays.stream(currentLosses).min().getAsDouble();
+			}
+			for (int i = backboneConcepts.size() - 1; i >= 0; i--) {
+				if (currentLosses[i] == smallestLoss) {
+					addedIteration.add(addedIteration.size());
+					addedRedundantConcept.add(backboneConcepts.get(i));
+					addedLoss.add(smallestLoss);
+					System.out.println("Iteration: " + addedIteration.get(addedIteration.size() - 1) + ". Loss: " + addedLoss.get(addedLoss.size() - 1) + ". Concept: " + backboneConcepts.get(i) + ".");
+					redundantConcepts.add(backboneConcepts.get(i));
+					backboneConcepts.remove(i);
+				}
+			}
+		}
+		// TODO:
+	}
 }

@@ -203,8 +203,7 @@ public class MenuBar extends JMenuBar {
 
 		// export menu: open backbone exporter
 		JMenuItem backboneExporterItem = new JMenuItem(actionBackboneExporter);
-		// exportMenu.add(backboneExporterItem);
-		// TODO: add back in once finalized
+		exportMenu.add(backboneExporterItem);
 
 		// settings menu
 		JMenu settingsMenu = new JMenu("Settings");
