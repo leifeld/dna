@@ -543,8 +543,10 @@ public class HeadlessDna implements Logger.LogListener {
 	/**
 	 * Compute backbone and set of redundant entities on the second mode in a discourse network.
 	 *
-	 * @param p                      Penalty parameter, for example {@code 7.5}.
-	 * @param T                      Number of iterations, for example {@code 50000}.
+	 * @param method                 Backbone algorithm (can be {@code "nested"}, {@code "all"}, {@code "size"}, or {@code "penalty"}).
+	 * @param backboneSize           The number of elements in the backbone set, as a fixed parameter. Only used when {@code method = "size"}.
+	 * @param p                      Penalty parameter, for example {@code 7.5}. Only used when {@code method = "penalty"}.
+	 * @param T                      Number of iterations, for example {@code 50000}. Only used when {@code method = "penalty"}.
 	 * @param statementType          Statement type as a {@link String}.
 	 * @param variable1              First variable for export, provided as a {@link String}.
 	 * @param variable1Document      boolean indicating if the first variable is at the document level.
@@ -572,9 +574,9 @@ public class HeadlessDna implements Logger.LogListener {
 	 * @param invertTypes            boolean indicating whether the document-level type values should be included (= {@code true}) rather than excluded.
 	 * @param outfile                {@link String} with a file name under which the resulting network should be saved.
 	 * @param fileFormat             {@link String} with the file format. Valid values are {@code "xml"}, {@code "json"}, and {@code null} (for no file export).
-	 * @return                       A {@link BackboneResult} object containing the results.
+	 * @return                       A {@link PenaltyBackboneResult} object containing the results.
 	 */
-	public void rBackbone(double p, int T, String statementType, String variable1, boolean variable1Document, String variable2,
+	public void rBackbone(String method, int backboneSize, double p, int T, String statementType, String variable1, boolean variable1Document, String variable2,
 						  boolean variable2Document, String qualifier, boolean qualifierDocument, String qualifierAggregation, String normalization,
 						  String duplicates, String startDate, String stopDate, String startTime, String stopTime,
 						  String[] excludeVariables, String[] excludeValues, String[] excludeAuthors, String[] excludeSources, String[] excludeSections,
@@ -679,42 +681,72 @@ public class HeadlessDna implements Logger.LogListener {
 		}
 
 		// step 3: compute results
-		this.exporter.backbone(p, T); // initial results
-		try (ProgressBar pb = new ProgressBar("Simulated annealing...", T)) {
-			while (exporter.getCurrentT() <= T) { // run up to upper bound of iterations T, provided by the user
-				pb.stepTo(exporter.getCurrentT());
-				exporter.iterateBackbone();
+		if (method.equals("nested")) {
+			this.exporter.initializeNestedBackbone();
+			int iterations = 0;
+			for (int i = 0; i < exporter.getFullSize(); i++) {
+				iterations = iterations + (exporter.getFullSize() - i);
 			}
-			exporter.saveBackboneResult();
+			try (ProgressBar pb = new ProgressBar("Nested backbone...", iterations)) {
+				while (exporter.getBackboneSize() > 0) { // run up to the point where all concepts have been moved from the backbone set to the redundant set
+					int it = 1;
+					for (int i = 0; i < exporter.getFullSize() - exporter.getBackboneSize(); i++) {
+						it = it + (exporter.getFullSize() - i);
+					}
+					pb.stepTo(it); // go from empty backbone set to full backbone set
+					exporter.iterateNestedBackbone();
+				}
+				exporter.saveNestedBackboneResult();
 
-			// step 4: save to file
-			if (fileFormat != null && outfile != null) {
-				if (fileFormat.equals("json") && !outfile.toLowerCase().endsWith(".json")) {
-					outfile = outfile + ".json";
-					LogEvent le = new LogEvent(Logger.WARNING,
-							"Appended \".json\" to file name.",
-							"The outfile for the backbone export did not end with \".json\" although the \"json\" file format was chosen. Appending \".json\" to the file name.");
-					Dna.logger.log(le);
-				}
-				if (fileFormat.equals("xml") && !outfile.toLowerCase().endsWith(".xml")) {
-					outfile = outfile + ".xml";
-					LogEvent le = new LogEvent(Logger.WARNING,
-							"Appended \".xml\" to file name.",
-							"The outfile for the backbone export did not end with \".xml\" although the \"xml\" file format was chosen. Appending \".xml\" to the file name.");
-					Dna.logger.log(le);
-				}
-				if (!fileFormat.equals("xml") && !fileFormat.equals("json")) {
-					fileFormat = null;
-					LogEvent le = new LogEvent(Logger.WARNING,
-							"File format for backbone export not recognized.",
-							"The file format for saving a backbone and redundant set to disk was not recognized. Valid file formats are \"json\" and \"xml\". The file format you provided was \"" + fileFormat + "\". Not saving the file to disk because the file format is unknown.");
-					Dna.logger.log(le);
-				} else {
-					this.exporter.writeBackboneToFile(outfile);
-				}
+				// step 4: save to file
+				saveJsonXml(fileFormat, outfile);
+				pb.stepTo(iterations);
 			}
+		} else if (method.equals("all")) {
+			// TODO
+		} else if (method.equals("size")) {
+			// TODO
+		} else if (method.equals("penalty")) {
+			this.exporter.initializePenaltyBackbone(p, T); // initial results
+			try (ProgressBar pb = new ProgressBar("Simulated annealing...", T)) {
+				while (exporter.getCurrentT() <= T) { // run up to upper bound of iterations T, provided by the user
+					pb.stepTo(exporter.getCurrentT());
+					exporter.iteratePenaltyBackbone();
+				}
+				exporter.savePenaltyBackboneResult();
 
-			pb.stepTo(T);
+				// step 4: save to file
+				saveJsonXml(fileFormat, outfile);
+				pb.stepTo(T);
+			}
+		}
+	}
+
+	private void saveJsonXml(String fileFormat, String outfile) {
+		if (fileFormat != null && outfile != null) {
+			if (fileFormat.equals("json") && !outfile.toLowerCase().endsWith(".json")) {
+				outfile = outfile + ".json";
+				LogEvent le = new LogEvent(Logger.WARNING,
+						"Appended \".json\" to file name.",
+						"The outfile for the backbone export did not end with \".json\" although the \"json\" file format was chosen. Appending \".json\" to the file name.");
+				Dna.logger.log(le);
+			}
+			if (fileFormat.equals("xml") && !outfile.toLowerCase().endsWith(".xml")) {
+				outfile = outfile + ".xml";
+				LogEvent le = new LogEvent(Logger.WARNING,
+						"Appended \".xml\" to file name.",
+						"The outfile for the backbone export did not end with \".xml\" although the \"xml\" file format was chosen. Appending \".xml\" to the file name.");
+				Dna.logger.log(le);
+			}
+			if (!fileFormat.equals("xml") && !fileFormat.equals("json")) {
+				fileFormat = null;
+				LogEvent le = new LogEvent(Logger.WARNING,
+						"File format for backbone export not recognized.",
+						"The file format for saving a backbone and redundant set to disk was not recognized. Valid file formats are \"json\" and \"xml\". The file format you provided was \"" + fileFormat + "\". Not saving the file to disk because the file format is unknown.");
+				Dna.logger.log(le);
+			} else {
+				this.exporter.writeBackboneToFile(outfile);
+			}
 		}
 	}
 

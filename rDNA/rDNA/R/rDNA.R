@@ -2260,6 +2260,39 @@ autoplot.dna_barplot <- function(object,
 #' network to partition the set of second-mode entities (e.g., concepts) into a
 #' backbone set and a complementary redundant set.
 #'
+#' @param method The backbone algorithm used to compute the results. Several
+#'  methods are available:
+#'  \itemize{
+#'    \item \code{"nested"}: A relatively fast, deterministic algorithm that
+#'      produces the full hierarchy of entities. It starts with a complete
+#'      backbone set resembling the full network. There are as many iterations
+#'      as entities on the second mode. In each iteration, the entity whose
+#'      removal would yield the smallest backbone loss is moved from the
+#'      backbone set into the redundant set, and the (unpenalized) spectral
+#'      loss is recorded. This creates a solution for all backbone sizes, where
+#'      each backbone set is fully nested in the next larger backbone set. The
+#'      solution usually resembles an unconstrained solution where nesting is
+#'      not required, but in some cases the loss of a non-nested solution may be
+#'      larger at a given level or number of elements in the backbone set.
+#'    \item \code{"all"}: Simulated annealing with a fixed number of elements in
+#'      the backbone set (i.e., only lateral changes are possible) and without
+#'      penalty, calculated iteratively for all possible backbone sizes. This
+#'      method may yield more optimal solutions than the nested algorithm
+#'      because it does not require a strict hierarchy. However, it produces an
+#'      approximation of the global optimum and is slower than the nested
+#'      method.
+#'    \item \code{"size"}: Like \code{"all"}, but only for one specific backbone
+#'      set size, for example exactly 10 concepts. The backbone set size is
+#'      defined in the \code{"backboneSize"} argument.
+#'    \item \code{"penalty"}: Simulated annealing with a variable number of
+#'      elements in the backbone set. The solution is stabilized by a penalty
+#'      parameter (see \code{"penalty"} argument). This algorithm takes longest
+#'      to compute for a single solution, and it is only an approximation, but
+#'      it considers slightly larger or smaller backbone sets if the solution is
+#'      better, thus this algorithm adds some flexibility.
+#'  }
+#' @param backboneSize The number of elements in the backbone set, as a fixed
+#'   parameter. Only used when \code{method = "size"}.
 #' @param penalty The penalty parameter for large backbone sets. The larger the
 #'   value, the more strongly larger backbone sets are punished and the smaller
 #'   the resulting backbone is. Try out different values to find the right size
@@ -2268,10 +2301,11 @@ autoplot.dna_barplot <- function(object,
 #'   imposes no penalty on the size of the backbone set and produces a redundant
 #'   set with only one element. Start with \code{0.0} if you want to weed out a
 #'   single concept and subsequently increase the penalty to include more items
-#'   in the redundant set and shrink the backbone further.
+#'   in the redundant set and shrink the backbone further. Only used when
+#'   \code{method = "penalty"}.
 #' @param iterations The number of iterations of the simulated annealing
 #'   algorithm. More iterations take more time but may lead to better
-#'   optimization results.
+#'   optimization results. Only used when \code{method = "penalty"}.
 #' @param qualifierAggregation The aggregation rule for the \code{qualifier}
 #'   variable. This must be \code{"ignore"} (for ignoring the qualifier
 #'   variable), \code{"congruence"} (for recording a network tie only if both
@@ -2300,7 +2334,8 @@ autoplot.dna_barplot <- function(object,
 #' dna_openDatabase("sample.dna", coderId = 1, coderPassword = "sample")
 #'
 #' # compute backbone and redundant set
-#' b <- dna_backbone(penalty = 3.5,
+#' b <- dna_backbone(method = "penalty",
+#'                   penalty = 3.5,
 #'                   iterations = 10000,
 #'                   variable1 = "organization",
 #'                   variable2 = "concept",
@@ -2350,8 +2385,10 @@ autoplot.dna_barplot <- function(object,
 #' @importFrom rJava .jcall
 #' @importFrom rJava .jnull
 #' @importFrom rJava J
-#' @noRd
-dna_backbone <- function(penalty = 3.5,
+#' @export
+dna_backbone <- function(method = "nested",
+                         backboneSize = 1,
+                         penalty = 3.5,
                          iterations = 10000,
                          statementType = "DNA Statement",
                          variable1 = "organization",
@@ -2423,6 +2460,8 @@ dna_backbone <- function(penalty = 3.5,
   .jcall(dnaEnvironment[["dna"]]$headlessDna,
          "V",
          "rBackbone",
+         method,
+         as.integer(backboneSize),
          as.double(penalty),
          as.integer(iterations),
          statementType,
@@ -2455,10 +2494,10 @@ dna_backbone <- function(penalty = 3.5,
   )
 
   exporter <- .jcall(dnaEnvironment[["dna"]]$headlessDna, "Lexport/Exporter;", "getExporter") # get a reference to the Exporter object, in which results are stored
-  result <- .jcall(exporter, "Lexport/BackboneResult;", "getBackboneResult", simplify = TRUE)
   if (!is.null(outfile) && !is.null(fileFormat) && is.character(outfile) && is.character(fileFormat) && fileFormat %in% c("json", "xml")) {
     message("File exported.")
-  } else {
+  } else if (method[1] == "penalty") {
+    result <- .jcall(exporter, "Lexport/PenaltyBackboneResult;", "getPenaltyBackboneResult", simplify = TRUE)
     # create a list with various results
     l <- list()
     l$penalty <- .jcall(result, "D", "getPenalty")
@@ -2509,31 +2548,57 @@ dna_backbone <- function(penalty = 3.5,
     attributes(l$full_network)$call <- match.call()
     attributes(l$backbone_network)$call <- match.call()
     attributes(l$redundant_network)$call <- match.call()
+    attributes(l)$method <- "penalty"
     class(l$full_network) <- c("dna_network_onemode", class(l$full_network))
     class(l$backbone_network) <- c("dna_network_onemode", class(l$backbone_network))
     class(l$redundant_network) <- c("dna_network_onemode", class(l$redundant_network))
 
     class(l) <- c("dna_backbone", class(l))
     return(l)
+  } else if (method[1] == "nested") {
+    result <- .jcall(exporter, "Lexport/NestedBackboneResult;", "getNestedBackboneResult", simplify = TRUE)
+    d <- data.frame(i = .jcall(result, "[I", "getIteration"),
+                    entity = .jcall(result, "[S", "getEntities"),
+                    backboneLoss = .jcall(result, "[D", "getBackboneLoss"),
+                    redundantLoss = .jcall(result, "[D", "getRedundantLoss"),
+                    statements = .jcall(result, "[I", "getNumStatements"))
+    rownames(d) <- NULL
+    attributes(d)$numStatementsFull <- .jcall(result, "I", "getNumStatementsFull")
+    attributes(d)$start <- as.POSIXct(.jcall(result, "J", "getStart"), origin = "1970-01-01") # add the start date/time of the result as an attribute
+    attributes(d)$stop <- as.POSIXct(.jcall(result, "J", "getStop"), origin = "1970-01-01") # add the end date/time of the result as an attribute
+    attributes(d)$method <- "nested"
+    class(d) <- c("dna_backbone", class(d))
+    return(d)
   }
 }
 
 #' @rdname dna_backbone
 #' @param x A \code{"dna_backbone"} object.
-#' @noRd
-print.dna_backbone <- function(x, ...) {
-  cat(paste0("Penalty: ", x$penalty, ". Iterations: ", x$iterations, ".\n\n"))
-  cat(paste0("Backbone set (loss: ", round(x$unpenalized_backbone_loss, 4), "):\n"))
-  cat(paste(1:length(x$backbone), x$backbone), sep = "\n")
-  cat(paste0("\nRedundant set (loss: ", round(x$unpenalized_redundant_loss, 4), "):\n"))
-  cat(paste(1:length(x$redundant), x$redundant), sep = "\n")
+#' @param trim Number of maximum characters to display in entity labels. Labels
+#'   with more characters are truncated, and the last character is replaced by
+#'   an asterisk (\code{*}).
+#' @export
+print.dna_backbone <- function(x, trim = 50, ...) {
+  if (attributes(x)$method == "penalty") {
+    cat("Backbone method: penalty.\n\n")
+    cat(paste0("Penalty: ", x$penalty, ". Iterations: ", x$iterations, ".\n\n"))
+    cat(paste0("Backbone set (loss: ", round(x$unpenalized_backbone_loss, 4), "):\n"))
+    cat(paste(1:length(x$backbone), x$backbone), sep = "\n")
+    cat(paste0("\nRedundant set (loss: ", round(x$unpenalized_redundant_loss, 4), "):\n"))
+    cat(paste(1:length(x$redundant), x$redundant), sep = "\n")
+  } else if (attributes(x)$method == "nested") {
+    cat("Backbone method: nested.\n\n")
+    x2 <- x
+    x2$entity <- sapply(x2$entity, function(r) if (nchar(r) > trim) paste0(substr(r, 1, trim - 1), "*") else r)
+    print(as.data.frame(x2), row.names = FALSE)
+  }
 }
 
 #' @param ma Number of iterations to compute moving average.
 #' @rdname dna_backbone
 #' @importFrom graphics lines
 #' @importFrom stats filter
-#' @noRd
+#' @export
 plot.dna_backbone <- function(x, ma = 500, ...) {
   # temperature and acceptance probability
   plot(x = x$diagnostics$iteration,
@@ -2600,7 +2665,7 @@ plot.dna_backbone <- function(x, ma = 500, ...) {
 #' @importFrom ggplot2 ggtitle
 #' @importFrom ggplot2 theme_bw
 #' @importFrom ggplot2 theme
-#' @noRd
+#' @export
 autoplot.dna_backbone <- function(object, ..., ma = 500) {
   bd <- object$diagnostics
   bd$bb_loss <- stats::filter(bd$penalized_backbone_loss, rep(1 / ma, ma), sides = 1)

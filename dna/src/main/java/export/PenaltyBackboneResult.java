@@ -1,14 +1,20 @@
 package export;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 
 /**
  * Class representing backbone results.
  */
-public class BackboneResult implements Serializable {
+public class PenaltyBackboneResult implements Serializable {
     private static final long serialVersionUID = -2275971337294798275L;
+
+    /**
+     * The algorithm used to compute the results. Can be {@code "nested"} (for a nested, agglomerative method),
+     * {@code "all"} (for simulated annealing with all backbone sizes and no penalty), {@code "size"} (for simulated
+     * annealing for a specific backbone size with no penalty), or {@code "penalty"} (for a penalized simulated
+     * annealing approach).
+     */
+    private String method;
 
     /**
      * The entities found to be in the backbone set, as an array of strings.
@@ -124,6 +130,7 @@ public class BackboneResult implements Serializable {
     /**
      * Create a new backbone result.
      *
+     * @param method The backbone algorithm.
      * @param backboneEntities The entities found to be in the backbone set, as an array of strings.
      * @param redundantEntities The entities found to be in the redundant set, as an array of strings.
      * @param unpenalizedBackboneLoss Euclidean spectral distance between the full network and the backbone network
@@ -155,28 +162,34 @@ public class BackboneResult implements Serializable {
      *                        array.
      * @param redundantNetwork The network matrix based only on the redundant concepts, after optimization as a 2D
      *                        double array.
+     * @param labels The network labels.
+     * @param start Start date and time.
+     * @param stop Stop date and time.
+     * @param numStatements The number of filtered statements contributing to the full network.
      */
-    public BackboneResult(String[] backboneEntities,
-                          String[] redundantEntities,
-                          double unpenalizedBackboneLoss,
-                          double unpenalizedRedundantLoss,
-                          double penalty,
-                          int iterations,
-                          double[] temperature,
-                          double[] acceptanceProbability,
-                          int[] acceptance,
-                          double[] penalizedBackboneLoss,
-                          int[] proposedBackboneSize,
-                          int[] currentBackboneSize,
-                          int[] optimalBackboneSize,
-                          double[] acceptanceRatioMovingAverage,
-                          double[][] fullNetwork,
-                          double[][] backboneNetwork,
-                          double[][] redundantNetwork,
-                          String[] labels,
-                          long start,
-                          long stop,
-                          int numStatements) {
+    public PenaltyBackboneResult(String method,
+                                 String[] backboneEntities,
+                                 String[] redundantEntities,
+                                 double unpenalizedBackboneLoss,
+                                 double unpenalizedRedundantLoss,
+                                 double penalty,
+                                 int iterations,
+                                 double[] temperature,
+                                 double[] acceptanceProbability,
+                                 int[] acceptance,
+                                 double[] penalizedBackboneLoss,
+                                 int[] proposedBackboneSize,
+                                 int[] currentBackboneSize,
+                                 int[] optimalBackboneSize,
+                                 double[] acceptanceRatioMovingAverage,
+                                 double[][] fullNetwork,
+                                 double[][] backboneNetwork,
+                                 double[][] redundantNetwork,
+                                 String[] labels,
+                                 long start,
+                                 long stop,
+                                 int numStatements) {
+        this.method = method;
         this.backboneEntities = backboneEntities;
         this.redundantEntities = redundantEntities;
         this.unpenalizedBackboneLoss = unpenalizedBackboneLoss;
@@ -198,6 +211,10 @@ public class BackboneResult implements Serializable {
         this.start = start;
         this.stop = stop;
         this.numStatements = numStatements;
+    }
+
+    public String getMethod() {
+        return this.method;
     }
 
     public String[] getBackboneEntities() {
@@ -367,5 +384,4 @@ public class BackboneResult implements Serializable {
     public void setNumStatements(int numStatements) {
         this.numStatements = numStatements;
     }
-
 }

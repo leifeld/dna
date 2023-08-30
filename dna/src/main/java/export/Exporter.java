@@ -75,23 +75,35 @@ public class Exporter {
 	 * Holds the resulting matrices. Can have size 1.
 	 */
 	private ArrayList<Matrix> matrixResults;
-	/**
-	 * Holds the resulting backbone result.
-	 */
-	private BackboneResult backboneResult = null;
 
-	// objects for backbone algorithm
+	// common backbone algorithm objects
+	private String[] fullConcepts;
+	private Matrix fullMatrix;
+	private ArrayList<String> currentBackboneList, currentRedundantList;
+	private double[] eigenvaluesFull;
+
+	// objects for nested backbone algorithm
+	private int counter;
+	private int[] iteration, numStatements;
+	private String[] entity;
+	private double[] backboneLoss, redundantLoss;
+	ArrayList<Matrix> backboneMatrices = new ArrayList<>();
+	ArrayList<Matrix> redundantMatrices = new ArrayList<>();
+	private NestedBackboneResult nestedBackboneResult = null;
+
+	// objects for penalty backbone algorithm
 	private ArrayList<Double> temperatureLog, acceptanceProbabilityLog, penalizedBackboneLossLog, acceptanceRatioLastHundredIterationsLog;
 	private ArrayList<Integer> acceptedLog, proposedBackboneSizeLog, acceptedBackboneSizeLog, finalBackboneSizeLog;
-	private String[] fullConcepts;
 	private String selectedAction;
-	private ArrayList<String> actionList, currentBackboneList, currentRedundantList, candidateBackboneList, candidateRedundantList, finalBackboneList, finalRedundantList;
+	private ArrayList<String> actionList, candidateBackboneList, candidateRedundantList, finalBackboneList, finalRedundantList;
 	private ArrayList<ExportStatement> currentStatementList, candidateStatementList, finalStatementList; // declare candidate statement list at t
-	private Matrix fullMatrix, currentMatrix, candidateMatrix, finalMatrix; // candidate matrix at the respective t, Y^{B^*_t}
+	private Matrix currentMatrix, candidateMatrix, finalMatrix; // candidate matrix at the respective t, Y^{B^*_t}
 	private boolean accept;
 	private double p, temperature, acceptance, r, oldLoss, newLoss, finalLoss, log;
-	private double[] eigenvaluesFull, eigenvaluesCurrent, eigenvaluesCandidate, eigenvaluesFinal;
+	private double[] eigenvaluesCurrent, eigenvaluesCandidate, eigenvaluesFinal;
 	private int T, t;
+	private PenaltyBackboneResult penaltyBackboneResult = null;
+
 
 	/**
 	 * <p>Create a new Exporter class instance, holding an array list of export
@@ -2597,7 +2609,7 @@ public class Exporter {
 	 * @param p Penalty parameter.
 	 * @param T Number of iterations.
 	 */
-	public void backbone(double p, int T) {
+	public void initializePenaltyBackbone(double p, int T) {
 		this.p = p;
 		this.T = T;
 		this.isolates = false; // no isolates initially for full matrix; will be set to true after full matrix has been computed
@@ -2714,7 +2726,7 @@ public class Exporter {
 	/**
 	 * Execute the next iteration of the simulated annealing backbone algorithm.
 	 */
-	public void iterateBackbone() {
+	public void iteratePenaltyBackbone() {
 		// first step: make a random move by adding, removing, or swapping a concept and computing a new candidate
 		actionList.clear(); // clear the set of possible actions and repopulate, depending on solution size
 		if (currentBackboneList.size() < 2) { // if there is only one concept, don't remove it because empty backbones do not work
@@ -2845,7 +2857,7 @@ public class Exporter {
 	/**
 	 * Compute matrix after final backbone iteration, collect results, and save in class.
 	 */
-	public void saveBackboneResult() {
+	public void savePenaltyBackboneResult() {
 		Collections.sort(finalBackboneList);
 		Collections.sort(finalRedundantList);
 
@@ -2856,7 +2868,8 @@ public class Exporter {
 				.collect(Collectors.toCollection(ArrayList::new));
 		Matrix redundantMatrix = this.computeOneModeMatrix(redundantStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
 
-		this.backboneResult = new BackboneResult(finalBackboneList.toArray(String[]::new),
+		this.penaltyBackboneResult = new PenaltyBackboneResult("penalty",
+				finalBackboneList.toArray(String[]::new),
 				finalRedundantList.toArray(String[]::new),
 				penalizedLoss(eigenvaluesFull, eigenvaluesCurrent, 0, currentBackboneList.size(), fullConcepts.length),
 				penalizedLoss(eigenvaluesFull, computeNormalizedEigenvalues(redundantMatrix.getMatrix()), 0, currentBackboneList.size(), fullConcepts.length),
@@ -2877,15 +2890,16 @@ public class Exporter {
 				fullMatrix.getStart().toEpochSecond(ZoneOffset.UTC),
 				fullMatrix.getStop().toEpochSecond(ZoneOffset.UTC),
 				fullMatrix.getNumStatements());
+		this.nestedBackboneResult = null;
 	}
 
 	/**
-	 * Get the backbone result that is saved in the class.
+	 * Get the penalty backbone result that is saved in the class.
 	 *
-	 * @return The backbone result (can be null if backbone function has not been executed).
+	 * @return The penalty backbone result (can be null if backbone function has not been executed).
 	 */
-	public BackboneResult getBackboneResult() {
-		return this.backboneResult;
+	public PenaltyBackboneResult getPenaltyBackboneResult() {
+		return this.penaltyBackboneResult;
 	}
 
 	/**
@@ -2950,9 +2964,13 @@ public class Exporter {
 
 		if (filename.toLowerCase().endsWith(".xml")) {
 			XStream xstream = new XStream(new StaxDriver());
-			xstream.processAnnotations(BackboneResult.class);
+			xstream.processAnnotations(PenaltyBackboneResult.class);
 			StringWriter stringWriter = new StringWriter();
-			xstream.marshal(this.backboneResult, new PrettyPrintWriter(stringWriter));
+			if (this.nestedBackboneResult != null) {
+				xstream.marshal(this.nestedBackboneResult, new PrettyPrintWriter(stringWriter));
+			} else if (this.penaltyBackboneResult != null) {
+				xstream.marshal(this.penaltyBackboneResult, new PrettyPrintWriter(stringWriter));
+			}
 			s = stringWriter.toString();
 		} else if (filename.toLowerCase().endsWith(".json")) {
 			Gson prettyGson = new GsonBuilder()
@@ -2960,7 +2978,11 @@ public class Exporter {
 					.serializeNulls()
 					.disableHtmlEscaping()
 					.create();
-			s = prettyGson.toJson(this.backboneResult);
+			if (this.nestedBackboneResult != null) {
+				s = prettyGson.toJson(this.nestedBackboneResult);
+			} else if (this.penaltyBackboneResult != null) {
+				s = prettyGson.toJson(this.penaltyBackboneResult);
+			}
 		}
 		try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
 			writer.write(s);
@@ -2994,8 +3016,28 @@ public class Exporter {
 		return distance;
 	}
 
-	public void nestedBackbone() {
+	/**
+	 * Get the size of the current backbone list.
+	 *
+	 * @return Backbone size at current iteration.
+	 */
+	public int getBackboneSize() {
+		return this.currentBackboneList.size();
+	}
 
+	/**
+	 * Get the number of variable 2 entities used for computing the full matrix (i.e., after filtering).
+	 *
+	 * @return Number of entities.
+	 */
+	public int getFullSize() {
+		return this.extractLabels(this.filteredStatements, this.variable2, this.variable2Document).length;
+	}
+
+	/**
+	 * Initialize the nested backbone algorithm by setting up the data structures.
+	 */
+	public void initializeNestedBackbone() {
 		// initial values before iterations start
 		this.originalStatements = this.filteredStatements; // to ensure not all isolates are included later
 
@@ -3004,51 +3046,100 @@ public class Exporter {
 
 		// full network matrix Y against which we compare in every iteration
 		fullMatrix = this.computeOneModeMatrix(this.filteredStatements, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
-		//this.isolates = true; // include isolates in the iterations; will be adjusted to full matrix without isolates manually each time
+		this.isolates = true; // include isolates in the iterations but not in the full matrix; will be adjusted to smaller full matrix dimensions without isolates manually each time in the iterations; necessary because some actors may be deleted in the backbone matrix otherwise after deleting their concepts
 
 		// compute normalised eigenvalues for the full matrix; no need to recompute every time as they do not change
 		eigenvaluesFull = computeNormalizedEigenvalues(fullMatrix.getMatrix());
-
-		ArrayList<Integer> addedIteration = new ArrayList<>();
-		ArrayList<Double> addedLoss = new ArrayList<>();
-		ArrayList<String> addedRedundantConcept = new ArrayList<>();
-		ArrayList<String> allConcepts = new ArrayList<>();
+		iteration = new int[fullConcepts.length];
+		backboneLoss = new double[fullConcepts.length];
+		redundantLoss = new double[fullConcepts.length];
+		entity = new String[fullConcepts.length];
+		ArrayList<String> allConcepts = new ArrayList<>(); // convert fullConcepts to array to populate backbone concepts
 		for (int i = 0; i < fullConcepts.length; i++) {
 			allConcepts.add(fullConcepts[i]);
 		}
-		ArrayList<String> backboneConcepts = new ArrayList<>(allConcepts);
-		ArrayList<String> redundantConcepts = new ArrayList<>();
-		double currentLoss = 999999.99;
-		while (backboneConcepts.size() > 0) {
-			double[] currentLosses = new double[backboneConcepts.size()];
-			for (int i = 0; i < backboneConcepts.size(); i++) {
-				ArrayList<String> candidate = new ArrayList<>(backboneConcepts);
-				candidate.remove(i);
-				final ArrayList<String> finalCandidate = new ArrayList<String>(candidate); // make it final, so it can be used in a stream
+		currentBackboneList = new ArrayList<>(allConcepts);
+		currentRedundantList = new ArrayList<>();
+		backboneMatrices = new ArrayList<>();
+		redundantMatrices = new ArrayList<>();
+		numStatements = new int[fullConcepts.length];
+		counter = 0;
+	}
+
+	/**
+	 * One iteration in the nested backbone algorithm. Needs to be called in a while loop until the backbone set is empty ({@code while (currentBackboneSet.size() > 0)}).
+	 */
+	public void iterateNestedBackbone() {
+		ArrayList<Matrix> candidateMatrices = new ArrayList<>();
+		double[] currentLosses = new double[currentBackboneList.size()];
+		int[] numStatementsCandidates = new int[currentBackboneList.size()];
+		for (int i = 0; i < currentBackboneList.size(); i++) {
+			ArrayList<String> candidate = new ArrayList<>(currentBackboneList);
+			candidate.remove(i);
+			final ArrayList<String> finalCandidate = new ArrayList<String>(candidate); // make it final, so it can be used in a stream
+			candidateStatementList = this.filteredStatements
+					.stream()
+					.filter(s -> finalCandidate.contains(((Entity) s.get(this.variable2)).getValue()))
+					.collect(Collectors.toCollection(ArrayList::new));
+			numStatementsCandidates[i] = candidateStatementList.size();
+			candidateMatrix = this.computeOneModeMatrix(candidateStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
+			candidateMatrix = this.reduceCandidateMatrix(candidateMatrix, fullMatrix.getRowNames()); // ensure it has the right dimensions by purging isolates relative to the full matrix
+			candidateMatrices.add(candidateMatrix);
+			eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix()); // normalised eigenvalues for the candidate matrix
+			currentLosses[i] = spectralLoss(eigenvaluesFull, eigenvaluesCandidate);
+		}
+		double smallestLoss = 0.0;
+		if (currentBackboneList.size() > 0) {
+			smallestLoss = Arrays.stream(currentLosses).min().getAsDouble();
+		}
+		for (int i = currentBackboneList.size() - 1; i >= 0; i--) {
+			if (currentLosses[i] == smallestLoss) {
+				iteration[counter] = counter + 1;
+				entity[counter] = currentBackboneList.get(i);
+				backboneLoss[counter] = smallestLoss;
+				currentRedundantList.add(currentBackboneList.get(i));
+				currentBackboneList.remove(i);
+				backboneMatrices.add(candidateMatrices.get(i));
+
+				// compute redundant matrix and loss at this level
+				final ArrayList<String> finalRedundantCandidate = new ArrayList<String>(currentRedundantList);
 				candidateStatementList = this.filteredStatements
 						.stream()
-						.filter(s -> finalCandidate.contains(((Entity) s.get(this.variable2)).getValue()))
+						.filter(s -> finalRedundantCandidate.contains(((Entity) s.get(this.variable2)).getValue()))
 						.collect(Collectors.toCollection(ArrayList::new));
-				candidateMatrix = this.computeOneModeMatrix(candidateStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
-				candidateMatrix = this.reduceCandidateMatrix(candidateMatrix, fullMatrix.getRowNames()); // ensure it has the right dimensions by purging isolates relative to the full matrix
-				eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix()); // normalised eigenvalues for the candidate matrix
-				currentLosses[i] = spectralLoss(eigenvaluesFull, eigenvaluesCandidate);
-			}
-			double smallestLoss = 0.0;
-			if (backboneConcepts.size() > 0) {
-				smallestLoss = Arrays.stream(currentLosses).min().getAsDouble();
-			}
-			for (int i = backboneConcepts.size() - 1; i >= 0; i--) {
-				if (currentLosses[i] == smallestLoss) {
-					addedIteration.add(addedIteration.size());
-					addedRedundantConcept.add(backboneConcepts.get(i));
-					addedLoss.add(smallestLoss);
-					System.out.println("Iteration: " + addedIteration.get(addedIteration.size() - 1) + ". Loss: " + addedLoss.get(addedLoss.size() - 1) + ". Concept: " + backboneConcepts.get(i) + ".");
-					redundantConcepts.add(backboneConcepts.get(i));
-					backboneConcepts.remove(i);
-				}
+				Matrix redundantMatrix = this.computeOneModeMatrix(candidateStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
+				redundantMatrix = this.reduceCandidateMatrix(redundantMatrix, fullMatrix.getRowNames());
+				redundantMatrices.add(redundantMatrix);
+				eigenvaluesCandidate = computeNormalizedEigenvalues(redundantMatrix.getMatrix());
+				redundantLoss[counter] = spectralLoss(eigenvaluesFull, eigenvaluesCandidate);
+				numStatements[counter] = numStatementsCandidates[i];
+				counter++;
 			}
 		}
-		// TODO:
+	}
+
+	/**
+	 * Get the nested backbone result that is saved in the class.
+	 *
+	 * @return The nested backbone result (can be null if backbone function has not been executed).
+	 */
+	public NestedBackboneResult getNestedBackboneResult() {
+		return this.nestedBackboneResult;
+	}
+
+	/**
+	 * Compute matrix after final backbone iteration, collect results, and save in class.
+	 */
+	public void saveNestedBackboneResult() {
+		Exporter.this.nestedBackboneResult = new NestedBackboneResult("nested",
+				iteration,
+				entity,
+				backboneLoss,
+				redundantLoss,
+				numStatements,
+				this.filteredStatements.size(),
+				fullMatrix.getStart().toEpochSecond(ZoneOffset.UTC),
+				fullMatrix.getStop().toEpochSecond(ZoneOffset.UTC));
+		Exporter.this.penaltyBackboneResult = null;
 	}
 }
