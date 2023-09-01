@@ -61,26 +61,27 @@ methods are available:
     solution usually resembles an unconstrained solution where nesting is
     not required, but in some cases the loss of a non-nested solution may be
     larger at a given level or number of elements in the backbone set.
-  \item \code{"all"}: Simulated annealing with a fixed number of elements in
-    the backbone set (i.e., only lateral changes are possible) and without
-    penalty, calculated iteratively for all possible backbone sizes. This
-    method may yield more optimal solutions than the nested algorithm
-    because it does not require a strict hierarchy. However, it produces an
-    approximation of the global optimum and is slower than the nested
-    method.
-  \item \code{"size"}: Like \code{"all"}, but only for one specific backbone
-    set size, for example exactly 10 concepts. The backbone set size is
-    defined in the \code{"backboneSize"} argument.
+  \item \code{"fixed"}: Simulated annealing with a fixed number of elements
+    in the backbone set (i.e., only lateral changes are possible) and
+    without penalty. This method may yield more optimal solutions than the
+    nested algorithm because it does not require a strict hierarchy.
+    However, it produces an approximation of the global optimum and is
+    slower than the nested method. With this method, you can specify that
+    backbone set should have, for example, exactly 10 concepts. Then fewer
+    iterations are necessary than with the penalty method because the search
+    space is smaller. The backbone set size is defined in the
+    \code{"backboneSize"} argument.
   \item \code{"penalty"}: Simulated annealing with a variable number of
     elements in the backbone set. The solution is stabilized by a penalty
     parameter (see \code{"penalty"} argument). This algorithm takes longest
     to compute for a single solution, and it is only an approximation, but
     it considers slightly larger or smaller backbone sets if the solution is
-    better, thus this algorithm adds some flexibility.
+    better, thus this algorithm adds some flexibility. It requires more
+    iterations than the fixed method for achieving the same quality.
 }}
 
 \item{backboneSize}{The number of elements in the backbone set, as a fixed
-parameter. Only used when \code{method = "size"}.}
+parameter. Only used when \code{method = "fixed"}.}
 
 \item{penalty}{The penalty parameter for large backbone sets. The larger the
 value, the more strongly larger backbone sets are punished and the smaller
@@ -95,7 +96,8 @@ in the redundant set and shrink the backbone further. Only used when
 
 \item{iterations}{The number of iterations of the simulated annealing
 algorithm. More iterations take more time but may lead to better
-optimization results. Only used when \code{method = "penalty"}.}
+optimization results. Only used when \code{method = "penalty"} or
+\code{method = "fixed"}.}
 
 \item{statementType}{The name of the statement type in which the variable
 of interest is nested. For example, \code{"DNA Statement"}.}

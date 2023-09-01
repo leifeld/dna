@@ -543,7 +543,7 @@ public class HeadlessDna implements Logger.LogListener {
 	/**
 	 * Compute backbone and set of redundant entities on the second mode in a discourse network.
 	 *
-	 * @param method                 Backbone algorithm (can be {@code "nested"}, {@code "all"}, {@code "size"}, or {@code "penalty"}).
+	 * @param method                 Backbone algorithm (can be {@code "nested"}, {@code "fixed"}, or {@code "penalty"}).
 	 * @param backboneSize           The number of elements in the backbone set, as a fixed parameter. Only used when {@code method = "size"}.
 	 * @param p                      Penalty parameter, for example {@code 7.5}. Only used when {@code method = "penalty"}.
 	 * @param T                      Number of iterations, for example {@code 50000}. Only used when {@code method = "penalty"}.
@@ -574,7 +574,7 @@ public class HeadlessDna implements Logger.LogListener {
 	 * @param invertTypes            boolean indicating whether the document-level type values should be included (= {@code true}) rather than excluded.
 	 * @param outfile                {@link String} with a file name under which the resulting network should be saved.
 	 * @param fileFormat             {@link String} with the file format. Valid values are {@code "xml"}, {@code "json"}, and {@code null} (for no file export).
-	 * @return                       A {@link PenaltyBackboneResult} object containing the results.
+	 * @return                       A {@link SimulatedAnnealingBackboneResult} object containing the results.
 	 */
 	public void rBackbone(String method, int backboneSize, double p, int T, String statementType, String variable1, boolean variable1Document, String variable2,
 						  boolean variable2Document, String qualifier, boolean qualifierDocument, String qualifierAggregation, String normalization,
@@ -702,18 +702,14 @@ public class HeadlessDna implements Logger.LogListener {
 				saveJsonXml(fileFormat, outfile);
 				pb.stepTo(iterations);
 			}
-		} else if (method.equals("all")) {
-			// TODO
-		} else if (method.equals("size")) {
-			// TODO
-		} else if (method.equals("penalty")) {
-			this.exporter.initializePenaltyBackbone(p, T); // initial results
+		} else if (method.equals("fixed") || method.equals("penalty")) {
+			this.exporter.initializeSimulatedAnnealingBackbone(method.equals("penalty"), p, T, backboneSize); // initialize algorithm
 			try (ProgressBar pb = new ProgressBar("Simulated annealing...", T)) {
 				while (exporter.getCurrentT() <= T) { // run up to upper bound of iterations T, provided by the user
 					pb.stepTo(exporter.getCurrentT());
-					exporter.iteratePenaltyBackbone();
+					exporter.iterateSimulatedAnnealingBackbone(method.equals("penalty"));
 				}
-				exporter.savePenaltyBackboneResult();
+				exporter.saveSimulatedAnnealingBackboneResult(method.equals("penalty"));
 
 				// step 4: save to file
 				saveJsonXml(fileFormat, outfile);

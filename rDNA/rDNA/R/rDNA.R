@@ -2274,25 +2274,26 @@ autoplot.dna_barplot <- function(object,
 #'      solution usually resembles an unconstrained solution where nesting is
 #'      not required, but in some cases the loss of a non-nested solution may be
 #'      larger at a given level or number of elements in the backbone set.
-#'    \item \code{"all"}: Simulated annealing with a fixed number of elements in
-#'      the backbone set (i.e., only lateral changes are possible) and without
-#'      penalty, calculated iteratively for all possible backbone sizes. This
-#'      method may yield more optimal solutions than the nested algorithm
-#'      because it does not require a strict hierarchy. However, it produces an
-#'      approximation of the global optimum and is slower than the nested
-#'      method.
-#'    \item \code{"size"}: Like \code{"all"}, but only for one specific backbone
-#'      set size, for example exactly 10 concepts. The backbone set size is
-#'      defined in the \code{"backboneSize"} argument.
+#'    \item \code{"fixed"}: Simulated annealing with a fixed number of elements
+#'      in the backbone set (i.e., only lateral changes are possible) and
+#'      without penalty. This method may yield more optimal solutions than the
+#'      nested algorithm because it does not require a strict hierarchy.
+#'      However, it produces an approximation of the global optimum and is
+#'      slower than the nested method. With this method, you can specify that
+#'      backbone set should have, for example, exactly 10 concepts. Then fewer
+#'      iterations are necessary than with the penalty method because the search
+#'      space is smaller. The backbone set size is defined in the
+#'      \code{"backboneSize"} argument.
 #'    \item \code{"penalty"}: Simulated annealing with a variable number of
 #'      elements in the backbone set. The solution is stabilized by a penalty
 #'      parameter (see \code{"penalty"} argument). This algorithm takes longest
 #'      to compute for a single solution, and it is only an approximation, but
 #'      it considers slightly larger or smaller backbone sets if the solution is
-#'      better, thus this algorithm adds some flexibility.
+#'      better, thus this algorithm adds some flexibility. It requires more
+#'      iterations than the fixed method for achieving the same quality.
 #'  }
 #' @param backboneSize The number of elements in the backbone set, as a fixed
-#'   parameter. Only used when \code{method = "size"}.
+#'   parameter. Only used when \code{method = "fixed"}.
 #' @param penalty The penalty parameter for large backbone sets. The larger the
 #'   value, the more strongly larger backbone sets are punished and the smaller
 #'   the resulting backbone is. Try out different values to find the right size
@@ -2305,7 +2306,8 @@ autoplot.dna_barplot <- function(object,
 #'   \code{method = "penalty"}.
 #' @param iterations The number of iterations of the simulated annealing
 #'   algorithm. More iterations take more time but may lead to better
-#'   optimization results. Only used when \code{method = "penalty"}.
+#'   optimization results. Only used when \code{method = "penalty"} or
+#'   \code{method = "fixed"}.
 #' @param qualifierAggregation The aggregation rule for the \code{qualifier}
 #'   variable. This must be \code{"ignore"} (for ignoring the qualifier
 #'   variable), \code{"congruence"} (for recording a network tie only if both
@@ -2496,11 +2498,16 @@ dna_backbone <- function(method = "nested",
   exporter <- .jcall(dnaEnvironment[["dna"]]$headlessDna, "Lexport/Exporter;", "getExporter") # get a reference to the Exporter object, in which results are stored
   if (!is.null(outfile) && !is.null(fileFormat) && is.character(outfile) && is.character(fileFormat) && fileFormat %in% c("json", "xml")) {
     message("File exported.")
-  } else if (method[1] == "penalty") {
-    result <- .jcall(exporter, "Lexport/PenaltyBackboneResult;", "getPenaltyBackboneResult", simplify = TRUE)
+  } else if (method[1] %in% c("penalty", "fixed")) {
+    result <- .jcall(exporter, "Lexport/SimulatedAnnealingBackboneResult;", "getSimulatedAnnealingBackboneResult", simplify = TRUE)
     # create a list with various results
     l <- list()
     l$penalty <- .jcall(result, "D", "getPenalty")
+    if (method[1] == "fixed") {
+      l$backbone_size <- as.integer(backboneSize)
+    } else {
+      l$backbone_size <- as.integer(NA)
+    }
     l$iterations <- .jcall(result, "I", "getIterations")
     l$backbone <- .jcall(result, "[S", "getBackboneEntities")
     l$redundant <- .jcall(result, "[S", "getRedundantEntities")
@@ -2548,11 +2555,10 @@ dna_backbone <- function(method = "nested",
     attributes(l$full_network)$call <- match.call()
     attributes(l$backbone_network)$call <- match.call()
     attributes(l$redundant_network)$call <- match.call()
-    attributes(l)$method <- "penalty"
+    attributes(l)$method <- method[1]
     class(l$full_network) <- c("dna_network_onemode", class(l$full_network))
     class(l$backbone_network) <- c("dna_network_onemode", class(l$backbone_network))
     class(l$redundant_network) <- c("dna_network_onemode", class(l$redundant_network))
-
     class(l) <- c("dna_backbone", class(l))
     return(l)
   } else if (method[1] == "nested") {
@@ -2579,15 +2585,19 @@ dna_backbone <- function(method = "nested",
 #'   an asterisk (\code{*}).
 #' @export
 print.dna_backbone <- function(x, trim = 50, ...) {
-  if (attributes(x)$method == "penalty") {
-    cat("Backbone method: penalty.\n\n")
-    cat(paste0("Penalty: ", x$penalty, ". Iterations: ", x$iterations, ".\n\n"))
+  method <- attributes(x)$method
+  cat(paste0("Backbone method: ", method, ".\n\n"))
+  if (method %in% c("penalty", "fixed")) {
+    if (method == "penalty") {
+      cat(paste0("Penalty: ", x$penalty, ". Iterations: ", x$iterations, ".\n\n"))
+    } else {
+      cat(paste0("Backbone size: ", x$backbone_size, ". Iterations: ", x$iterations, ".\n\n"))
+    }
     cat(paste0("Backbone set (loss: ", round(x$unpenalized_backbone_loss, 4), "):\n"))
     cat(paste(1:length(x$backbone), x$backbone), sep = "\n")
     cat(paste0("\nRedundant set (loss: ", round(x$unpenalized_redundant_loss, 4), "):\n"))
     cat(paste(1:length(x$redundant), x$redundant), sep = "\n")
-  } else if (attributes(x)$method == "nested") {
-    cat("Backbone method: nested.\n\n")
+  } else if (method == "nested") {
     x2 <- x
     x2$entity <- sapply(x2$entity, function(r) if (nchar(r) > trim) paste0(substr(r, 1, trim - 1), "*") else r)
     print(as.data.frame(x2), row.names = FALSE)
@@ -2617,12 +2627,19 @@ plot.dna_backbone <- function(x, ma = 500, ...) {
   bb_loss <- stats::filter(x$diagnostics$penalized_backbone_loss,
                            rep(1 / ma, ma),
                            sides = 1)
+  if (attributes(x)$method == "penalty") {
+    yl <- "Penalized backbone loss"
+    ti <- "Penalized spectral backbone distance"
+  } else {
+    yl <- "Backbone loss"
+    ti <- "Spectral backbone distance"
+  }
   plot(x = x$diagnostics$iteration,
        y = bb_loss,
        type = "l",
        xlab = "Iteration",
-       ylab = "Penalized backbone loss",
-       main = "Penalized spectral backbone distance")
+       ylab = yl,
+       main = ti)
 
   # number of concepts in the backbone solution per iteration
   current_size_ma <- stats::filter(x$diagnostics$current_backbone_size,
@@ -2684,11 +2701,18 @@ autoplot.dna_backbone <- function(object, ..., ma = 500) {
     ggplot2::theme_bw()
 
   # spectral distance between full network and backbone network per iteration
+  if (attributes(object)$method == "penalty") {
+    yl <- "Penalized backbone loss"
+    ti <- "Penalized spectral backbone distance"
+  } else {
+    yl <- "Backbone loss"
+    ti <- "Spectral backbone distance"
+  }
   g_loss <- ggplot2::ggplot(bd, ggplot2::aes_string(y = "bb_loss", x = "iteration")) +
     ggplot2::geom_line() +
-    ggplot2::ylab("Penalized backbone loss") +
+    ggplot2::ylab(yl) +
     ggplot2::xlab("Iteration") +
-    ggplot2::ggtitle("Penalized spectral backbone distance") +
+    ggplot2::ggtitle(ti) +
     ggplot2::theme_bw()
 
   # number of concepts in the backbone solution per iteration

@@ -5,7 +5,7 @@ import java.io.Serializable;
 /**
  * Class representing backbone results.
  */
-public class PenaltyBackboneResult implements Serializable {
+public class SimulatedAnnealingBackboneResult implements Serializable {
     private static final long serialVersionUID = -2275971337294798275L;
 
     /**
@@ -167,28 +167,28 @@ public class PenaltyBackboneResult implements Serializable {
      * @param stop Stop date and time.
      * @param numStatements The number of filtered statements contributing to the full network.
      */
-    public PenaltyBackboneResult(String method,
-                                 String[] backboneEntities,
-                                 String[] redundantEntities,
-                                 double unpenalizedBackboneLoss,
-                                 double unpenalizedRedundantLoss,
-                                 double penalty,
-                                 int iterations,
-                                 double[] temperature,
-                                 double[] acceptanceProbability,
-                                 int[] acceptance,
-                                 double[] penalizedBackboneLoss,
-                                 int[] proposedBackboneSize,
-                                 int[] currentBackboneSize,
-                                 int[] optimalBackboneSize,
-                                 double[] acceptanceRatioMovingAverage,
-                                 double[][] fullNetwork,
-                                 double[][] backboneNetwork,
-                                 double[][] redundantNetwork,
-                                 String[] labels,
-                                 long start,
-                                 long stop,
-                                 int numStatements) {
+    public SimulatedAnnealingBackboneResult(String method,
+                                            String[] backboneEntities,
+                                            String[] redundantEntities,
+                                            double unpenalizedBackboneLoss,
+                                            double unpenalizedRedundantLoss,
+                                            double penalty,
+                                            int iterations,
+                                            double[] temperature,
+                                            double[] acceptanceProbability,
+                                            int[] acceptance,
+                                            double[] penalizedBackboneLoss,
+                                            int[] proposedBackboneSize,
+                                            int[] currentBackboneSize,
+                                            int[] optimalBackboneSize,
+                                            double[] acceptanceRatioMovingAverage,
+                                            double[][] fullNetwork,
+                                            double[][] backboneNetwork,
+                                            double[][] redundantNetwork,
+                                            String[] labels,
+                                            long start,
+                                            long stop,
+                                            int numStatements) {
         this.method = method;
         this.backboneEntities = backboneEntities;
         this.redundantEntities = redundantEntities;

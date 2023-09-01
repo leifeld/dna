@@ -5,6 +5,7 @@ import com.github.lgooddatepicker.components.DateTimePicker;
 import com.github.lgooddatepicker.components.TimePickerSettings;
 import dna.Dna;
 import export.Exporter;
+import export.SimulatedAnnealingBackboneResult;
 import logger.LogEvent;
 import logger.Logger;
 import me.tongfei.progressbar.ProgressBar;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * GUI for network export. Allows the user to set up options for exporting
@@ -86,8 +88,7 @@ public class BackboneExporter extends JDialog {
 				"<html><p width=\"500\">Which method should be used to partition the entities of the second variable (usually concepts) into a backbone set and a redundant set? Several methods are available:" +
 						"<dl>" +
 						"<dt><b>nested</b></dt><dd width=\"500\">A deterministic, agglomerative algorithm that starts with a full backbone set and empty redundant set and moves individual entities whose removal from the backbone would cause the lowest spectral loss step by step from the backbone set to the redundant set. The procedure creates a complete, nested hierarchy of entities. The method is relatively fast and deterministic. It computes the best solution given the constraint that the solution must be completely nested. Note that slightly better non-nested solutions may exist at any level.</dd>" +
-						"<dt><b>all</b></dt><dd width=\"500\">Simulated annealing without a penalty parameter and with a fixed number of entities in the backbone set, computed for all possible sizes of the backbone set. The procedure creates a full set at all levels, like the nested algorithm, but the results are not necessarily nested, which means sometimes backbone solutions with a smaller loss than a larger backbone set may not be fully contained within the larger backbone set. The method takes longer to compute than the nested algorithm because it runs a simulated annealing algorithm separately for each level. The algorithm returns an approximation, which should likely be the globally best solution but may sometimes deviate and provide a close to optimal solution because the solution space is not exhaustively explored when combinatorial optimization is used.</dd>" +
-						"<dt><b>size</b></dt><dd width=\"500\">Like the method without penalty for all backbone sizes, but with a specific, fixed, user-defined number of entities in the backbone set. This runs the simulated annealing algorithm once, for the backbone size (i.e., number of entities in the backbone set) specified as a parameter by the user.</dd>" +
+						"<dt><b>fixed</b></dt><dd width=\"500\">Simulated annealing without a penalty parameter and with a fixed number of entities in the backbone set. Results at different backbone size levels are not necessarily nested with this algorithm, which means sometimes backbone solutions with a smaller loss may not be fully contained within a larger backbone set. This combinatorial optimization algorithm returns an approximation, which should likely be the globally best solution but may sometimes deviate and provide a close to optimal solution because the solution space is not exhaustively explored. If you select this option, the simulated annealing algorithm will run once, for the specified backbone size (i.e., number of entities in the backbone set) specified as a parameter by the user. You can manually run this algorithm multiple times for different backbone sizes to compare the results.</dd>" +
 						"<dt><b>penalty</b></dt><dd width=\"500\">Simulated annealing with a penalty parameter and a defined number of iterations. The user does not have to specify how many entities precisely should be in the backbone set and how many should be in the redundant set. Instead, the algorithm may explore larger and smaller solutions in the search space but gravitate towards certain levels as defined by the penalty parameter. The penalty parameter is a real number, and useful values could be something like 3.5, 5.5, 7.5, or 12, for example. Larger penalties tend to produce smaller backbone sets and larger redundant sets. The number of iterations is larger than in the simulated annealing approach with a fixed number of entities and without penalty because there are many more possible solutions in the search space that need to be explored. Hence, due to more iterations required, the algorithm takes longer to compute the result. More iterations tend to approximate the globally optimal solution better. Useful numbers of iterations could be 10,000, 30,000, or 50,000, for example.</dd>" +
 						"</dl>" +
 						"</p></html>";
@@ -157,7 +158,7 @@ public class BackboneExporter extends JDialog {
 		});
 
 		gbc.gridx = 1;
-		String[] methods = new String[] {"nested", "all", "size", "penalty"};
+		String[] methods = new String[] {"nested", "fixed", "penalty"};
 		backboneMethodBox = new JComboBox<>(methods);
 		backboneMethodBox.setSelectedIndex(0);
 		backboneMethodBox.setToolTipText(backboneMethodToolTip);
@@ -203,14 +204,14 @@ public class BackboneExporter extends JDialog {
 		backboneMethodBox.addItemListener(new ItemListener() {
 			@Override
 			public void itemStateChanged(ItemEvent itemEvent) {
-				if (itemEvent.getItem().equals("nested") || itemEvent.getItem().equals("all")) {
+				if (itemEvent.getItem().equals("nested")) {
 					removeComponentFromGridBagPanel(settingsPanel, 2, 0);
 					removeComponentFromGridBagPanel(settingsPanel, 3, 0);
 					removeComponentFromGridBagPanel(settingsPanel, 2, 1);
 					removeComponentFromGridBagPanel(settingsPanel, 3, 1);
 					settingsPanel.revalidate();
 					settingsPanel.repaint();
-				} else if (itemEvent.getItem().equals("size")) {
+				} else if (itemEvent.getItem().equals("fixed")) {
 					int size = Dna.sql.getUniqueValues(((StatementType) statementTypeBox.getSelectedItem()).getId(), (String) var2Box.getSelectedItem()).size();
 					backboneSizeModel.setMaximum(size);
 					backboneSizeModel.setValue(1);
@@ -224,6 +225,11 @@ public class BackboneExporter extends JDialog {
 					settingsPanel.add(backboneSizeLabel, gbc);
 					gbc.gridy = 1;
 					settingsPanel.add(backboneSizeSpinner, gbc);
+					gbc.gridy = 0;
+					gbc.gridx = 3;
+					settingsPanel.add(iterationsLabel, gbc);
+					gbc.gridy = 1;
+					settingsPanel.add(iterationsSpinner, gbc);
 					settingsPanel.revalidate();
 					settingsPanel.repaint();
 				} else if (itemEvent.getItem().equals("penalty")) {
@@ -849,7 +855,7 @@ public class BackboneExporter extends JDialog {
 				"The <b>redundant set</b> is the complementary subset of entities/values of Variable 2 that do not " +
 				"contribute much additional value in structuring the one-mode network into clusters. A custom " +
 				"<b>simulated annealing</b> algorithm is employed to find the backbone and redundant sets by " +
-				"minimizing penalized Euclidean spectral distances between the backbone network and the full network. " +
+				"minimizing (penalized) Euclidean spectral distances between the backbone network and the full network. " +
 				"The results can inform how to recode entities or which entities to include or exclude during network " +
 				"export. By pressing this button, the calculation will start, but the results will not be saved to " +
 				"a file yet.</p></html>";
@@ -860,6 +866,7 @@ public class BackboneExporter extends JDialog {
 			String method = (String) backboneMethodBox.getSelectedItem();
 			double penalty = (double) penaltySpinner.getValue();
 			int iterations = (int) iterationsSpinner.getValue();
+			int backboneSize = (int) backboneSizeSpinner.getValue();
 			StatementType statementType = (StatementType) statementTypeBox.getSelectedItem();
 			String variable1Name = (String) var1Box.getSelectedItem();
 			boolean variable1Document = var1Box.getSelectedIndex() > var1Box.getItemCount() - 7;
@@ -888,7 +895,7 @@ public class BackboneExporter extends JDialog {
 			LocalDateTime stopDateTime = stopPicker.getDateTimeStrict();
 
 			// start backbone thread
-			Thread backboneThread = new Thread(new GuiBackboneThread(method, penalty, iterations,
+			Thread backboneThread = new Thread(new GuiBackboneThread(method, backboneSize, penalty, iterations,
 					statementType, variable1Name, variable1Document, variable2Name, variable2Document, qualifier,
 					qualifierDocument, qualifierAggregation, normalization, duplicates, startDateTime,
 					stopDateTime, BackboneExporter.this.excludeValues, BackboneExporter.this.excludeAuthor,
@@ -1048,6 +1055,7 @@ public class BackboneExporter extends JDialog {
 	 */
 	private class GuiBackboneThread implements Runnable {
 		private String method;
+		private int backboneSize;
 		private double p;
 		private int T;
 		private String variable1, variable2, qualifier, qualifierAggregation, normalization, duplicates;
@@ -1060,6 +1068,7 @@ public class BackboneExporter extends JDialog {
 
 		public GuiBackboneThread(
 				String method,
+				int backboneSize,
 				double p,
 				int T,
 				StatementType statementType,
@@ -1085,6 +1094,7 @@ public class BackboneExporter extends JDialog {
 				boolean invertSections,
 				boolean invertTypes) {
 			this.method = method;
+			this.backboneSize = backboneSize;
 			this.p = p;
 			this.T = T;
 			this.statementType = statementType;
@@ -1160,7 +1170,6 @@ public class BackboneExporter extends JDialog {
 
 			if (progressMonitor.isCanceled()) {
 				proceed = false;
-				//progressMonitor.setProgress(2);
 				progressMonitor.close();
 			}
 
@@ -1177,6 +1186,7 @@ public class BackboneExporter extends JDialog {
 				}
 			}
 
+			// calculate maximum iterations for nested algorithm; necessary because the initial iterations take longer due to more loss comparisons, so it's best to count the number of loss comparisons rather than number of entities as iterations
 			if (this.method.equals("nested")) {
 				int iterations = 0;
 				for (int i = 0; i < exporter.getFullSize(); i++) {
@@ -1184,18 +1194,17 @@ public class BackboneExporter extends JDialog {
 				}
 				progressMonitor.setMaximum(iterations);
 				this.T = iterations;
-			} // TODO: other algorithms
+			}
 
+			// initialise algorithm
 			if (proceed) {
 				progressMonitor.setNote("Initializing algorithm...");
 				if (this.method.equals("nested")) {
 					exporter.initializeNestedBackbone();
-				} else if (this.method.equals("all")) {
-					// TODO
-				} else if (this.method.equals("size")) {
-					// TODO
+				} else if (this.method.equals("fixed")) {
+					exporter.initializeSimulatedAnnealingBackbone(false, p, T, backboneSize); // p is inconsequential because penalty = false
 				} else if (this.method.equals("penalty")) {
-					exporter.initializePenaltyBackbone(p, T);
+					exporter.initializeSimulatedAnnealingBackbone(true, p, T, backboneSize); // backboneSize is inconsequential because penalty = true
 				}
 			}
 			if (!proceed || progressMonitor.isCanceled()) {
@@ -1231,11 +1240,7 @@ public class BackboneExporter extends JDialog {
 							System.err.println("Canceled.");
 						}
 					}
-				} else if (this.method.equals("all")) {
-					// TODO
-				} else if (this.method.equals("size")) {
-					// TODO
-				} else if (this.method.equals("penalty")) {
+				} else if (this.method.equals("fixed") || this.method.equals("penalty")) {
 					progressMonitor.setNote("Simulated annealing...");
 					try (ProgressBar pb = new ProgressBar("Simulated annealing...", this.T)) {
 						while (exporter.getCurrentT() <= T && !progressMonitor.isCanceled()) { // run up to upper bound of iterations T, provided by the user
@@ -1246,11 +1251,11 @@ public class BackboneExporter extends JDialog {
 							} else {
 								pb.stepTo(exporter.getCurrentT());
 								progressMonitor.setProgress(exporter.getCurrentT());
-								exporter.iteratePenaltyBackbone();
+								exporter.iterateSimulatedAnnealingBackbone(this.method.equals("penalty"));
 							}
 						}
 						if (!progressMonitor.isCanceled()) {
-							exporter.savePenaltyBackboneResult();
+							exporter.saveSimulatedAnnealingBackboneResult(this.method.equals("penalty"));
 							BackboneExporter.this.exporter = exporter;
 							progressMonitor.setProgress(T);
 						}
