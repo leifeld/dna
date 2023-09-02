@@ -2692,13 +2692,13 @@ plot.dna_backbone <- function(x, ma = 500, ...) {
     a$merge <- merges_clust
     
     # Define merge heights
-    a$height <- object$backboneLoss[1:nrow(x) - 1]
+    a$height <- x$backboneLoss[1:nrow(x) - 1]
     
     # Order of leaves
-    a$order <- 1:nrow(object)
+    a$order <- 1:nrow(x)
     
     # Labels of leaves
-    a$labels <- rev(object$entity)
+    a$labels <- rev(x$entity)
     
     # Define hclust class
     class(a) <- "hclust"
