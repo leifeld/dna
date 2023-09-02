@@ -2611,7 +2611,7 @@ print.dna_backbone <- function(x, trim = 50, ...) {
 #' @export
 plot.dna_backbone <- function(x, ma = 500, ...) {
   
-  if (attr(object, "method") != "nested") {
+  if (attr(x, "method") != "nested") {
     # temperature and acceptance probability
     plot(x = x$diagnostics$iteration,
          y = x$diagnostics$temperature,
@@ -2675,13 +2675,13 @@ plot.dna_backbone <- function(x, ma = 500, ...) {
     
     # define merging pattern: negative numbers are leaves, positive are merged
     # clusters
-    merges_clust <- matrix(nrow = nrow(object) - 1, ncol = 2)
+    merges_clust <- matrix(nrow = nrow(x) - 1, ncol = 2)
     
-    merges_clust[1,1] <- -nrow(object)
-    merges_clust[1,2] <- -(nrow(object) - 1)
+    merges_clust[1,1] <- -nrow(x)
+    merges_clust[1,2] <- -(nrow(x) - 1)
     
-    for (i in 2:(nrow(object) - 1)) {
-      merges_clust[i, 1] <- -(nrow(object) - i)
+    for (i in 2:(nrow(x) - 1)) {
+      merges_clust[i, 1] <- -(nrow(x) - i)
       merges_clust[i, 2] <- i - 1
     }
     
@@ -2692,7 +2692,7 @@ plot.dna_backbone <- function(x, ma = 500, ...) {
     a$merge <- merges_clust
     
     # Define merge heights
-    a$height <- object$backboneLoss[1:nrow(object) - 1]
+    a$height <- object$backboneLoss[1:nrow(x) - 1]
     
     # Order of leaves
     a$order <- 1:nrow(object)
