@@ -2663,64 +2663,101 @@ print.dna_backbone <- function(x, trim = 50, ...) {
 #' @importFrom stats filter
 #' @export
 plot.dna_backbone <- function(x, ma = 500, ...) {
-  # temperature and acceptance probability
-  plot(x = x$diagnostics$iteration,
-       y = x$diagnostics$temperature,
-       col = "red",
-       type = "l",
-       lwd = 3,
-       xlab = "Iteration",
-       ylab = "Acceptance probability",
-       main = "Temperature and acceptance probability")
-  # note that better solutions are coded as -1 and need to be skipped:
-  lines(x = x$diagnostics$iteration[x$diagnostics$acceptance_prob >= 0],
-        y = x$diagnostics$acceptance_prob[x$diagnostics$acceptance_prob >= 0])
 
-  # spectral distance between full network and backbone network per iteration
-  bb_loss <- stats::filter(x$diagnostics$penalized_backbone_loss,
-                           rep(1 / ma, ma),
-                           sides = 1)
-  if (attributes(x)$method == "penalty") {
-    yl <- "Penalized backbone loss"
-    ti <- "Penalized spectral backbone distance"
+  if (attr(x, "method") != "nested") {
+    # temperature and acceptance probability
+    plot(x = x$diagnostics$iteration,
+         y = x$diagnostics$temperature,
+         col = "red",
+         type = "l",
+         lwd = 3,
+         xlab = "Iteration",
+         ylab = "Acceptance probability",
+         main = "Temperature and acceptance probability")
+    # note that better solutions are coded as -1 and need to be skipped:
+    lines(x = x$diagnostics$iteration[x$diagnostics$acceptance_prob >= 0],
+          y = x$diagnostics$acceptance_prob[x$diagnostics$acceptance_prob >= 0])
+
+    # spectral distance between full network and backbone network per iteration
+    bb_loss <- stats::filter(x$diagnostics$penalized_backbone_loss,
+                             rep(1 / ma, ma),
+                             sides = 1)
+    if (attributes(x)$method == "penalty") {
+      yl <- "Penalized backbone loss"
+      ti <- "Penalized spectral backbone distance"
+    } else {
+      yl <- "Backbone loss"
+      ti <- "Spectral backbone distance"
+    }
+    plot(x = x$diagnostics$iteration,
+         y = bb_loss,
+         type = "l",
+         xlab = "Iteration",
+         ylab = yl,
+         main = ti)
+
+    # number of concepts in the backbone solution per iteration
+    current_size_ma <- stats::filter(x$diagnostics$current_backbone_size,
+                                     rep(1 / ma, ma),
+                                     sides = 1)
+    optimal_size_ma <- stats::filter(x$diagnostics$optimal_backbone_size,
+                                     rep(1 / ma, ma),
+                                     sides = 1)
+    plot(x = x$diagnostics$iteration,
+         y = current_size_ma,
+         ylim = c(min(c(current_size_ma, optimal_size_ma), na.rm = TRUE),
+                  max(c(current_size_ma, optimal_size_ma), na.rm = TRUE)),
+         type = "l",
+         xlab = "Iteration",
+         ylab = paste0("Number of elements (MA, last ", ma, ")"),
+         main = "Backbone size (red = best)")
+    lines(x = x$diagnostics$iteration, y = optimal_size_ma, col = "red")
+
+    # ratio of recent acceptances
+    accept_ratio <- stats::filter(x$diagnostics$acceptance,
+                                  rep(1 / ma, ma),
+                                  sides = 1)
+    plot(x = x$diagnostics$iteration,
+         y = accept_ratio,
+         type = "l",
+         xlab = "Iteration",
+         ylab = paste("Acceptance ratio in the last", ma, "iterations"),
+         main = "Acceptance ratio")
   } else {
-    yl <- "Backbone loss"
-    ti <- "Spectral backbone distance"
+    ## Create hclust object
+
+    # define merging pattern: negative numbers are leaves, positive are merged
+    # clusters
+    merges_clust <- matrix(nrow = nrow(x) - 1, ncol = 2)
+
+    merges_clust[1,1] <- -nrow(x)
+    merges_clust[1,2] <- -(nrow(x) - 1)
+
+    for (i in 2:(nrow(x) - 1)) {
+      merges_clust[i, 1] <- -(nrow(x) - i)
+      merges_clust[i, 2] <- i - 1
+    }
+
+    # Initialize empty object
+    a <- list()
+
+    # Add merges
+    a$merge <- merges_clust
+
+    # Define merge heights
+    a$height <- x$backboneLoss[1:nrow(x) - 1]
+
+    # Order of leaves
+    a$order <- 1:nrow(x)
+
+    # Labels of leaves
+    a$labels <- rev(x$entity)
+
+    # Define hclust class
+    class(a) <- "hclust"
+
+    plot(a, ylab = "")
   }
-  plot(x = x$diagnostics$iteration,
-       y = bb_loss,
-       type = "l",
-       xlab = "Iteration",
-       ylab = yl,
-       main = ti)
-
-  # number of concepts in the backbone solution per iteration
-  current_size_ma <- stats::filter(x$diagnostics$current_backbone_size,
-                                   rep(1 / ma, ma),
-                                   sides = 1)
-  optimal_size_ma <- stats::filter(x$diagnostics$optimal_backbone_size,
-                                   rep(1 / ma, ma),
-                                   sides = 1)
-  plot(x = x$diagnostics$iteration,
-       y = current_size_ma,
-       ylim = c(min(c(current_size_ma, optimal_size_ma), na.rm = TRUE),
-                max(c(current_size_ma, optimal_size_ma), na.rm = TRUE)),
-       type = "l",
-       xlab = "Iteration",
-       ylab = paste0("Number of elements (MA, last ", ma, ")"),
-       main = "Backbone size (red = best)")
-  lines(x = x$diagnostics$iteration, y = optimal_size_ma, col = "red")
-
-  # ratio of recent acceptances
-  accept_ratio <- stats::filter(x$diagnostics$acceptance,
-                                rep(1 / ma, ma),
-                                sides = 1)
-  plot(x = x$diagnostics$iteration,
-       y = accept_ratio,
-       type = "l",
-       xlab = "Iteration",
-       ylab = paste("Acceptance ratio in the last", ma, "iterations"),
-       main = "Acceptance ratio")
 }
 
 #' @rdname dna_backbone
@@ -2735,63 +2772,125 @@ plot.dna_backbone <- function(x, ma = 500, ...) {
 #' @importFrom ggplot2 ggtitle
 #' @importFrom ggplot2 theme_bw
 #' @importFrom ggplot2 theme
+#' @importFrom ggplot2 coord_flip
+#' @importFrom ggplot2 scale_x_continuous
+#' @importFrom ggplot2 scale_y_continuous
+#' @importFrom ggraph ggraph
+#' @importFrom ggraph geom_edge_elbow
+#' @importFrom ggraph geom_node_point
 #' @export
 autoplot.dna_backbone <- function(object, ..., ma = 500) {
-  bd <- object$diagnostics
-  bd$bb_loss <- stats::filter(bd$penalized_backbone_loss, rep(1 / ma, ma), sides = 1)
-  bd$current_size_ma <- stats::filter(bd$current_backbone_size, rep(1 / ma, ma), sides = 1)
-  bd$optimal_size_ma <- stats::filter(bd$optimal_backbone_size, rep(1 / ma, ma), sides = 1)
-  bd$accept_ratio <- stats::filter(bd$acceptance, rep(1 / ma, ma), sides = 1)
 
-  # temperature and acceptance probability
-  g_accept <- ggplot2::ggplot(bd, ggplot2::aes_string(y = "temperature", x = "iteration")) +
-    ggplot2::geom_line(color = "#a50f15") +
-    ggplot2::geom_line(data = bd[bd$acceptance_prob >= 0, ],
-                       ggplot2::aes_string(y = "acceptance_prob", x = "iteration")) +
-    ggplot2::ylab("Acceptance probability") +
-    ggplot2::xlab("Iteration") +
-    ggplot2::ggtitle("Temperature and acceptance probability") +
-    ggplot2::theme_bw()
+  if (attr(object, "method") != "nested") {
+    bd <- object$diagnostics
+    bd$bb_loss <- stats::filter(bd$penalized_backbone_loss, rep(1 / ma, ma), sides = 1)
+    bd$current_size_ma <- stats::filter(bd$current_backbone_size, rep(1 / ma, ma), sides = 1)
+    bd$optimal_size_ma <- stats::filter(bd$optimal_backbone_size, rep(1 / ma, ma), sides = 1)
+    bd$accept_ratio <- stats::filter(bd$acceptance, rep(1 / ma, ma), sides = 1)
 
-  # spectral distance between full network and backbone network per iteration
-  if (attributes(object)$method == "penalty") {
-    yl <- "Penalized backbone loss"
-    ti <- "Penalized spectral backbone distance"
+    # temperature and acceptance probability
+    g_accept <- ggplot2::ggplot(bd, ggplot2::aes_string(y = "temperature", x = "iteration")) +
+      ggplot2::geom_line(color = "#a50f15") +
+      ggplot2::geom_line(data = bd[bd$acceptance_prob >= 0, ],
+                         ggplot2::aes_string(y = "acceptance_prob", x = "iteration")) +
+      ggplot2::ylab("Acceptance probability") +
+      ggplot2::xlab("Iteration") +
+      ggplot2::ggtitle("Temperature and acceptance probability") +
+      ggplot2::theme_bw()
+
+    # spectral distance between full network and backbone network per iteration
+    if (attributes(object)$method == "penalty") {
+      yl <- "Penalized backbone loss"
+      ti <- "Penalized spectral backbone distance"
+    } else {
+      yl <- "Backbone loss"
+      ti <- "Spectral backbone distance"
+    }
+    g_loss <- ggplot2::ggplot(bd, ggplot2::aes_string(y = "bb_loss", x = "iteration")) +
+      ggplot2::geom_line() +
+      ggplot2::ylab(yl) +
+      ggplot2::xlab("Iteration") +
+      ggplot2::ggtitle(ti) +
+      ggplot2::theme_bw()
+
+    # number of concepts in the backbone solution per iteration
+    d <- data.frame(iteration = rep(bd$iteration, 2),
+                    size = c(bd$current_size_ma, bd$optimal_size_ma),
+                    Criterion = c(rep("Current iteration", nrow(bd)),
+                                  rep("Best solution", nrow(bd))))
+    g_size <- ggplot2::ggplot(d, ggplot2::aes_string(y = "size", x = "iteration", color = "Criterion")) +
+      ggplot2::geom_line() +
+      ggplot2::ylab(paste0("Number of elements (MA, last ", ma, ")")) +
+      ggplot2::xlab("Iteration") +
+      ggplot2::ggtitle("Backbone size") +
+      ggplot2::theme_bw() +
+      ggplot2::theme(legend.position = "bottom")
+
+    # ratio of recent acceptances
+    g_ar <- ggplot2::ggplot(bd, ggplot2::aes_string(y = "accept_ratio", x = "iteration")) +
+      ggplot2::geom_line() +
+      ggplot2::ylab(paste("Acceptance ratio in the last", ma, "iterations")) +
+      ggplot2::xlab("Iteration") +
+      ggplot2::ggtitle("Acceptance ratio") +
+      ggplot2::theme_bw()
+
+    # wrap in list
+    plots <- list(g_accept, g_loss, g_size, g_ar)
+    return(plots)
   } else {
-    yl <- "Backbone loss"
-    ti <- "Spectral backbone distance"
+    ## Create hclust object
+
+    # define merging pattern: negative numbers are leaves, positive are merged
+    # clusters
+    merges_clust <- matrix(nrow = nrow(object) - 1, ncol = 2)
+
+    merges_clust[1,1] <- -nrow(object)
+    merges_clust[1,2] <- -(nrow(object) - 1)
+
+    for (i in 2:(nrow(object) - 1)) {
+      merges_clust[i, 1] <- -(nrow(object) - i)
+      merges_clust[i, 2] <- i - 1
+    }
+
+    # Initialize empty object
+    a <- list()
+
+    # Add merges
+    a$merge <- merges_clust
+
+    # Define merge heights
+    a$height <- object$backboneLoss[1:nrow(object) - 1]
+
+    # Order of leaves
+    a$order <- 1:nrow(object)
+
+    # Labels of leaves
+    a$labels <- rev(object$entity)
+
+    # Define hclust class
+    class(a) <- "hclust"
+
+    g_clust <- ggraph::ggraph(graph = a,
+                              layout = "dendrogram",
+                              circular = FALSE,
+                              height = height) +
+      ggraph::geom_edge_elbow() +
+      ggraph::geom_node_point(aes_string(filter = "leaf")) +
+      ggplot2::theme_bw() +
+      ggplot2::theme(panel.border = element_blank(),
+                     axis.title = element_blank(),
+                     panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank(),
+                     axis.line = element_blank(),
+                     axis.text.y = element_text(size = 6),
+                     axis.ticks.y = element_blank()) +
+      ggplot2::scale_x_continuous(breaks = seq(0, nrow(nested) - 1, by = 1),
+                                  labels = rev(nested$entity)) +
+      ggplot2::scale_y_continuous(expand = c(0, 0.01)) +
+      ggplot2::coord_flip()
+
+    return(g_clust)
   }
-  g_loss <- ggplot2::ggplot(bd, ggplot2::aes_string(y = "bb_loss", x = "iteration")) +
-    ggplot2::geom_line() +
-    ggplot2::ylab(yl) +
-    ggplot2::xlab("Iteration") +
-    ggplot2::ggtitle(ti) +
-    ggplot2::theme_bw()
-
-  # number of concepts in the backbone solution per iteration
-  d <- data.frame(iteration = rep(bd$iteration, 2),
-                  size = c(bd$current_size_ma, bd$optimal_size_ma),
-                  Criterion = c(rep("Current iteration", nrow(bd)),
-                                rep("Best solution", nrow(bd))))
-  g_size <- ggplot2::ggplot(d, ggplot2::aes_string(y = "size", x = "iteration", color = "Criterion")) +
-    ggplot2::geom_line() +
-    ggplot2::ylab(paste0("Number of elements (MA, last ", ma, ")")) +
-    ggplot2::xlab("Iteration") +
-    ggplot2::ggtitle("Backbone size") +
-    ggplot2::theme_bw() +
-    ggplot2::theme(legend.position = "bottom")
-
-  # ratio of recent acceptances
-  g_ar <- ggplot2::ggplot(bd, ggplot2::aes_string(y = "accept_ratio", x = "iteration")) +
-    ggplot2::geom_line() +
-    ggplot2::ylab(paste("Acceptance ratio in the last", ma, "iterations")) +
-    ggplot2::xlab("Iteration") +
-    ggplot2::ggtitle("Acceptance ratio") +
-    ggplot2::theme_bw()
-
-  # wrap in list
-  plots <- list(g_accept, g_loss, g_size, g_ar)
-  return(plots)
 }
 
 
