@@ -5,7 +5,6 @@ import com.github.lgooddatepicker.components.DateTimePicker;
 import com.github.lgooddatepicker.components.TimePickerSettings;
 import dna.Dna;
 import export.Exporter;
-import export.SimulatedAnnealingBackboneResult;
 import logger.LogEvent;
 import logger.Logger;
 import me.tongfei.progressbar.ProgressBar;
@@ -15,7 +14,6 @@ import model.TableDocument;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -27,7 +25,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * GUI for network export. Allows the user to set up options for exporting

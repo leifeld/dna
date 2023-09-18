@@ -12,6 +12,7 @@ import java.util.stream.Stream;
 
 import export.*;
 import me.tongfei.progressbar.ProgressBar;
+import model.Value;
 import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
 import org.rosuda.JRI.RConsoleOutputStream;
 import org.rosuda.JRI.Rengine;
@@ -744,6 +745,31 @@ public class HeadlessDna implements Logger.LogListener {
 				this.exporter.writeBackboneToFile(outfile);
 			}
 		}
+	}
+
+	/* =================================================================================================================
+	 * Functions for managing variables
+	 * =================================================================================================================
+	 */
+
+	/**
+	 * Retrieve variables and data type definitions for a given statement type (via label).
+	 *
+	 * @param statementTypeLabel  Label of the statement type for which variables should be retrieved.
+	 * @return                    Array list of {@link Value} objects representing variables.
+	 */
+	public ArrayList<Value> getVariables(String statementTypeLabel) {
+		return Dna.sql.getStatementType(statementTypeLabel).getVariables();
+	}
+
+	/**
+	 * Retrieve variables and data type definitions for a given statement type (via ID).
+	 *
+	 * @param statementTypeId  ID of the statement type for which variables should be retrieved.
+	 * @return                 Array list of {@link Value} objects representing variables.
+	 */
+	public ArrayList<Value> getVariables(int statementTypeId) {
+		return Dna.sql.getStatementType(statementTypeId).getVariables();
 	}
 
 	/* =================================================================================================================
