@@ -371,9 +371,7 @@ the polarization of a discourse network.
 In particular, the function can be used to compute the maximal modularity of
 a smoothed time series of discourse networks using the \code{timeWindow} and
 \code{windowSize} arguments for a given \code{k} across a number of
-clustering methods. The resulting smoothed time series of bipolarization or
-multipolarization values can be plotted using the \link{dna_plotModularity}
-function.
+clustering methods.
 
 It is also possible to switch off all but one clustering method using the
 respective arguments and carry out a simple cluster analysis with the method

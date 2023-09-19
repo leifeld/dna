@@ -1,6 +1,6 @@
 Package: rDNA
 Version: 3.0.10
-Date: 2023-08-31
+Date: 2023-09-19
 Title: Discourse Network Analysis in R
 Authors@R: 
   c(person(given = "Philip",
@@ -26,8 +26,10 @@ Imports:
 Suggests: 
     testthat,
     askpass (>= 1.1),
-    igraph (>= 1.3.5),
-    ggraph (>= 2.1.0)
+    igraph (>= 0.8.1),
+    ggraph (>= 2.1.0),
+    cluster (>= 1.12.0),
+    sna (>= 2.4)
 SystemRequirements: Java (>= 11)
 License: GPL-2
 LazyData: true

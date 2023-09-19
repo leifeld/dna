@@ -81,6 +81,11 @@ jobs:
         extra-packages: |
           any::ggplot2
           any::roxygen2
+          any::igraph
+          any::ggraph
+          any::askpass
+          any::cluster
+          any::sna
 
     - uses: gradle/wrapper-validation-action@v1
 

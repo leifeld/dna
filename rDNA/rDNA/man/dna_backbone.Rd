@@ -290,7 +290,7 @@ dna_init()
 dna_sample()
 dna_openDatabase("sample.dna", coderId = 1, coderPassword = "sample")
 
-# compute backbone and redundant set
+# compute backbone and redundant set using penalised spectral loss
 b <- dna_backbone(method = "penalty",
                   penalty = 3.5,
                   iterations = 10000,
@@ -334,6 +334,28 @@ new_plot & theme_grey() + theme(legend.position = "bottom")
 # use the gridExtra package to arrange the diagnostics in a single plot
 library("gridExtra")
 grid.arrange(p[[1]], p[[2]], p[[3]], p[[4]])
+
+# compute backbone with fixed size (here: 4 concepts)
+b <- dna_backbone(method = "fixed",
+                  backboneSize = 4,
+                  iterations = 2000,
+                  variable1 = "organization",
+                  variable2 = "concept",
+                  qualifier = "agreement",
+                  qualifierAggregation = "subtract",
+                  normalization = "average")
+b
+
+# compute backbone with a nested structure and plot dendrogram
+b <- dna_backbone(method = "nested",
+                  variable1 = "organization",
+                  variable2 = "concept",
+                  qualifier = "agreement",
+                  qualifierAggregation = "subtract",
+                  normalization = "average")
+b
+plot(b)
+autoplot(b)
 }
 
 }

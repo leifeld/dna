@@ -2388,7 +2388,7 @@ autoplot.dna_barplot <- function(object,
 #' dna_sample()
 #' dna_openDatabase("sample.dna", coderId = 1, coderPassword = "sample")
 #'
-#' # compute backbone and redundant set
+#' # compute backbone and redundant set using penalised spectral loss
 #' b <- dna_backbone(method = "penalty",
 #'                   penalty = 3.5,
 #'                   iterations = 10000,
@@ -2432,6 +2432,28 @@ autoplot.dna_barplot <- function(object,
 #' # use the gridExtra package to arrange the diagnostics in a single plot
 #' library("gridExtra")
 #' grid.arrange(p[[1]], p[[2]], p[[3]], p[[4]])
+#'
+#' # compute backbone with fixed size (here: 4 concepts)
+#' b <- dna_backbone(method = "fixed",
+#'                   backboneSize = 4,
+#'                   iterations = 2000,
+#'                   variable1 = "organization",
+#'                   variable2 = "concept",
+#'                   qualifier = "agreement",
+#'                   qualifierAggregation = "subtract",
+#'                   normalization = "average")
+#' b
+#'
+#' # compute backbone with a nested structure and plot dendrogram
+#' b <- dna_backbone(method = "nested",
+#'                   variable1 = "organization",
+#'                   variable2 = "concept",
+#'                   qualifier = "agreement",
+#'                   qualifierAggregation = "subtract",
+#'                   normalization = "average")
+#' b
+#' plot(b)
+#' autoplot(b)
 #' }
 #'
 #' @author Philip Leifeld, Tim Henrichsen
@@ -2723,11 +2745,8 @@ plot.dna_backbone <- function(x, ma = 500, ...) {
          xlab = "Iteration",
          ylab = paste("Acceptance ratio in the last", ma, "iterations"),
          main = "Acceptance ratio")
-  } else {
-    ## Create hclust object
-
-    # define merging pattern: negative numbers are leaves, positive are merged
-    # clusters
+  } else { # create hclust object
+    # define merging pattern: negative numbers are leaves, positive are merged clusters
     merges_clust <- matrix(nrow = nrow(x) - 1, ncol = 2)
 
     merges_clust[1,1] <- -nrow(x)
@@ -2775,12 +2794,8 @@ plot.dna_backbone <- function(x, ma = 500, ...) {
 #' @importFrom ggplot2 coord_flip
 #' @importFrom ggplot2 scale_x_continuous
 #' @importFrom ggplot2 scale_y_continuous
-#' @importFrom ggraph ggraph
-#' @importFrom ggraph geom_edge_elbow
-#' @importFrom ggraph geom_node_point
 #' @export
 autoplot.dna_backbone <- function(object, ..., ma = 500) {
-
   if (attr(object, "method") != "nested") {
     bd <- object$diagnostics
     bd$bb_loss <- stats::filter(bd$penalized_backbone_loss, rep(1 / ma, ma), sides = 1)
@@ -2837,11 +2852,8 @@ autoplot.dna_backbone <- function(object, ..., ma = 500) {
     # wrap in list
     plots <- list(g_accept, g_loss, g_size, g_ar)
     return(plots)
-  } else {
-    ## Create hclust object
-
-    # define merging pattern: negative numbers are leaves, positive are merged
-    # clusters
+  } else { # create hclust object
+    # define merging pattern: negative numbers are leaves, positive are merged clusters
     merges_clust <- matrix(nrow = nrow(object) - 1, ncol = 2)
 
     merges_clust[1,1] <- -nrow(object)
@@ -2870,12 +2882,17 @@ autoplot.dna_backbone <- function(object, ..., ma = 500) {
     # Define hclust class
     class(a) <- "hclust"
 
+    # ensure ggraph is installed, otherwise throw error (better than importing it to avoid hard dependency)
+    if (!requireNamespace("ggraph", quietly = TRUE)) {
+      stop("The 'ggraph' package is required for plotting nested backbone dendrograms with 'ggplot2' but was not found. Consider installing it.")
+    }
+
     g_clust <- ggraph::ggraph(graph = a,
                               layout = "dendrogram",
                               circular = FALSE,
-                              height = height) +
+                              height = height) + # TODO @Tim: "height" does not seem to exist
       ggraph::geom_edge_elbow() +
-      ggraph::geom_node_point(aes_string(filter = "leaf")) +
+      ggraph::geom_node_point(aes_string(filter = "leaf")) + # TODO @Tim: "leaf" does not seem to exist; aes_string is deprecated
       ggplot2::theme_bw() +
       ggplot2::theme(panel.border = element_blank(),
                      axis.title = element_blank(),
@@ -2884,8 +2901,8 @@ autoplot.dna_backbone <- function(object, ..., ma = 500) {
                      axis.line = element_blank(),
                      axis.text.y = element_text(size = 6),
                      axis.ticks.y = element_blank()) +
-      ggplot2::scale_x_continuous(breaks = seq(0, nrow(nested) - 1, by = 1),
-                                  labels = rev(nested$entity)) +
+      ggplot2::scale_x_continuous(breaks = seq(0, nrow(object) - 1, by = 1),
+                                  labels = rev(object$entity)) +
       ggplot2::scale_y_continuous(expand = c(0, 0.01)) +
       ggplot2::coord_flip()
 
@@ -2895,6 +2912,7 @@ autoplot.dna_backbone <- function(object, ..., ma = 500) {
 
 
 # Clustering -------------------------------------------------------------------
+
 #' Compute multiple cluster solutions for a discourse network
 #'
 #' Compute multiple cluster solutions for a discourse network.
@@ -2911,9 +2929,7 @@ autoplot.dna_backbone <- function(object, ..., ma = 500) {
 #' In particular, the function can be used to compute the maximal modularity of
 #' a smoothed time series of discourse networks using the \code{timeWindow} and
 #' \code{windowSize} arguments for a given \code{k} across a number of
-#' clustering methods. The resulting smoothed time series of bipolarization or
-#' multipolarization values can be plotted using the \link{dna_plotModularity}
-#' function.
+#' clustering methods.
 #'
 #' It is also possible to switch off all but one clustering method using the
 #' respective arguments and carry out a simple cluster analysis with the method
@@ -3086,6 +3102,7 @@ autoplot.dna_backbone <- function(object, ..., ma = 500) {
 #' mc3$max_mod         # maximal modularity and method per time point
 #' }
 #'
+#' @importFrom stats as.dist cor hclust cutree kmeans
 #' @export
 dna_multiclust <- function(statementType = "DNA Statement",
                            variable1 = "organization",
@@ -3284,7 +3301,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
     jaccard_similarities[is.nan(jaccard_similarities)] <- 0 # avoid division by zero
     jaccard_distances <- 1 - jaccard_similarities # convert to Jaccard distances
     rownames(jaccard_distances) <- rn # re-attach the row names
-    jac <- as.dist(jaccard_distances) # convert to dist object
+    jac <- stats::as.dist(jaccard_distances) # convert to dist object
 
     # prepare one-mode network
     if ("dna_network_onemode_timewindows" %in% class(nw_sub)) {
@@ -4061,6 +4078,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
 #'
 #' @author Philip Leifeld
 #' @rdname dna_multiclust
+#' @importFrom utils head
 #' @export
 print.dna_multiclust <- function(x, ...) {
   cat(paste0("$k\n", x$k, "\n"))
@@ -4068,17 +4086,17 @@ print.dna_multiclust <- function(x, ...) {
     cat(paste0("\n$cl\n", length(x$cl), " cluster object(s) embedded.\n"))
   }
   cat("\n$max_mod\n")
-  print(head(x$max_mod))
+  print(utils::head(x$max_mod))
   if (nrow(x$max_mod) > 6) {
     cat(paste0("[... ", nrow(x$max_mod), " rows]\n"))
   }
   cat("\n$modularity\n")
-  print(head(x$modularity))
+  print(utils::head(x$modularity))
   if (nrow(x$modularity) > 6) {
     cat(paste0("[... ", nrow(x$modularity), " rows]\n"))
   }
   cat("\n$memberships\n")
-  print(head(x$memberships))
+  print(utils::head(x$memberships))
   if (nrow(x$memberships) > 6) {
     cat(paste0("[... ", nrow(x$memberships), " rows]\n"))
   }
