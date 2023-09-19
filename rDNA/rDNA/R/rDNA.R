@@ -2872,6 +2872,7 @@ autoplot.dna_backbone <- function(object, ..., ma = 500) {
 
     # Define merge heights
     a$height <- object$backboneLoss[1:nrow(object) - 1]
+    height <- a$height
 
     # Order of leaves
     a$order <- 1:nrow(object)

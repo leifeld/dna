@@ -3,10 +3,10 @@ context("backbone")
 # Initialize DNA and sample database
 suppressPackageStartupMessages(library("rDNA"))
 dna_init()
-samp <- dna_sample()
-dna_openDatabase(samp, coderId = 1, coderPassword = "sample")
 
 test_that("Penalized backbone works", {
+  samp <- dna_sample()
+  dna_openDatabase(samp, coderId = 1, coderPassword = "sample")
   b <- dna_backbone(method = "penalty",
                     penalty = 3.5,
                     iterations = 10000,
@@ -35,9 +35,13 @@ test_that("Penalized backbone works", {
   expect_s3_class(b, "dna_backbone")
   expect_equal(dim(b$diagnostics), c(10000, 9))
   expect_false(any(is.na(b$diagnostics)))
+  dna_closeDatabase()
+  unlink(samp)
 })
 
 test_that("Plot method works for backbones with penalty", {
+  samp <- dna_sample()
+  dna_openDatabase(samp, coderId = 1, coderPassword = "sample")
   b <- dna_backbone(method = "penalty",
                     penalty = 3.5,
                     iterations = 10000,
@@ -55,9 +59,13 @@ test_that("Plot method works for backbones with penalty", {
   dev.off()
   expect_true(file.exists(fn))
   file.remove(fn)
+  dna_closeDatabase()
+  unlink(samp)
 })
 
 test_that("Autoplot method works for backbones with penalty", {
+  samp <- dna_sample()
+  dna_openDatabase(samp, coderId = 1, coderPassword = "sample")
   b <- dna_backbone(method = "penalty",
                     penalty = 3.5,
                     iterations = 10000,
@@ -72,9 +80,13 @@ test_that("Autoplot method works for backbones with penalty", {
   expect_true("list" %in% class(p))
   expect_length(p, 4)
   expect_equal(unique(as.character(sapply(p, class))), c("gg", "ggplot"))
+  dna_closeDatabase()
+  unlink(samp)
 })
 
 test_that("Fixed backbone works", {
+  samp <- dna_sample()
+  dna_openDatabase(samp, coderId = 1, coderPassword = "sample")
   b <- dna_backbone(method = "fixed",
                     backboneSize = 4,
                     iterations = 2000,
@@ -103,9 +115,13 @@ test_that("Fixed backbone works", {
   expect_s3_class(b, "dna_backbone")
   expect_equal(dim(b$diagnostics), c(2000, 9))
   expect_false(any(is.na(b$diagnostics)))
+  dna_closeDatabase()
+  unlink(samp)
 })
 
 test_that("Plot method works for fixed backbone size", {
+  samp <- dna_sample()
+  dna_openDatabase(samp, coderId = 1, coderPassword = "sample")
   b <- dna_backbone(method = "fixed",
                     backboneSize = 4,
                     iterations = 2000,
@@ -123,9 +139,13 @@ test_that("Plot method works for fixed backbone size", {
   dev.off()
   expect_true(file.exists(fn))
   file.remove(fn)
+  dna_closeDatabase()
+  unlink(samp)
 })
 
 test_that("Autoplot method works for backbones with fixed size", {
+  samp <- dna_sample()
+  dna_openDatabase(samp, coderId = 1, coderPassword = "sample")
   b <- dna_backbone(method = "fixed",
                     backboneSize = 4,
                     iterations = 2000,
@@ -140,9 +160,13 @@ test_that("Autoplot method works for backbones with fixed size", {
   expect_true("list" %in% class(p))
   expect_length(p, 4)
   expect_equal(unique(as.character(sapply(p, class))), c("gg", "ggplot"))
+  dna_closeDatabase()
+  unlink(samp)
 })
 
 test_that("Nested backbone works", {
+  samp <- dna_sample()
+  dna_openDatabase(samp, coderId = 1, coderPassword = "sample")
   b <- dna_backbone(method = "nested",
                     variable1 = "organization",
                     variable2 = "concept",
@@ -162,9 +186,13 @@ test_that("Nested backbone works", {
   expect_equal(attributes(b)$method, "nested")
   expect_s3_class(b, "dna_backbone")
   expect_false(any(is.na(b)))
+  dna_closeDatabase()
+  unlink(samp)
 })
 
 test_that("Plot method works for nested backbone", {
+  samp <- dna_sample()
+  dna_openDatabase(samp, coderId = 1, coderPassword = "sample")
   b <- dna_backbone(method = "nested",
                     variable1 = "organization",
                     variable2 = "concept",
@@ -180,9 +208,13 @@ test_that("Plot method works for nested backbone", {
   dev.off()
   expect_true(file.exists(fn))
   file.remove(fn)
+  dna_closeDatabase()
+  unlink(samp)
 })
 
 test_that("Autoplot method works for nested backbones", {
+  samp <- dna_sample()
+  dna_openDatabase(samp, coderId = 1, coderPassword = "sample")
   b <- dna_backbone(method = "nested",
                     variable1 = "organization",
                     variable2 = "concept",
@@ -192,9 +224,7 @@ test_that("Autoplot method works for nested backbones", {
   skip_if_not_installed("ggplot2")
   library("ggplot2")
   p <- autoplot(b)
-  expect_equal(class(p), c("gg", "ggplot"))
-})
-
-teardown_env({
+  expect_equal(class(p), c("ggraph", "gg", "ggplot"))
+  dna_closeDatabase()
   unlink(samp)
 })
