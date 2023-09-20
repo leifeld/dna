@@ -719,6 +719,146 @@ public class HeadlessDna implements Logger.LogListener {
 		}
 	}
 
+	/**
+	 * Compute the spectral loss for a given backbone set relative to the full network.
+	 *
+	 * @param backboneEntities       An array of entities (e.g., concepts) for which the spectral loss should be computed relative to the full network.
+	 * @param p                      The penalty parameter. Can be \code{0} to switch off the penalty.
+	 * @param statementType          Statement type as a {@link String}.
+	 * @param variable1              First variable for export, provided as a {@link String}.
+	 * @param variable1Document      boolean indicating if the first variable is at the document level.
+	 * @param variable2              Second variable for export, provided as a {@link String}.
+	 * @param variable2Document      boolean indicating if the second variable is at the document level.
+	 * @param qualifier              Qualifier variable as a {@link String}.
+	 * @param qualifierDocument      boolean indicating if the qualifier variable is at the document level.
+	 * @param qualifierAggregation   Aggregation rule for the qualifier variable (can be {@code "ignore"}, {@code "combine"}, {@code "subtract"}, {@code "congruence"}, or {@code "conflict"}). Note that negative values in the {@code "subtract"} case are replaced by {@code 0}.
+	 * @param normalization          Normalization setting as a {@link String}, as provided by rDNA (can be {@code "no"}, {@code "activity"}, {@code "prominence"}, {@code "average"}, {@code "jaccard"}, or {@code "cosine"}).
+	 * @param duplicates             An input {@link String} from rDNA that can be {@code "include"}, {@code "document"}, {@code "week"}, {@code "month"}, {@code "year"}, or {@code "acrossrange"}.
+	 * @param startDate              Start date for the export, provided as a {@link String} with format {@code "dd.MM.yyyy"}.
+	 * @param stopDate               Stop date for the export, provided as a {@link String} with format {@code "dd.MM.yyyy"}.
+	 * @param startTime              Start time for the export, provided as a {@link String} with format {@code "HH:mm:ss"}.
+	 * @param stopTime               Stop time for the export, provided as a {@link String} with format {@code "HH:mm:ss"}.
+	 * @param excludeVariables       A {@link String} array with n elements, indicating the variable of the n'th value.
+	 * @param excludeValues          A {@link String} array with n elements, indicating the value pertaining to the n'th variable {@link String}.
+	 * @param excludeAuthors         A {@link String} array of values to exclude in the {@code author} variable at the document level.
+	 * @param excludeSources         A {@link String} array of values to exclude in the {@code source} variable at the document level.
+	 * @param excludeSections        A {@link String} array of values to exclude in the {@code section} variable at the document level.
+	 * @param excludeTypes           A {@link String} array of values to exclude in the {@code "type"} variable at the document level.
+	 * @param invertValues           boolean indicating whether the statement-level exclude values should be included (= {@code true}) rather than excluded.
+	 * @param invertAuthors          boolean indicating whether the document-level author values should be included (= {@code true}) rather than excluded.
+	 * @param invertSources          boolean indicating whether the document-level source values should be included (= {@code true}) rather than excluded.
+	 * @param invertSections         boolean indicating whether the document-level section values should be included (= {@code true}) rather than excluded.
+	 * @param invertTypes            boolean indicating whether the document-level type values should be included (= {@code true}) rather than excluded.
+	 * @return                       A double array with the loss for the backbone and redundant set.
+	 */
+	public double[] rEvaluateBackboneSolution(String[] backboneEntities, int p, String statementType, String variable1, boolean variable1Document, String variable2,
+						  boolean variable2Document, String qualifier, boolean qualifierDocument, String qualifierAggregation, String normalization,
+						  String duplicates, String startDate, String stopDate, String startTime, String stopTime,
+						  String[] excludeVariables, String[] excludeValues, String[] excludeAuthors, String[] excludeSources, String[] excludeSections,
+						  String[] excludeTypes, boolean invertValues, boolean invertAuthors, boolean invertSources, boolean invertSections,
+						  boolean invertTypes) {
+
+		// step 1: preprocess arguments
+		StatementType st = Dna.sql.getStatementType(statementType); // format statement type
+
+		// format dates and times with input formats "dd.MM.yyyy" and "HH:mm:ss"
+		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
+		LocalDateTime ldtStart, ldtStop;
+		LocalDateTime[] dateRange = Dna.sql.getDateTimeRange();
+		if (startTime == null || startTime.equals("")) {
+			startTime = "00:00:00";
+		}
+		if (startDate == null || startDate.equals("") || startDate.equals("01.01.1900")) {
+			ldtStart = dateRange[0];
+		} else {
+			String startString = startDate + " " + startTime;
+			ldtStart = LocalDateTime.parse(startString, dtf);
+			if (!startString.equals(dtf.format(ldtStart))) {
+				ldtStart = dateRange[0];
+				LogEvent le = new LogEvent(Logger.WARNING,
+						"Start date or time is invalid.",
+						"When computing the backbone and redundant set of the network, the start date or time (" + startString + ") did not conform to the format dd.MM.yyyy HH:mm:ss and could not be interpreted. Assuming earliest date and time in the dataset: " + ldtStart.format(dtf) + ".");
+				Dna.logger.log(le);
+			}
+		}
+		if (stopTime == null || stopTime.equals("")) {
+			stopTime = "23:59:59";
+		}
+		if (stopDate == null || stopDate.equals("") || stopDate.equals("31.12.2099")) {
+			ldtStop = dateRange[1];
+		} else {
+			String stopString = stopDate + " " + stopTime;
+			ldtStop = LocalDateTime.parse(stopString, dtf);
+			if (!stopString.equals(dtf.format(ldtStop))) {
+				ldtStop = dateRange[1];
+				LogEvent le = new LogEvent(Logger.WARNING,
+						"End date or time is invalid.",
+						"When computing the spectral loss of a backbone set, the end date or time (" + stopString + ") did not conform to the format dd.MM.yyyy HH:mm:ss and could not be interpreted. Assuming latest date and time in the dataset: " + ldtStop.format(dtf) + ".");
+				Dna.logger.log(le);
+			}
+		}
+
+		// process exclude variables: create HashMap with variable:value pairs
+		HashMap<String, ArrayList<String>> map = new HashMap<String, ArrayList<String>>();
+		if (excludeVariables.length > 0) {
+			for (int i = 0; i < excludeVariables.length; i++) {
+				ArrayList<String> values = map.get(excludeVariables[i]);
+				if (values == null) {
+					values = new ArrayList<String>();
+				}
+				if (!values.contains(excludeValues[i])) {
+					values.add(excludeValues[i]);
+				}
+				Collections.sort(values);
+				map.put(excludeVariables[i], values);
+			}
+		}
+
+		// initialize Exporter class
+		this.exporter = new Exporter(
+				"onemode",
+				st,
+				variable1,
+				variable1Document,
+				variable2,
+				variable2Document,
+				qualifier,
+				qualifierDocument,
+				qualifierAggregation,
+				normalization,
+				true,
+				duplicates,
+				ldtStart,
+				ldtStop,
+				"no",
+				1,
+				map,
+				Stream.of(excludeAuthors).collect(Collectors.toCollection(ArrayList::new)),
+				Stream.of(excludeSources).collect(Collectors.toCollection(ArrayList::new)),
+				Stream.of(excludeSections).collect(Collectors.toCollection(ArrayList::new)),
+				Stream.of(excludeTypes).collect(Collectors.toCollection(ArrayList::new)),
+				invertValues,
+				invertAuthors,
+				invertSources,
+				invertSections,
+				invertTypes,
+				null,
+				null);
+
+		// step 2: filter
+		this.exporter.loadData();
+		this.exporter.filterStatements();
+		if (exporter.getFilteredStatements().size() == 0) {
+			LogEvent le = new LogEvent(Logger.ERROR,
+					"No statements left after filtering.",
+					"Attempted to filter the statements by date and other criteria before finding backbone. But no statements were left after applying the filters. Perhaps the time period was mis-specified?");
+			Dna.logger.log(le);
+		}
+
+		// step 3: compute and return results
+		return this.exporter.evaluateBackboneSolution(backboneEntities, p);
+	}
+
 	private void saveJsonXml(String fileFormat, String outfile) {
 		if (fileFormat != null && outfile != null) {
 			if (fileFormat.equals("json") && !outfile.toLowerCase().endsWith(".json")) {

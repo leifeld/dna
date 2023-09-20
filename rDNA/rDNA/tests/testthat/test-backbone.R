@@ -228,3 +228,16 @@ test_that("Autoplot method works for nested backbones", {
   dna_closeDatabase()
   unlink(samp)
 })
+
+
+test_that("Evaluate backbone solution works", {
+  samp <- dna_sample()
+  dna_openDatabase(samp, coderId = 1, coderPassword = "sample")
+  b <- dna_evaluateBackboneSolution(
+    c("There should be legislation to regulate emissions.",
+      "Emissions legislation should regulate CO2.")
+  )
+  expect_length(b, 2)
+  dna_closeDatabase()
+  unlink(samp)
+})

@@ -46,6 +46,7 @@ dna_openConnectionProfile(file = "my profile.dnc", coderPassword = "sample")
 }
 \seealso{
 Other {rDNA database connections}: 
+\code{\link{dna_api}()},
 \code{\link{dna_closeDatabase}()},
 \code{\link{dna_openDatabase}()},
 \code{\link{dna_printDetails}()},

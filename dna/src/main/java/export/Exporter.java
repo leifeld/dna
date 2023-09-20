@@ -3188,4 +3188,64 @@ public class Exporter {
 		acceptanceRatioLastHundredIterationsLog.add(log / Math.min(100, t)); // log ratio of accepted candidates in the last 100 iterations
 		t = t + 1; // go to next iteration
 	}
+
+	/**
+	 * Compute the spectral distance between the full network and the network based only on the backbone set and only the redundant set. The penalty parameter can be switched off by setting it to zero.
+	 *
+	 * @param backboneEntities An array of entities (e.g., concepts) to construct a backbone set for computing the spectral distance.
+	 * @param p The penalty parameter. Can be \code{0} to switch off the penalty parameter.
+	 * @return A double array with the penalized loss for the backbone set and the redundant set.
+	 */
+	public double[] evaluateBackboneSolution(String[] backboneEntities, int p) {
+		this.p = p;
+		double[] results = new double[2];
+		this.isolates = false; // no isolates initially for full matrix; will be set to true after full matrix has been computed
+
+		// initial values before iterations start
+		this.originalStatements = this.filteredStatements; // to ensure not all isolates are included later
+
+		// full set of concepts C
+		fullConcepts = this.extractLabels(this.filteredStatements, this.variable2, this.variable2Document);
+
+		// full network matrix Y against which we compare in every iteration
+		fullMatrix = this.computeOneModeMatrix(this.filteredStatements, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
+		this.isolates = true; // include isolates in the iterations; will be adjusted to full matrix without isolates manually each time
+
+		// compute normalised eigenvalues for the full matrix; no need to recompute every time as they do not change
+		eigenvaluesFull = computeNormalizedEigenvalues(fullMatrix.getMatrix());
+
+		// create copy of filtered statements and remove redundant entities
+		ArrayList<String> entityList = Stream.of(backboneEntities).collect(Collectors.toCollection(ArrayList<String>::new));
+		ArrayList<String> backboneSet = new ArrayList<>();
+		ArrayList<String> redundantSet = new ArrayList<>();
+		for (int i = 0; i < fullConcepts.length; i++) {
+			if (entityList.contains(fullConcepts[i])) {
+				backboneSet.add(fullConcepts[i]);
+			} else {
+				redundantSet.add(fullConcepts[i]);
+			}
+		}
+
+		// spectral distance between full and backbone set
+		candidateStatementList = this.filteredStatements
+				.stream()
+				.filter(s -> backboneSet.contains(((Entity) s.get(this.variable2)).getValue()))
+				.collect(Collectors.toCollection(ArrayList::new));
+		candidateMatrix = this.computeOneModeMatrix(candidateStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime); // create candidate matrix after filtering the statements based on the action that was executed
+		candidateMatrix = this.reduceCandidateMatrix(candidateMatrix, fullMatrix.getRowNames()); // ensure it has the right dimensions by purging isolates relative to the full matrix
+		eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix()); // normalised eigenvalues for the candidate matrix
+		results[0] = penalizedLoss(eigenvaluesFull, eigenvaluesCandidate, p, backboneSet.size(), fullConcepts.length); // spectral distance between full and candidate matrix
+
+		// spectral distance between full and redundant set
+		candidateStatementList = this.filteredStatements
+				.stream()
+				.filter(s -> redundantSet.contains(((Entity) s.get(this.variable2)).getValue()))
+				.collect(Collectors.toCollection(ArrayList::new));
+		candidateMatrix = this.computeOneModeMatrix(candidateStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime); // create candidate matrix after filtering the statements based on the action that was executed
+		candidateMatrix = this.reduceCandidateMatrix(candidateMatrix, fullMatrix.getRowNames()); // ensure it has the right dimensions by purging isolates relative to the full matrix
+		eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix()); // normalised eigenvalues for the candidate matrix
+		results[1] = penalizedLoss(eigenvaluesFull, eigenvaluesCandidate, p, redundantSet.size(), fullConcepts.length); // spectral distance between full and candidate matrix
+
+		return results;
+	}
 }

@@ -539,6 +539,47 @@ dna_printDetails <- function() {
   .jcall(dnaEnvironment[["dna"]]$headlessDna, "V", "printDatabaseDetails")
 }
 
+#' Get a reference to the headless Java class for R (API)
+#'
+#' Get a reference to the headless Java class for R (API).
+#'
+#' This function returns a Java object reference to the instance of the
+#' \code{Dna/HeadlessDna} class in the DNA JAR file that is held in the rDNA
+#' package environment and used by the functions in the package to exchange data
+#' with the Java application. You can use the \pkg{rJava} package to access the
+#' available functions in this class directly. API access requires detailed
+#' knowledge of the DNA JAR classes and functions and is recommended for
+#' developers and advanced users only.
+#'
+#' @return A Java object reference to the \code{Dna/HeadlessDna} class.
+#'
+#' @author Philip Leifeld
+#'
+#' @examples
+#' \dontrun{
+#' library("rJava") # load rJava package to use functions in the Java API
+#' dna_init()
+#' dna_sample()
+#' dna_openDatabase(coderId = 1,
+#'                  coderPassword = "sample",
+#'                  db_url = "sample.dna")
+#' api <- dna_api()
+#'
+#' # use the \code{getVariables} function to retrieve variables
+#' variable_references <- api$getVariables("DNA Statement")
+#'
+#' # iterate through variable references and print their data type
+#' for (i in seq(variable_references$size()) - 1) {
+#'   print(variable_references$get(as.integer(i))$getDataType())
+#' }
+#' }
+#'
+#' @family {rDNA database connections}
+#'
+#' @export
+dna_api <- function() {
+  return(dnaEnvironment[["dna"]]$headlessDna)
+}
 
 # Coder management--------------------------------------------------------------
 
@@ -1798,8 +1839,7 @@ autoplot.dna_network_twomode <- autoplot.dna_network_onemode
 #'
 #' @author Philip Leifeld
 #'
-#' @family {rDNA barplots}
-#'
+#' @rdname dna_barplot
 #' @importFrom rJava .jarray
 #' @importFrom rJava .jcall
 #' @importFrom rJava .jevalArray
@@ -1933,8 +1973,7 @@ dna_barplot <- function(statementType = "DNA Statement",
 #'
 #' @author Philip Leifeld
 #'
-#' @family {rDNA barplots}
-#'
+#' @rdname dna_barplot
 #' @export
 print.dna_barplot <- function(x, trim = 30, attr = TRUE, ...) {
   x2 <- x
@@ -2021,8 +2060,7 @@ print.dna_barplot <- function(x, trim = 30, attr = TRUE, ...) {
 #'
 #' @author Johannes B. Gruber, Tim Henrichsen
 #'
-#' @family {rDNA barplots}
-#'
+#' @rdname dna_barplot
 #' @importFrom ggplot2 autoplot
 #' @importFrom ggplot2 ggplot
 #' @importFrom ggplot2 aes_string
@@ -2458,6 +2496,7 @@ autoplot.dna_barplot <- function(object,
 #'
 #' @author Philip Leifeld, Tim Henrichsen
 #'
+#' @rdname dna_backbone
 #' @importFrom rJava .jarray
 #' @importFrom rJava .jcall
 #' @importFrom rJava .jnull
@@ -2911,6 +2950,142 @@ autoplot.dna_backbone <- function(object, ..., ma = 500) {
   }
 }
 
+#' Evaluate the spectral loss for an arbitrary set of entities
+#'
+#' Compute the backbone loss for any set of entities, for example concepts.
+#'
+#' This function computes the spectral loss for an arbitrary backbone and its
+#' complement, the redundant set, specified by the user. For example, the user
+#' can evaluate how much structure would be lost if the second mode was composed
+#' only of the concepts provided to this function. This can be used to compare
+#' how useful different codebook models are. The penalty parameter \code{p}
+#' applies a penalty factor to the spectral loss. The default value of \code{0}
+#' switches off the penalty.
+#'
+#' @param backboneEntities A vector of character values to be included in the
+#'   backbone. The function will compute the spectral loss between the full
+#'   network and the network composed only of those entities on the second mode
+#'   that are contained in this vector.
+#' @param p The penalty parameter. The default value of \code{0} means no
+#'   penalty for backbone size is applied.
+#' @inheritParams dna_backbone
+#' @return A vector with two numeric values: the backbone and redundant loss.
+#'
+#' @examples
+#' \dontrun{
+#' dna_init()
+#' dna_sample()
+#' dna_openDatabase("sample.dna", coderId = 1, coderPassword = "sample")
+#'
+#' dna_evaluateBackboneSolution(
+#'   c("There should be legislation to regulate emissions.",
+#'     "Emissions legislation should regulate CO2.")
+#' )
+#' }
+#'
+#' @author Philip Leifeld
+#'
+#' @rdname dna_backbone
+#' @importFrom rJava .jarray
+#' @importFrom rJava .jcall
+#' @importFrom rJava .jnull
+#' @export
+dna_evaluateBackboneSolution <- function(backboneEntities,
+                                         p = 0,
+                                         statementType = "DNA Statement",
+                                         variable1 = "organization",
+                                         variable1Document = FALSE,
+                                         variable2 = "concept",
+                                         variable2Document = FALSE,
+                                         qualifier = "agreement",
+                                         qualifierDocument = FALSE,
+                                         qualifierAggregation = "subtract",
+                                         normalization = "average",
+                                         duplicates = "document",
+                                         start.date = "01.01.1900",
+                                         stop.date = "31.12.2099",
+                                         start.time = "00:00:00",
+                                         stop.time = "23:59:59",
+                                         excludeValues = list(),
+                                         excludeAuthors = character(),
+                                         excludeSources = character(),
+                                         excludeSections = character(),
+                                         excludeTypes = character(),
+                                         invertValues = FALSE,
+                                         invertAuthors = FALSE,
+                                         invertSources = FALSE,
+                                         invertSections = FALSE,
+                                         invertTypes = FALSE) {
+
+  # wrap the vectors of exclude values for document variables into Java arrays
+  excludeAuthors <- .jarray(excludeAuthors)
+  excludeSources <- .jarray(excludeSources)
+  excludeSections <- .jarray(excludeSections)
+  excludeTypes <- .jarray(excludeTypes)
+
+  # compile exclude variables and values vectors
+  dat <- matrix("", nrow = length(unlist(excludeValues)), ncol = 2)
+  count <- 0
+  if (length(excludeValues) > 0) {
+    for (i in 1:length(excludeValues)) {
+      if (length(excludeValues[[i]]) > 0) {
+        for (j in 1:length(excludeValues[[i]])) {
+          count <- count + 1
+          dat[count, 1] <- names(excludeValues)[i]
+          dat[count, 2] <- excludeValues[[i]][j]
+        }
+      }
+    }
+    var <- dat[, 1]
+    val <- dat[, 2]
+  } else {
+    var <- character()
+    val <- character()
+  }
+  var <- .jarray(var) # array of variable names of each excluded value
+  val <- .jarray(val) # array of values to be excluded
+
+  # encode R NULL as Java null value if necessary
+  if (is.null(qualifier) || is.na(qualifier)) {
+    qualifier <- .jnull(class = "java/lang/String")
+  }
+
+  # call rBackbone function to compute results
+  result <- .jcall(dnaEnvironment[["dna"]]$headlessDna,
+                   "[D",
+                   "rEvaluateBackboneSolution",
+                   .jarray(backboneEntities),
+                   as.integer(p),
+                   statementType,
+                   variable1,
+                   variable1Document,
+                   variable2,
+                   variable2Document,
+                   qualifier,
+                   qualifierDocument,
+                   qualifierAggregation,
+                   normalization,
+                   duplicates,
+                   start.date,
+                   stop.date,
+                   start.time,
+                   stop.time,
+                   var,
+                   val,
+                   excludeAuthors,
+                   excludeSources,
+                   excludeSections,
+                   excludeTypes,
+                   invertValues,
+                   invertAuthors,
+                   invertSources,
+                   invertSections,
+                   invertTypes
+  )
+  names(result) <- c("backbone loss", "redundant loss")
+  return(result)
+}
+
 
 # Clustering -------------------------------------------------------------------
 
@@ -3103,6 +3278,7 @@ autoplot.dna_backbone <- function(object, ..., ma = 500) {
 #' mc3$max_mod         # maximal modularity and method per time point
 #' }
 #'
+#' @rdname dna_multiclust
 #' @importFrom stats as.dist cor hclust cutree kmeans
 #' @export
 dna_multiclust <- function(statementType = "DNA Statement",
@@ -4078,6 +4254,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
 #' @param ... Further options (currently not used).
 #'
 #' @author Philip Leifeld
+#'
 #' @rdname dna_multiclust
 #' @importFrom utils head
 #' @export

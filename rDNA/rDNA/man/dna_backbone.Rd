@@ -5,6 +5,7 @@
 \alias{print.dna_backbone}
 \alias{plot.dna_backbone}
 \alias{autoplot.dna_backbone}
+\alias{dna_evaluateBackboneSolution}
 \title{Compute and retrieve the backbone and redundant set}
 \usage{
 dna_backbone(
@@ -45,6 +46,35 @@ dna_backbone(
 \method{plot}{dna_backbone}(x, ma = 500, ...)
 
 \method{autoplot}{dna_backbone}(object, ..., ma = 500)
+
+dna_evaluateBackboneSolution(
+  backboneEntities,
+  p = 0,
+  statementType = "DNA Statement",
+  variable1 = "organization",
+  variable1Document = FALSE,
+  variable2 = "concept",
+  variable2Document = FALSE,
+  qualifier = "agreement",
+  qualifierDocument = FALSE,
+  qualifierAggregation = "subtract",
+  normalization = "average",
+  duplicates = "document",
+  start.date = "01.01.1900",
+  stop.date = "31.12.2099",
+  start.time = "00:00:00",
+  stop.time = "23:59:59",
+  excludeValues = list(),
+  excludeAuthors = character(),
+  excludeSources = character(),
+  excludeSections = character(),
+  excludeTypes = character(),
+  invertValues = FALSE,
+  invertAuthors = FALSE,
+  invertSources = FALSE,
+  invertSections = FALSE,
+  invertTypes = FALSE
+)
 }
 \arguments{
 \item{method}{The backbone algorithm used to compute the results. Several
@@ -275,14 +305,35 @@ an asterisk (\code{*}).}
 \item{ma}{Number of iterations to compute moving average.}
 
 \item{object}{A \code{"dna_backbone"} object.}
+
+\item{backboneEntities}{A vector of character values to be included in the
+backbone. The function will compute the spectral loss between the full
+network and the network composed only of those entities on the second mode
+that are contained in this vector.}
+
+\item{p}{The penalty parameter. The default value of \code{0} means no
+penalty for backbone size is applied.}
+}
+\value{
+A vector with two numeric values: the backbone and redundant loss.
 }
 \description{
 Compute and retrieve the backbone and redundant set of a discourse network.
+
+Compute the backbone loss for any set of entities, for example concepts.
 }
 \details{
 This function applies a simulated annealing algorithm to the discourse
 network to partition the set of second-mode entities (e.g., concepts) into a
 backbone set and a complementary redundant set.
+
+This function computes the spectral loss for an arbitrary backbone and its
+complement, the redundant set, specified by the user. For example, the user
+can evaluate how much structure would be lost if the second mode was composed
+only of the concepts provided to this function. This can be used to compare
+how useful different codebook models are. The penalty parameter \code{p}
+applies a penalty factor to the spectral loss. The default value of \code{0}
+switches off the penalty.
 }
 \examples{
 \dontrun{
@@ -358,7 +409,20 @@ plot(b)
 autoplot(b)
 }
 
+\dontrun{
+dna_init()
+dna_sample()
+dna_openDatabase("sample.dna", coderId = 1, coderPassword = "sample")
+
+dna_evaluateBackboneSolution(
+  c("There should be legislation to regulate emissions.",
+    "Emissions legislation should regulate CO2.")
+)
+}
+
 }
 \author{
 Philip Leifeld, Tim Henrichsen
+
+Philip Leifeld
 }
