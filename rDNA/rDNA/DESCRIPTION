@@ -1,6 +1,6 @@
 Package: rDNA
 Version: 3.0.11
-Date: 2023-09-20
+Date: 2023-09-22
 Title: Discourse Network Analysis in R
 Authors@R: 
   c(person(given = "Philip",
@@ -14,6 +14,10 @@ Authors@R:
     person(given = "Johannes B.",
            family = "Gruber",
            email = "j.b.gruber@vu.nl",
+           role = "ctb"))
+    person(given = "Kristijan",
+           family = "Garic",
+           email = "k.garic@essex.ac.uk",
            role = "ctb"))
 Maintainer: Philip Leifeld <Philip.Leifeld@essex.ac.uk>
 Description: Qualitative content analysis and discourse network analysis 
@@ -29,7 +33,8 @@ Suggests:
     igraph (>= 0.8.1),
     ggraph (>= 2.1.0),
     cluster (>= 1.12.0),
-    sna (>= 2.4)
+    sna (>= 2.4),
+    pbmcapply (>= 1.5.1)
 SystemRequirements: Java (>= 11)
 License: GPL-2
 LazyData: true

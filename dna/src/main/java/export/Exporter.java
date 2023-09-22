@@ -430,7 +430,7 @@ public class Exporter {
 		this.qualifierAggregation = qualifierAggregation.toLowerCase();
 		this.qualifier = qualifier;
 		ArrayList<String> variables = Stream.of(this.statementType.getVariablesList(false, true, true, true)).collect(Collectors.toCollection(ArrayList::new));
-		if (this.qualifier != null && this.qualifierDocument == false && (!variables.contains(this.qualifier) || this.qualifier.equals(this.variable1) || this.qualifier.equals(this.variable2))) {
+		if (this.qualifier != null && !this.qualifierDocument && (!variables.contains(this.qualifier) || this.qualifier.equals(this.variable1) || this.qualifier.equals(this.variable2))) {
 			this.qualifier = null;
 			if (!this.qualifierAggregation.equals("ignore")) {
 				this.qualifierAggregation = "ignore";
@@ -1836,7 +1836,7 @@ public class Exporter {
 								currentWindowStatements.add(this.filteredStatements.get(i));
 							}
 						}
-						if (currentWindowStatements.size() > 0) {
+						// if (currentWindowStatements.size() > 0) {
 							Matrix m;
 							if (this.networkType.equals("twomode")) {
 								m = computeTwoModeMatrix(currentWindowStatements, windowStart, windowStop);
@@ -1846,7 +1846,7 @@ public class Exporter {
 							m.setDateTime(matrixTime);
 							m.setNumStatements(currentWindowStatements.size());
 							timeWindowMatrices.add(m);
-						}
+						// }
 					}
 					percent = 100 * (currentTime.toEpochSecond(ZoneOffset.UTC) - startCalendar.toEpochSecond(ZoneOffset.UTC)) / (stopCalendar.toEpochSecond(ZoneOffset.UTC) - startCalendar.toEpochSecond(ZoneOffset.UTC));
 					pb.stepTo(percent);

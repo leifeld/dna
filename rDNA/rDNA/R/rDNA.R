@@ -4279,3 +4279,512 @@ print.dna_multiclust <- function(x, ...) {
     cat(paste0("[... ", nrow(x$memberships), " rows]\n"))
   }
 }
+
+
+# Phase transitions ------------------------------------------------------------
+
+#' Detect phase transitions and states in a discourse network
+#'
+#' Detect phase transitions and states in a discourse network.
+#'
+#' This function applies the state dynamics methods of Masuda and Holme to a
+#' time window discourse network. It computes temporally overlapping discourse
+#' networks, computes the dissimilarity between all networks, and clusters them.
+#' For the dissimilarity, the sum of absolute edge weight differences and the
+#' Euclidean spectral distance are available. Several clustering techniques can
+#' be applied to identify the different stages and phases from the resulting
+#' distance matrix.
+#'
+#' @param distanceMethod The distance measure that expresses the dissimilarity
+#'   between any two network matrices. The following choices are available:
+#'   \itemize{
+#'     \item \code{"absdiff"}: The sum of the cell-wise absolute differences
+#'       between the two matrices, i.e., the sum of differences in edge weights.
+#'       This is equivalent to the graph edit distance because the network
+#'       dimensions are kept constant across all networks by including all nodes
+#'       at all time points (i.e., by including isolates).
+#'     \item \code{"spectral"}: The Euclidean distance between the normalized
+#'       eigenvalues of the graph Laplacian matrices, also called the spectral
+#'       distance between two network matrices. Any negative values (e.g., from
+#'       the subtract method) are replaced by zero before computing the
+#'       distance.
+#'     \item \code{"modularity"}: The difference in maximal modularity as
+#'       obtained through an approximation via community detection. Note that
+#'       this method has not been implemented.
+#'   }
+#' @param normalizeNetwork Divide all cells by their sum before computing
+#'   the dissimilarity between two network matrices? This normalization scales
+#'   all edge weights to a sum of \code{1.0}.
+#' @param clusterMethods The clustering techniques that are applied to the
+#'   distance matrix in the end. Hierarchical methods are repeatedly cut off at
+#'   different levels, and solutions are compared using network modularity to
+#'   pick the best-fitting cluster membership vector. Some of the methods are
+#'   slower than others, hence they are not included by default. It is possible
+#'   to include any number of methods in the argument. For each included method,
+#'   the cluster membership vector (i.e., the states over time) along with the
+#'   associated time stamps of the networks are returned, and the modularity of
+#'   each included method is computed for comparison. The following methods are
+#'   available:
+#'   \itemize{
+#'     \item \code{"single"}: Hierarchical clustering with single linkage using
+#'       the \code{\link[stats]{hclust}} function from the \pkg{stats} package.
+#'     \item \code{"average"}: Hierarchical clustering with average linkage
+#'       using the \code{\link[stats]{hclust}} function from the \pkg{stats}
+#'       package.
+#'     \item \code{"complete"}: Hierarchical clustering with complete linkage
+#'       using the \code{\link[stats]{hclust}} function from the \pkg{stats}
+#'       package.
+#'     \item \code{"ward"}: Hierarchical clustering with Ward's method (D2)
+#'       using the \code{\link[stats]{hclust}} function from the \pkg{stats}
+#'       package.
+#'     \item \code{"kmeans"}: k-means clustering using the
+#'       \code{\link[stats]{kmeans}} function from the \pkg{stats} package.
+#'     \item \code{"pam"}: Partitioning around medoids using the
+#'       \code{\link[cluster]{pam}} function from the \pkg{cluster} package.
+#'     \item \code{"equivalence"}: Equivalence clustering using the
+#'       \code{\link[sna]{equiv.clust}} function in the \pkg{sna} package).
+#'     \item \code{"concor"}: CONvergence of iterative CORrelations (CONCOR)
+#'       with exactly \code{k = 2} clusters.
+#'     \item \code{"louvain"}: Louvain community detection using the
+#'       \code{\link[igraph]{cluster_louvain}} function in the \pkg{igraph}
+#'       package.
+#'     \item \code{"leiden"}: Leiden community detection using the
+#'       \code{\link[igraph]{cluster_leiden}} function in the \pkg{igraph}
+#'       package.
+#'     \item \code{"fastgreedy"}: Fast & greedy community detection using the
+#'       \code{\link[igraph]{cluster_fast_greedy}} function in the \pkg{igraph}
+#'       package.
+#'     \item \code{"walktrap"}: Walktrap community detection using the
+#'       \code{\link[igraph]{cluster_walktrap}} function in the \pkg{igraph}
+#'       package.
+#'     \item \code{"leading_eigen"}: Leading eigenvector community detection
+#'       using the \code{\link[igraph]{cluster_leading_eigen}} function in the
+#'       \pkg{igraph} package.
+#'     \item \code{"edge_betweenness"}: Girvan-Newman edge betweenness community
+#'       detection using the \code{\link[igraph]{cluster_edge_betweenness}}
+#'       function in the \pkg{igraph} package. (Can be slow.)
+#'     \item \code{"infomap"}: Infomap community detection using the
+#'       \code{\link[igraph]{cluster_infomap}} function in the \pkg{igraph}
+#'       package.
+#'     \item \code{"label_prop"}: Label propagation community detection using
+#'       the \code{\link[igraph]{cluster_label_prop}} function in the
+#'       \pkg{igraph} package.
+#'     \item \code{"spinglass"}: Spinglass community detection using the
+#'       \code{\link[igraph]{cluster_spinglass}} function in the \pkg{igraph}
+#'       package.
+#'   }
+#' @param k.max For the hierarchical cluster methods, up to how many clusters or
+#'   states should be identified?
+#' @param splitNodes Split the nodes of a one-mode network (e.g., concepts in a
+#'   concept x concept congruence network) into multiple separate nodes, one for
+#'   each qualifier level? For example, if the qualifier variable is the boolean
+#'   \code{"agreement"} variable with values \code{0} or \code{1}, then each
+#'   concept is included twice, one time with suffix \code{"- 0"} and one time
+#'   with suffix \code{"- 1"}. This is useful when the nodes do not possess
+#'   agency and positive and negative levels of the variable should not be
+#'   connected through congruence ties. It helps preserve the signed nature of
+#'   the data in this case. Do not use with actor networks!
+#' @param cores The number of computing cores for parallel processing. If
+#'   \code{1} (the default), no parallel processing is used. If a larger number,
+#'   the \pkg{pbmcapply} package is used to parallelize the computation of the
+#'   distance matrix and the clustering. Note that this method is based on
+#'   forking and is only available on Unix operating systems, including MacOS
+#'   and Linux.
+#' @inheritParams dna_network
+#'
+#' @examples
+#' \dontrun{
+#' dna_init()
+#' dna_sample()
+#' dna_openDatabase("sample.dna", coderId = 1, coderPassword = "sample")
+#'
+#' # compute states and phases for sample dataset
+#' results <- dna_phaseTransitions(distanceMethod = "absdiff",
+#'                                 clusterMethods = c("ward",
+#'                                                    "pam",
+#'                                                    "concor",
+#'                                                    "louvain"),
+#'                                 cores = 1,
+#'                                 k.max = 6,
+#'                                 networkType = "onemode",
+#'                                 variable1 = "organization",
+#'                                 variable2 = "concept",
+#'                                 timeWindow = "events",
+#'                                 windowSize = 15)
+#' results
+#' }
+#'
+#' @author Philip Leifeld, Kristijan Garic
+#'
+#' @rdname dna_phaseTransitions
+#' @export
+dna_phaseTransitions <- function(distanceMethod = "absdiff",
+                                 normalizeNetwork = FALSE,
+                                 clusterMethods = c("ward",
+                                                    "kmeans",
+                                                    "louvain",
+                                                    "fastgreedy"),
+                                 k.max = 6,
+                                 splitNodes = FALSE,
+                                 cores = 1,
+                                 networkType = "twomode",
+                                 statementType = "DNA Statement",
+                                 variable1 = "organization",
+                                 variable1Document = FALSE,
+                                 variable2 = "concept",
+                                 variable2Document = FALSE,
+                                 qualifier = "agreement",
+                                 qualifierDocument = FALSE,
+                                 qualifierAggregation = "subtract",
+                                 normalization = "no",
+                                 duplicates = "document",
+                                 start.date = "01.01.1900",
+                                 stop.date = "31.12.2099",
+                                 start.time = "00:00:00",
+                                 stop.time = "23:59:59",
+                                 timeWindow = "days",
+                                 windowSize = 150,
+                                 excludeValues = list(),
+                                 excludeAuthors = character(),
+                                 excludeSources = character(),
+                                 excludeSections = character(),
+                                 excludeTypes = character(),
+                                 invertValues = FALSE,
+                                 invertAuthors = FALSE,
+                                 invertSources = FALSE,
+                                 invertSections = FALSE,
+                                 invertTypes = FALSE) {
+
+  # check arguments and packages
+  if (distanceMethod == "spectral" && networkType == "twomode") {
+    distanceMethod <- "absdiff"
+    warning("Spectral distances only work with one-mode networks. Using 'distanceMethod = \"absdiff\"' instead.")
+  }
+  if (cores > 1 && !requireNamespace("pbmcapply", quietly = TRUE)) {
+    pbmclapply <- FALSE
+    warning("Argument 'cores' requires the 'pbmcapply' package, which is not installed.\nSetting 'cores = 1'. Consider installing the 'pbmcapply' package if you use Linux or MacOS.")
+  }
+  igraphMethods <- c("louvain", "fastgreedy", "walktrap", "leading_eigen", "edge_betweenness", "infomap", "label_prop", "spinglass")
+  if (any(igraphMethods %in% clusterMethods) && !requireNamespace("igraph", quietly = TRUE)) {
+    clusterMethods <- clusterMethods[-igraphMethods]
+    warning("'igraph' package not installed. Dropping clustering methods from the 'igraph' package. Consider installing 'igraph'.")
+  }
+  if ("equivalence" %in% clusterMethods && !requireNamespace("sna", quietly = TRUE)) {
+    clusterMethods <- clusterMethods[which(clusterMethods != "equivalence")]
+    warning("'sna' package not installed. Dropping clustering methods from the 'sna' package. Consider installing 'sna'.")
+  }
+  if ("pam" %in% clusterMethods && !requireNamespace("cluster", quietly = TRUE)) {
+    clusterMethods <- clusterMethods[which(clusterMethods != "pam")]
+    warning("'cluster' package not installed. Dropping clustering methods from the 'cluster' package. Consider installing 'cluster'.")
+  }
+
+  # generate the time window networks
+  if (is.null(timeWindow) || is.na(timeWindow) || !is.character(timeWindow) || length(timeWindow) != 1 || !timeWindow %in% c("events", "seconds", "minutes", "hours", "days", "weeks", "months", "years")) {
+    timeWindow <- "events"
+    warning("The 'timeWindow' argument was invalid. Proceeding with 'timeWindow = \"events\" instead.")
+  }
+  if (qualifierAggregation == "split") { # splitting first-mode nodes by qualifier
+    if (networkType != "onemode") {
+      stop("The 'qualifierAggregation' argument accepts the value \"split\" only in conjunction with creating one-mode networks.")
+    }
+    v <- dna_getVariables(statementType)
+    if (v$type[v$label == qualifier] != "boolean") {
+      stop("The 'qualifierAggregation = \"split\" argument currently only works with boolean qualifier variables.")
+    }
+    mcall <- match.call()
+    aff <- dna_network(networkType = "twomode",
+                       statementType = statementType,
+                       variable1 = variable1,
+                       variable1Document = variable1Document,
+                       variable2 = variable2,
+                       variable2Document = variable2Document,
+                       qualifier = qualifier,
+                       qualifierDocument = qualifierDocument,
+                       qualifierAggregation = "combine",
+                       normalization = "no",
+                       isolates = TRUE,
+                       duplicates = duplicates,
+                       start.date = start.date,
+                       stop.date = stop.date,
+                       start.time = start.time,
+                       stop.time = stop.time,
+                       timeWindow = timeWindow,
+                       windowSize = windowSize,
+                       excludeValues = excludeValues,
+                       excludeAuthors = excludeAuthors,
+                       excludeSources = excludeSources,
+                       excludeSections = excludeSections,
+                       excludeTypes = excludeTypes,
+                       invertValues = invertValues,
+                       invertAuthors = invertAuthors,
+                       invertSources = invertSources,
+                       invertSections = invertSections,
+                       invertTypes = invertTypes,
+                       fileFormat = NULL,
+                       outfile = NULL)
+    cat("Splitting nodes... ")
+    nw <- lapply(aff, function(x) {
+      pos <- x
+      pos[pos == 2] <- 0
+      rownames(pos) <- paste(rownames(pos), "- 1")
+      neg <- x
+      neg[neg == 1] <- 0
+      rownames(neg) <- paste(rownames(neg), "- 0")
+      combined <- rbind(pos, neg)
+      congruence <- combined %*% t(combined)
+      diag(congruence) <- 0
+      rs <- x
+      rs[rs != 0] <- 1
+      rs <- rowSums(rs)
+      if (normalization == "average") {
+        denominator <- matrix(1, nrow = nrow(congruence), ncol = ncol(congruence))
+        for (i in 1:nrow(x)) {
+          for (j in 1:ncol(x)) {
+            d <- (rs[i] + rs[j]) / 2
+            if (d != 0) denominator[i, j] <- d
+          }
+        }
+        result <- congruence / denominator
+      } else if (normalization == "jaccard") {
+        unions <- matrix(rep(rs, times = length(rs)), nrow = length(rs)) + t(matrix(rep(rs, times = length(rs)), nrow = length(rs))) - congruence
+        result <- congruence / unions
+        diag(result) <- 0
+      } else if (normalization == "cosine") {
+        magnitudes <- sqrt(rs)
+        result <- congruence / (outer(magnitudes, magnitudes))
+        diag(result) <- 1
+      } else if (normalization == "no") {
+        result <- congruence
+        diag(result) <- 0
+      } else {
+        normalization <- "no"
+        result <- congruence
+        diag(result) <- 0
+        warning("Invalid normalization setting for one-mode networks. Switching off normalization.")
+      }
+      class(result) <- c("dna_network_onemode", class(result))
+      attributes(result)$start <- attributes(x)$start
+      attributes(result)$stop <- attributes(x)$stop
+      attributes(result)$middle <- attributes(x)$middle
+      attributes(result)$numStatements <- attributes(x)$numStatements
+      attributes(result)$call <- mcall
+      return(result)
+    })
+    cat(intToUtf8(0x2714), "\n")
+  } else { # letting dna_network create the networks
+    nw <- dna_network(networkType = networkType,
+                      statementType = statementType,
+                      variable1 = variable1,
+                      variable1Document = variable1Document,
+                      variable2 = variable2,
+                      variable2Document = variable2Document,
+                      qualifier = qualifier,
+                      qualifierDocument = qualifierDocument,
+                      qualifierAggregation = qualifierAggregation,
+                      normalization = normalization,
+                      isolates = TRUE,
+                      duplicates = duplicates,
+                      start.date = start.date,
+                      stop.date = stop.date,
+                      start.time = start.time,
+                      stop.time = stop.time,
+                      timeWindow = timeWindow,
+                      windowSize = windowSize,
+                      excludeValues = excludeValues,
+                      excludeAuthors = excludeAuthors,
+                      excludeSources = excludeSources,
+                      excludeSections = excludeSections,
+                      excludeTypes = excludeTypes,
+                      invertValues = invertValues,
+                      invertAuthors = invertAuthors,
+                      invertSources = invertSources,
+                      invertSections = invertSections,
+                      invertTypes = invertTypes,
+                      fileFormat = NULL,
+                      outfile = NULL)
+  }
+
+  # normalize network matrices to sum to 1.0
+  if (normalizeNetwork) {
+    cat("Normalizing network to sum to 1... ")
+    nw <- lapply(nw, function(x) x / sum(x))
+    cat(intToUtf8(0x2714), "\n")
+  }
+
+  # define distance function for network comparison
+  if (distanceMethod == "absdiff") {
+    d <- function(pair, data) {
+      sum(abs(data[[pair[1]]] - data[[pair[2]]]))
+    }
+  } else if (distanceMethod == "spectral") {
+    d <- function(pair, data) {
+      data[[pair[1]]][data[[pair[1]]] < 0] <- 0 # replace negative values by zero
+      data[[pair[2]]][data[[pair[2]]] < 0] <- 0 # for example, in a subtract network
+      D_x <- data[[pair[1]]] * 0 # create matrices with zeros
+      D_y <- data[[pair[2]]] * 0
+      diag(D_x) <- rowSums(data[[pair[1]]]) # fill the diagonal with row sums to create degree matrices
+      diag(D_y) <- rowSums(data[[pair[2]]])
+      L_x <- D_x - data[[pair[1]]] # Laplacian matrix
+      L_y <- D_y - data[[pair[2]]]
+      eigen_x <- eigen(L_x) # eigenvalues for each Laplacian matrix
+      eigen_y <- eigen(L_y)
+      eigen_x <- eigen_x$values / sum(eigen_x$values) # normalize to sum to 1.0
+      eigen_y <- eigen_y$values / sum(eigen_y$values)
+      return(sqrt(sum((eigen_x - eigen_y)^2))) # return square root of the sum of squared differences (Euclidean distance) between the normalized eigenvalues
+    }
+  } else if (distanceMethod == "modularity") {
+    stop("Differences in modularity have not been implemented yet. Please use absolute differences or spectral Euclidean distance as a distance method.")
+  } else {
+    stop("Distance method not recognized. Try \"absdiff\" or \"spectral\".")
+  }
+
+  # apply distance function and create distance matrix
+  distance_mat <- matrix(0, nrow = length(nw), ncol = length(nw))
+  pairs <- combn(length(nw), 2, simplify = FALSE)
+  if (cores > 1) {
+    cat(paste("Computing distances on", cores, "cores.\n"))
+    a <- Sys.time()
+    distances <- pbmcapply::pbmclapply(pairs, d, data = nw, mc.cores = cores)
+    b <- Sys.time()
+  } else {
+    cat("Computing distances... ")
+    a <- Sys.time()
+    distances <- lapply(pairs, d, data = nw)
+    b <- Sys.time()
+    cat(intToUtf8(0x2714), "\n")
+  }
+  distance_mat[lower.tri(distance_mat)] <- unlist(distances)
+  distance_mat <- as.dist(distance_mat)
+  distance_mat[is.nan(distance_mat)] <- 0 # replace NaN values with zeros
+  # distance_mat <- distance_mat + 1e-12 # adding small constant
+  print(b - a)
+
+  # define clustering function
+  hclustMethods <- c("single", "average", "complete", "ward")
+  cl <- function(method, distmat) {
+    tryCatch({
+      g <- igraph::graph.adjacency(distmat, mode = "undirected", weighted = TRUE, diag = FALSE)
+      if (method %in% hclustMethods) {
+        if (method == "single") {
+          suppressWarnings(cl <- stats::hclust(as.dist(distmat), method = "single"))
+        } else if (method == "average") {
+          suppressWarnings(cl <- stats::hclust(as.dist(distmat), method = "average"))
+        } else if (method == "complete") {
+          suppressWarnings(cl <- stats::hclust(as.dist(distmat), method = "complete"))
+        } else if (method == "ward") {
+          suppressWarnings(cl <- stats::hclust(as.dist(distmat), method = "ward.D2"))
+        }
+        opt_k <- lapply(2:k.max, function(x) {
+          mem <- stats::cutree(cl, k = x)
+          mod <- igraph::modularity(x = g, membership = mem)
+          return(list(mem = mem, mod = mod))
+        })
+        mod <- sapply(opt_k, function(x) x$mod)
+        kk <- which.max(mod)
+        mem <- opt_k[[kk]]$mem
+      } else if (method == "kmeans") {
+        opt_k <- lapply(2:k.max, function(x) {
+          suppressWarnings(cl <- stats::kmeans(distmat, centers = x))
+          mem <- cl$cluster
+          mod <- igraph::modularity(x = g, membership = mem)
+          return(list(cl = cl, mem = mem, mod = mod))
+        })
+        mod <- sapply(opt_k, function(x) x$mod)
+        kk <- which.max(mod)
+        mem <- opt_k[[kk]]$mem
+      } else if (method == "pam") {
+        opt_k <- lapply(2:k.max, function(x) {
+          suppressWarnings(cl <- cluster::pam(distmat, k = x))
+          mem <- cl$cluster
+          mod <- igraph::modularity(x = g, membership = mem)
+          return(list(cl = cl, mem = mem, mod = mod))
+        })
+        mod <- sapply(opt_k, function(x) x$mod)
+        kk <- which.max(mod)
+        mem <- opt_k[[kk]]$mem
+      } else if (method == "equivalence") {
+        suppressWarnings(cl <- sna::equiv.clust(distmat, equiv.dist = distance_mat))
+        opt_k <- lapply(2:k.max, function(x) {
+          mem <- stats::cutree(cl$cluster, k = x)
+          mod <- igraph::modularity(x = g, membership = mem)
+          return(list(mem = mem, mod = mod))
+        })
+        mod <- sapply(opt_k, function(x) x$mod)
+        kk <- which.max(mod)
+        mem <- opt_k[[kk]]$mem
+      } else if (method == "concor") {
+        suppressWarnings(mi <- stats::cor(distmat))
+        iter <- 1
+        while (any(abs(mi) <= 0.999) & iter <= 50) {
+          mi[is.na(mi)] <- 0
+          mi <- stats::cor(mi)
+          iter <- iter + 1
+        }
+        mem <- ((mi[, 1] > 0) * 1) + 1
+      } else if (method %in% igraphMethods) {
+        if (method == "louvain") {
+          suppressWarnings(cl <- igraph::cluster_louvain(g))
+        } else if (method == "leiden") {
+          suppressWarnings(cl <- igraph::cluster_leiden(g))
+        } else if (method == "fastgreedy") {
+          suppressWarnings(cl <- igraph::cluster_fast_greedy(g))
+        } else if (method == "walktrap") {
+          suppressWarnings(cl <- igraph::cluster_walktrap(g))
+        } else if (method == "leading_eigen") {
+          suppressWarnings(cl <- igraph::cluster_leading_eigen(g))
+        } else if (method == "edge_betweenness") {
+          suppressWarnings(cl <- igraph::cluster_edge_betweenness(g))
+        } else if (method == "infomap") {
+          suppressWarnings(cl <- igraph::cluster_infomap(g))
+        } else if (method == "label_prop") {
+          suppressWarnings(cl <- igraph::cluster_label_prop(g))
+        } else if (method == "spinglass") {
+          suppressWarnings(cl <- igraph::cluster_spinglass(g))
+        }
+        mem <- igraph::membership(cl)
+      }
+      list(method = method,
+           modularity = igraph::modularity(x = g, membership = mem),
+           memberships = mem)
+    },
+    error = function(e) {
+      warning("Cluster method '", method, "' could not be computed due to an error: ", e)
+    },
+    warning = function(w) {
+      warning("Cluster method '", method, "' threw a warning: ", w)
+    })
+  }
+
+  # apply all clustering methods to distance matrix
+  if (cores > 1) {
+    cat(paste("Clustering distance matrix on", cores, "cores.\n"))
+    a <- Sys.time()
+    l <- pbmcapply::pbmclapply(clusterMethods, cl, distmat = as.matrix(distance_mat), mc.cores = cores)
+    b <- Sys.time()
+  } else {
+    cat("Clustering distance matrix... ")
+    a <- Sys.time()
+    l <- lapply(clusterMethods, cl, distmat = as.matrix(distance_mat))
+    b <- Sys.time()
+    cat(intToUtf8(0x2714), "\n")
+  }
+  for (i in length(l):1) {
+    if (length(l[[i]]) == 1) {
+      l <- l[-i]
+      clusterMethods <- clusterMethods[-i]
+    }
+  }
+  results <- list()
+  mem <- sapply(l, function(x) x$memberships)
+  mem <- cbind(lapply(nw, function(x) attributes(x)$start),
+               lapply(nw, function(x) attributes(x)$middle),
+               lapply(nw, function(x) attributes(x)$stop),
+               mem)
+  colnames(mem) <- c("start", "middle", "stop", clusterMethods)
+  results$memberships <- mem
+  results$modularity <- sapply(l, function(x) x$modularity)
+  names(results$modularity) <- clusterMethods
+  class(results) <- "dna_phaseTransitions"
+  print(b - a)
+  return(results)
+}
