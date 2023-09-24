@@ -13,6 +13,7 @@ dnaEnvironment <- new.env(hash = TRUE, parent = emptyenv())
     'Author:       Philip Leifeld (University of Essex)\n',
     'Contributors: Tim Henrichsen (University of Warwick),\n',
     '              Johannes B. Gruber (Vrije Universiteit Amsterdam)\n',
+    '              Kristijan Garic (University of Essex)\n',
     'Project home: github.com/leifeld/dna'
   )
 }
@@ -4341,16 +4342,13 @@ print.dna_multiclust <- function(x, ...) {
 #'       \code{\link[stats]{kmeans}} function from the \pkg{stats} package.
 #'     \item \code{"pam"}: Partitioning around medoids using the
 #'       \code{\link[cluster]{pam}} function from the \pkg{cluster} package.
-#'     \item \code{"equivalence"}: Equivalence clustering using the
-#'       \code{\link[sna]{equiv.clust}} function in the \pkg{sna} package).
+#'     \item \code{"spectral"}: Spectral clustering. An affinity matrix using a
+#'       Gaussian (RBF) kernel is created. The Laplacian matrix of the affinity
+#'       matrix is computed and normalized. The first first k eigenvectors of
+#'       the normalized Laplacian matrix are clustered using k-means.
 #'     \item \code{"concor"}: CONvergence of iterative CORrelations (CONCOR)
-#'       with exactly \code{k = 2} clusters.
-#'     \item \code{"louvain"}: Louvain community detection using the
-#'       \code{\link[igraph]{cluster_louvain}} function in the \pkg{igraph}
-#'       package.
-#'     \item \code{"leiden"}: Leiden community detection using the
-#'       \code{\link[igraph]{cluster_leiden}} function in the \pkg{igraph}
-#'       package.
+#'       with exactly \code{k = 2} clusters. (Not included by default because of
+#'       the limit to \code{k = 2}.)
 #'     \item \code{"fastgreedy"}: Fast & greedy community detection using the
 #'       \code{\link[igraph]{cluster_fast_greedy}} function in the \pkg{igraph}
 #'       package.
@@ -4359,22 +4357,19 @@ print.dna_multiclust <- function(x, ...) {
 #'       package.
 #'     \item \code{"leading_eigen"}: Leading eigenvector community detection
 #'       using the \code{\link[igraph]{cluster_leading_eigen}} function in the
-#'       \pkg{igraph} package.
+#'       \pkg{igraph} package. (Can be slow, hence not included by default.)
 #'     \item \code{"edge_betweenness"}: Girvan-Newman edge betweenness community
 #'       detection using the \code{\link[igraph]{cluster_edge_betweenness}}
-#'       function in the \pkg{igraph} package. (Can be slow.)
-#'     \item \code{"infomap"}: Infomap community detection using the
-#'       \code{\link[igraph]{cluster_infomap}} function in the \pkg{igraph}
-#'       package.
-#'     \item \code{"label_prop"}: Label propagation community detection using
-#'       the \code{\link[igraph]{cluster_label_prop}} function in the
-#'       \pkg{igraph} package.
-#'     \item \code{"spinglass"}: Spinglass community detection using the
-#'       \code{\link[igraph]{cluster_spinglass}} function in the \pkg{igraph}
-#'       package.
+#'       function in the \pkg{igraph} package. (Can be slow, hence not included
+#'       by default.)
 #'   }
+#' @param k.min For the hierarchical cluster methods, how many clusters or
+#'   states should at least be identified? Only the best solution between
+#'   \code{k.min} and \code{k.max} clusters is retained and compared to other
+#'   methods.
 #' @param k.max For the hierarchical cluster methods, up to how many clusters or
-#'   states should be identified?
+#'   states should be identified? Only the best solution between \code{k.min}
+#'   and \code{k.max} clusters is retained and compared to other methods.
 #' @param splitNodes Split the nodes of a one-mode network (e.g., concepts in a
 #'   concept x concept congruence network) into multiple separate nodes, one for
 #'   each qualifier level? For example, if the qualifier variable is the boolean
@@ -4403,8 +4398,9 @@ print.dna_multiclust <- function(x, ...) {
 #'                                 clusterMethods = c("ward",
 #'                                                    "pam",
 #'                                                    "concor",
-#'                                                    "louvain"),
+#'                                                    "walktrap"),
 #'                                 cores = 1,
+#'                                 k.min = 2,
 #'                                 k.max = 6,
 #'                                 networkType = "onemode",
 #'                                 variable1 = "organization",
@@ -4417,13 +4413,21 @@ print.dna_multiclust <- function(x, ...) {
 #' @author Philip Leifeld, Kristijan Garic
 #'
 #' @rdname dna_phaseTransitions
+#' @importFrom stats dist
+#' @importFrom utils combn
 #' @export
 dna_phaseTransitions <- function(distanceMethod = "absdiff",
                                  normalizeNetwork = FALSE,
-                                 clusterMethods = c("ward",
+                                 clusterMethods = c("single",
+                                                    "average",
+                                                    "complete",
+                                                    "ward",
                                                     "kmeans",
-                                                    "louvain",
-                                                    "fastgreedy"),
+                                                    "pam",
+                                                    "spectral",
+                                                    "fastgreedy",
+                                                    "walktrap"),
+                                 k.min = 2,
                                  k.max = 6,
                                  splitNodes = FALSE,
                                  cores = 1,
@@ -4469,14 +4473,16 @@ dna_phaseTransitions <- function(distanceMethod = "absdiff",
     clusterMethods <- clusterMethods[-igraphMethods]
     warning("'igraph' package not installed. Dropping clustering methods from the 'igraph' package. Consider installing 'igraph'.")
   }
-  if ("equivalence" %in% clusterMethods && !requireNamespace("sna", quietly = TRUE)) {
-    clusterMethods <- clusterMethods[which(clusterMethods != "equivalence")]
-    warning("'sna' package not installed. Dropping clustering methods from the 'sna' package. Consider installing 'sna'.")
-  }
   if ("pam" %in% clusterMethods && !requireNamespace("cluster", quietly = TRUE)) {
     clusterMethods <- clusterMethods[which(clusterMethods != "pam")]
     warning("'cluster' package not installed. Dropping clustering methods from the 'cluster' package. Consider installing 'cluster'.")
   }
+  if ("concor" %in% clusterMethods && k.min > 2) {
+    clusterMethods <- clusterMethods[which(clusterMethods != "concor")]
+    warning("Dropping 'concor' from clustering methods because the CONCOR implementation in rDNA can only find exactly two clusters, but the 'k.min' argument was larger than 2.")
+  }
+  clusterMethods <- rev(clusterMethods) # reverse order to save time during parallel computation by starting the computationally intensive methods first
+  mcall <- match.call() # save the arguments for storing them in the results later
 
   # generate the time window networks
   if (is.null(timeWindow) || is.na(timeWindow) || !is.character(timeWindow) || length(timeWindow) != 1 || !timeWindow %in% c("events", "seconds", "minutes", "hours", "days", "weeks", "months", "years")) {
@@ -4491,7 +4497,6 @@ dna_phaseTransitions <- function(distanceMethod = "absdiff",
     if (v$type[v$label == qualifier] != "boolean") {
       stop("The 'qualifierAggregation = \"split\" argument currently only works with boolean qualifier variables.")
     }
-    mcall <- match.call()
     aff <- dna_network(networkType = "twomode",
                        statementType = statementType,
                        variable1 = variable1,
@@ -4607,7 +4612,10 @@ dna_phaseTransitions <- function(distanceMethod = "absdiff",
   # normalize network matrices to sum to 1.0
   if (normalizeNetwork) {
     cat("Normalizing network to sum to 1... ")
-    nw <- lapply(nw, function(x) x / sum(x))
+    nw <- lapply(nw, function(x) {
+      s <- sum(x)
+      ifelse(s == 0, return(x), return(x / s))
+    })
     cat(intToUtf8(0x2714), "\n")
   }
 
@@ -4620,14 +4628,8 @@ dna_phaseTransitions <- function(distanceMethod = "absdiff",
     d <- function(pair, data) {
       data[[pair[1]]][data[[pair[1]]] < 0] <- 0 # replace negative values by zero
       data[[pair[2]]][data[[pair[2]]] < 0] <- 0 # for example, in a subtract network
-      D_x <- data[[pair[1]]] * 0 # create matrices with zeros
-      D_y <- data[[pair[2]]] * 0
-      diag(D_x) <- rowSums(data[[pair[1]]]) # fill the diagonal with row sums to create degree matrices
-      diag(D_y) <- rowSums(data[[pair[2]]])
-      L_x <- D_x - data[[pair[1]]] # Laplacian matrix
-      L_y <- D_y - data[[pair[2]]]
-      eigen_x <- eigen(L_x) # eigenvalues for each Laplacian matrix
-      eigen_y <- eigen(L_y)
+      eigen_x <- eigen(diag(rowSums(data[[pair[1]]])) - data[[pair[1]]]) # eigenvalues for each Laplacian matrix
+      eigen_y <- eigen(diag(rowSums(data[[pair[2]]])) - data[[pair[2]]])
       eigen_x <- eigen_x$values / sum(eigen_x$values) # normalize to sum to 1.0
       eigen_y <- eigen_y$values / sum(eigen_y$values)
       return(sqrt(sum((eigen_x - eigen_y)^2))) # return square root of the sum of squared differences (Euclidean distance) between the normalized eigenvalues
@@ -4654,16 +4656,18 @@ dna_phaseTransitions <- function(distanceMethod = "absdiff",
     cat(intToUtf8(0x2714), "\n")
   }
   distance_mat[lower.tri(distance_mat)] <- unlist(distances)
-  distance_mat <- as.dist(distance_mat)
+  distance_mat <- distance_mat + t(distance_mat)
   distance_mat[is.nan(distance_mat)] <- 0 # replace NaN values with zeros
   # distance_mat <- distance_mat + 1e-12 # adding small constant
+  distance_mat <- distance_mat / max(distance_mat) # rescale between 0 and 1
   print(b - a)
 
   # define clustering function
   hclustMethods <- c("single", "average", "complete", "ward")
   cl <- function(method, distmat) {
     tryCatch({
-      g <- igraph::graph.adjacency(distmat, mode = "undirected", weighted = TRUE, diag = FALSE)
+      similarity_mat <- 1 - distmat
+      g <- igraph::graph.adjacency(similarity_mat, mode = "undirected", weighted = TRUE, diag = FALSE) # graph needs to be based on similarity, not distance
       if (method %in% hclustMethods) {
         if (method == "single") {
           suppressWarnings(cl <- stats::hclust(as.dist(distmat), method = "single"))
@@ -4674,46 +4678,52 @@ dna_phaseTransitions <- function(distanceMethod = "absdiff",
         } else if (method == "ward") {
           suppressWarnings(cl <- stats::hclust(as.dist(distmat), method = "ward.D2"))
         }
-        opt_k <- lapply(2:k.max, function(x) {
+        opt_k <- lapply(k.min:k.max, function(x) {
           mem <- stats::cutree(cl, k = x)
-          mod <- igraph::modularity(x = g, membership = mem)
+          mod <- igraph::modularity(x = g, weights = igraph::E(g)$weight, membership = mem)
           return(list(mem = mem, mod = mod))
         })
         mod <- sapply(opt_k, function(x) x$mod)
         kk <- which.max(mod)
         mem <- opt_k[[kk]]$mem
       } else if (method == "kmeans") {
-        opt_k <- lapply(2:k.max, function(x) {
+        opt_k <- lapply(k.min:k.max, function(x) {
           suppressWarnings(cl <- stats::kmeans(distmat, centers = x))
           mem <- cl$cluster
-          mod <- igraph::modularity(x = g, membership = mem)
+          mod <- igraph::modularity(x = g, weights = igraph::E(g)$weight, membership = mem)
           return(list(cl = cl, mem = mem, mod = mod))
         })
         mod <- sapply(opt_k, function(x) x$mod)
         kk <- which.max(mod)
         mem <- opt_k[[kk]]$mem
       } else if (method == "pam") {
-        opt_k <- lapply(2:k.max, function(x) {
+        opt_k <- lapply(k.min:k.max, function(x) {
           suppressWarnings(cl <- cluster::pam(distmat, k = x))
           mem <- cl$cluster
-          mod <- igraph::modularity(x = g, membership = mem)
+          mod <- igraph::modularity(x = g, weights = igraph::E(g)$weight, membership = mem)
           return(list(cl = cl, mem = mem, mod = mod))
         })
         mod <- sapply(opt_k, function(x) x$mod)
         kk <- which.max(mod)
         mem <- opt_k[[kk]]$mem
-      } else if (method == "equivalence") {
-        suppressWarnings(cl <- sna::equiv.clust(distmat, equiv.dist = distance_mat))
-        opt_k <- lapply(2:k.max, function(x) {
-          mem <- stats::cutree(cl$cluster, k = x)
-          mod <- igraph::modularity(x = g, membership = mem)
+      } else if (method == "spectral") {
+        sigma <- 1.0
+        affinity_matrix <- exp(-distmat^2 / (2 * sigma^2))
+        L <- diag(rowSums(affinity_matrix)) - affinity_matrix
+        D.sqrt.inv <- diag(1 / sqrt(rowSums(affinity_matrix)))
+        L.norm <- D.sqrt.inv %*% L %*% D.sqrt.inv
+        eigenvalues <- eigen(L.norm) # eigenvalue decomposition
+        opt_k <- lapply(k.min:k.max, function(x) {
+          U <- eigenvalues$vectors[, 1:x]
+          mem <- kmeans(U, centers = x)$cluster # cluster the eigenvectors
+          mod <- igraph::modularity(x = g, weights = igraph::E(g)$weight, membership = mem)
           return(list(mem = mem, mod = mod))
         })
         mod <- sapply(opt_k, function(x) x$mod)
         kk <- which.max(mod)
         mem <- opt_k[[kk]]$mem
       } else if (method == "concor") {
-        suppressWarnings(mi <- stats::cor(distmat))
+        suppressWarnings(mi <- stats::cor(similarity_mat))
         iter <- 1
         while (any(abs(mi) <= 0.999) & iter <= 50) {
           mi[is.na(mi)] <- 0
@@ -4722,11 +4732,7 @@ dna_phaseTransitions <- function(distanceMethod = "absdiff",
         }
         mem <- ((mi[, 1] > 0) * 1) + 1
       } else if (method %in% igraphMethods) {
-        if (method == "louvain") {
-          suppressWarnings(cl <- igraph::cluster_louvain(g))
-        } else if (method == "leiden") {
-          suppressWarnings(cl <- igraph::cluster_leiden(g))
-        } else if (method == "fastgreedy") {
+        if (method == "fastgreedy") {
           suppressWarnings(cl <- igraph::cluster_fast_greedy(g))
         } else if (method == "walktrap") {
           suppressWarnings(cl <- igraph::cluster_walktrap(g))
@@ -4734,17 +4740,20 @@ dna_phaseTransitions <- function(distanceMethod = "absdiff",
           suppressWarnings(cl <- igraph::cluster_leading_eigen(g))
         } else if (method == "edge_betweenness") {
           suppressWarnings(cl <- igraph::cluster_edge_betweenness(g))
-        } else if (method == "infomap") {
-          suppressWarnings(cl <- igraph::cluster_infomap(g))
-        } else if (method == "label_prop") {
-          suppressWarnings(cl <- igraph::cluster_label_prop(g))
         } else if (method == "spinglass") {
           suppressWarnings(cl <- igraph::cluster_spinglass(g))
         }
-        mem <- igraph::membership(cl)
+        opt_k <- lapply(k.min:k.max, function(x) {
+          mem <- igraph::cut_at(communities = cl, no = x)
+          mod <- igraph::modularity(x = g, weights = igraph::E(g)$weight, membership = mem)
+          return(list(mem = mem, mod = mod))
+        })
+        mod <- sapply(opt_k, function(x) x$mod)
+        kk <- which.max(mod)
+        mem <- opt_k[[kk]]$mem
       }
       list(method = method,
-           modularity = igraph::modularity(x = g, membership = mem),
+           modularity = igraph::modularity(x = g, weights = igraph::E(g)$weight, membership = mem),
            memberships = mem)
     },
     error = function(e) {
@@ -4759,15 +4768,16 @@ dna_phaseTransitions <- function(distanceMethod = "absdiff",
   if (cores > 1) {
     cat(paste("Clustering distance matrix on", cores, "cores.\n"))
     a <- Sys.time()
-    l <- pbmcapply::pbmclapply(clusterMethods, cl, distmat = as.matrix(distance_mat), mc.cores = cores)
+    l <- pbmcapply::pbmclapply(clusterMethods, cl, distmat = distance_mat, mc.cores = cores)
     b <- Sys.time()
   } else {
     cat("Clustering distance matrix... ")
     a <- Sys.time()
-    l <- lapply(clusterMethods, cl, distmat = as.matrix(distance_mat))
+    l <- lapply(clusterMethods, cl, distmat = distance_mat)
     b <- Sys.time()
     cat(intToUtf8(0x2714), "\n")
   }
+  print(b - a)
   for (i in length(l):1) {
     if (length(l[[i]]) == 1) {
       l <- l[-i]
@@ -4775,16 +4785,166 @@ dna_phaseTransitions <- function(distanceMethod = "absdiff",
     }
   }
   results <- list()
-  mem <- sapply(l, function(x) x$memberships)
-  mem <- cbind(lapply(nw, function(x) attributes(x)$start),
-               lapply(nw, function(x) attributes(x)$middle),
-               lapply(nw, function(x) attributes(x)$stop),
-               mem)
-  colnames(mem) <- c("start", "middle", "stop", clusterMethods)
-  results$memberships <- mem
-  results$modularity <- sapply(l, function(x) x$modularity)
-  names(results$modularity) <- clusterMethods
+  mod <- sapply(l, function(x) x$modularity)
+  best <- which(mod == max(mod))[1]
+  results$modularity <- mod[best]
+  results$clusterMethod <- clusterMethods[best]
+  dates <- sapply(nw, function(x) attributes(x)$middle)
+
+  # temporal embedding via MDS
+  if (!requireNamespace("MASS", quietly = TRUE)) {
+    mem <- data.frame("date" = as.POSIXct(dates, format = "%d-%m-%Y", tz = "UTC"),
+                      "state" = l[[best]]$memberships)
+    results$states <- mem
+    warning("Skipping temporal embedding because the 'MASS' package is not installed. Consider installing it.")
+  } else {
+    cat("Temporal embedding...\n")
+    a <- Sys.time()
+    distmat <- distance_mat + 1e-12
+    mds <- MASS::isoMDS(distmat) # MDS of distance matrix
+    points <- mds$points
+    mem <- data.frame("date" = as.POSIXct(dates, format = "%d-%m-%Y", tz = "UTC"),
+                      "state" = l[[best]]$memberships,
+                      "X1" = points[, 1],
+                      "X2" = points[, 2])
+    results$states <- mem
+    b <- Sys.time()
+    print(b - a)
+  }
+
+  results$distmat <- distance_mat
   class(results) <- "dna_phaseTransitions"
-  print(b - a)
+  attributes(results)$stress <- ifelse(ncol(results$states) == 2, NA, mds$stress)
+  attributes(results)$call <- mcall
   return(results)
+}
+
+#' Print the summary of a \code{dna_phaseTransitions} object
+#'
+#' Show details of a \code{dna_phaseTransitions} object.
+#'
+#' Print a summary of a \code{dna_phaseTransitions} object, which can be created
+#' using the \link{dna_phaseTransitions} function.
+#'
+#' @param x A \code{dna_phaseTransitions} object.
+#' @param ... Further options (currently not used).
+#'
+#' @author Philip Leifeld
+#'
+#' @rdname dna_phaseTransitions
+#' @importFrom utils head
+#' @export
+print.dna_phaseTransitions <- function(x, ...) {
+  cat(paste0("States: ", max(x$states$state), ". Cluster method: ", x$clusterMethod, ". Modularity: ", round(x$modularity, 3), ".\n\n"))
+  print(utils::head(x$states, 20))
+  cat(paste0("...", nrow(x$states), " further rows\n"))
+}
+
+#' @rdname dna_phaseTransitions
+#' @param object A \code{"dna_phaseTransitions"} object.
+#' @param ... Additional arguments. Currently not in use.
+#' @param plots The plots to include in the output list. Can be one or more of
+#'   the following: \code{"heatmap"}, \code{"silhouette"}, \code{"mds"},
+#'   \code{"states"}.
+#'
+#' @author Philip Leifeld, Kristijan Garic
+#' @importFrom ggplot2 autoplot ggplot aes_string geom_line geom_point xlab ylab
+#'   labs ggtitle theme_bw theme arrow unit scale_shape_manual element_text
+#'   scale_x_datetime scale_colour_manual guides
+#' @export
+autoplot.dna_phaseTransitions <- function(object, ..., plots = c("heatmap", "silhouette", "mds", "states")) {
+  # settings for all plots
+  k <- max(object$states$state)
+  shapes <- c(21:25, 0:14)[1:k]
+  l <- list()
+
+  # heatmap
+  if ("heatmap" %in% plots) {
+    try({
+      if (!requireNamespace("heatmaply", quietly = TRUE)) {
+        warning("Heatmap skipped because the 'heatmaply' package is not installed.")
+      } else {
+        l[[length(l) + 1]] <- heatmaply::ggheatmap(1 - object$distmat,
+                                                   dendrogram = "both",
+                                                   showticklabels = FALSE, # remove axis labels
+                                                   show_dendrogram = TRUE,
+                                                   hide_colorbar = TRUE)
+      }
+    })
+  }
+
+  # silhouette plot
+  if ("silhouette" %in% plots) {
+    try({
+      if (!requireNamespace("cluster", quietly = TRUE)) {
+        warning("Silhouette plot skipped because the 'cluster' package is not installed.")
+      } else if (!requireNamespace("factoextra", quietly = TRUE)) {
+        warning("Silhouette plot skipped because the 'factoextra' package is not installed.")
+      } else {
+        sil <- cluster::silhouette(object$states$state, dist(object$distmat))
+        l[[length(l) + 1]] <- factoextra::fviz_silhouette(sil, print.summary = FALSE) +
+          ggplot2::ggtitle(paste0("Cluster silhouettes (mean width: ", round(mean(sil[, 3]), 3), ")")) +
+          ggplot2::ylab("Silhouette width") +
+          ggplot2::labs(fill = "State", color = "State") +
+          ggplot2::theme_classic() +
+          ggplot2::theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+      }
+    })
+  }
+
+  # temporal embedding
+  if ("mds" %in% plots) {
+    try({
+      if (is.na(attributes(object)$stress)) {
+        warning("No temporal embedding found. Skipping this plot.")
+      } else if (!requireNamespace("igraph", quietly = TRUE)) {
+        warning("Temporal embedding plot skipped because the 'igraph' package is not installed.")
+      } else if (!requireNamespace("ggraph", quietly = TRUE)) {
+        warning("Temporal embedding plot skipped because the 'ggraph' package is not installed.")
+      } else {
+        nodes <- object$states
+        nodes$date <- as.character(nodes$date)
+        nodes$State <- as.factor(nodes$state)
+        edges <- data.frame(sender = as.character(object$states$date),
+                            receiver = c(as.character(object$states$date[2:(nrow(object$states))]), "NA"))
+        edges <- edges[-nrow(edges), ]
+        g <- igraph::graph_from_data_frame(edges, directed = TRUE, vertices = nodes)
+        l[[length(l) + 1]] <- ggraph::ggraph(g, layout = "manual", x = igraph::V(g)$X1, y = igraph::V(g)$X2) +
+          ggraph::geom_edge_link(arrow = ggplot2::arrow(type = "closed", length = ggplot2::unit(2, "mm")),
+                                 start_cap = ggraph::circle(1, "mm"),
+                                 end_cap = ggraph::circle(2, "mm")) +
+          ggraph::geom_node_point(ggplot2::aes_string(shape = "State", fill = "State", size = 2)) +
+          ggplot2::scale_shape_manual(values = shapes) +
+          ggplot2::ggtitle("Temporal embedding (MDS)") +
+          ggplot2::xlab("Dimension 1") +
+          ggplot2::ylab("Dimension 2") +
+          ggplot2::theme_bw() +
+          ggplot2::guides(size = "none")
+      }
+    })
+  }
+
+  # state dynamics
+  if ("states" %in% plots) {
+    try({
+      d <- data.frame(
+        time = object$states$date,
+        id = cumsum(c(TRUE, diff(object$states$state) != 0)),
+        State = factor(object$states$state, levels = 1:k, labels = paste("State", 1:k)),
+        time1 = as.Date(object$states$date)
+      )
+      l[[length(l) + 1]] <- ggplot2::ggplot(d, ggplot2::aes_string(x = "time", y = "State", colour = "State")) +
+        ggplot2::geom_line(ggplot2::aes_string(group = 1, linewidth = 1), color = "black", lineend = "square") +
+        ggplot2::geom_line(ggplot2::aes_string(group = "id", linewidth = 1), lineend = "square") +
+        ggplot2::scale_x_datetime(date_labels = "%b %Y", breaks = "4 months") + # format x-axis as month year
+        ggplot2::xlab("Time") +
+        ggplot2::ylab("") +
+        ggplot2::ggtitle("State dynamics") +
+        ggplot2::theme_bw() +
+        ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1)) +
+        ggplot2::guides(linewidth = "none")
+    })
+  }
+
+  return(l)
 }

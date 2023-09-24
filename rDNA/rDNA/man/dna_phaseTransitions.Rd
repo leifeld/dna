@@ -2,13 +2,16 @@
 % Please edit documentation in R/rDNA.R
 \name{dna_phaseTransitions}
 \alias{dna_phaseTransitions}
+\alias{print.dna_phaseTransitions}
+\alias{autoplot.dna_phaseTransitions}
 \title{Detect phase transitions and states in a discourse network}
 \usage{
 dna_phaseTransitions(
   distanceMethod = "absdiff",
   normalizeNetwork = FALSE,
   clusterMethods = c("single", "average", "complete", "ward", "kmeans", "pam",
-    "equivalence", "concor", "louvain", "fastgreedy"),
+    "spectral", "fastgreedy", "walktrap"),
+  k.min = 2,
   k.max = 6,
   splitNodes = FALSE,
   cores = 1,
@@ -27,7 +30,7 @@ dna_phaseTransitions(
   stop.date = "31.12.2099",
   start.time = "00:00:00",
   stop.time = "23:59:59",
-  timeWindow = "events",
+  timeWindow = "days",
   windowSize = 150,
   excludeValues = list(),
   excludeAuthors = character(),
@@ -40,6 +43,10 @@ dna_phaseTransitions(
   invertSections = FALSE,
   invertTypes = FALSE
 )
+
+\method{print}{dna_phaseTransitions}(x, ...)
+
+\method{autoplot}{dna_phaseTransitions}(object, ..., plots = c("heatmap", "silhouette", "mds", "states"))
 }
 \arguments{
 \item{distanceMethod}{The distance measure that expresses the dissimilarity
@@ -90,16 +97,13 @@ available:
     \code{\link[stats]{kmeans}} function from the \pkg{stats} package.
   \item \code{"pam"}: Partitioning around medoids using the
     \code{\link[cluster]{pam}} function from the \pkg{cluster} package.
-  \item \code{"equivalence"}: Equivalence clustering using the
-    \code{\link[sna]{equiv.clust}} function in the \pkg{sna} package).
+  \item \code{"spectral"}: Spectral clustering. An affinity matrix using a
+    Gaussian (RBF) kernel is created. The Laplacian matrix of the affinity
+    matrix is computed and normalized. The first first k eigenvectors of
+    the normalized Laplacian matrix are clustered using k-means.
   \item \code{"concor"}: CONvergence of iterative CORrelations (CONCOR)
-    with exactly \code{k = 2} clusters.
-  \item \code{"louvain"}: Louvain community detection using the
-    \code{\link[igraph]{cluster_louvain}} function in the \pkg{igraph}
-    package.
-  \item \code{"leiden"}: Leiden community detection using the
-    \code{\link[igraph]{cluster_leiden}} function in the \pkg{igraph}
-    package.
+    with exactly \code{k = 2} clusters. (Not included by default because of
+    the limit to \code{k = 2}.)
   \item \code{"fastgreedy"}: Fast & greedy community detection using the
     \code{\link[igraph]{cluster_fast_greedy}} function in the \pkg{igraph}
     package.
@@ -108,23 +112,21 @@ available:
     package.
   \item \code{"leading_eigen"}: Leading eigenvector community detection
     using the \code{\link[igraph]{cluster_leading_eigen}} function in the
-    \pkg{igraph} package.
+    \pkg{igraph} package. (Can be slow, hence not included by default.)
   \item \code{"edge_betweenness"}: Girvan-Newman edge betweenness community
     detection using the \code{\link[igraph]{cluster_edge_betweenness}}
-    function in the \pkg{igraph} package. (Can be slow.)
-  \item \code{"infomap"}: Infomap community detection using the
-    \code{\link[igraph]{cluster_infomap}} function in the \pkg{igraph}
-    package.
-  \item \code{"label_prop"}: Label propagation community detection using
-    the \code{\link[igraph]{cluster_label_prop}} function in the
-    \pkg{igraph} package.
-  \item \code{"spinglass"}: Spinglass community detection using the
-    \code{\link[igraph]{cluster_spinglass}} function in the \pkg{igraph}
-    package.
+    function in the \pkg{igraph} package. (Can be slow, hence not included
+    by default.)
 }}
 
+\item{k.min}{For the hierarchical cluster methods, how many clusters or
+states should at least be identified? Only the best solution between
+\code{k.min} and \code{k.max} clusters is retained and compared to other
+methods.}
+
 \item{k.max}{For the hierarchical cluster methods, up to how many clusters or
-states should be identified?}
+states should be identified? Only the best solution between \code{k.min}
+and \code{k.max} clusters is retained and compared to other methods.}
 
 \item{splitNodes}{Split the nodes of a one-mode network (e.g., concepts in a
 concept x concept congruence network) into multiple separate nodes, one for
@@ -336,9 +338,21 @@ by the \code{excludeTypes} argument should be excluded from network
 construction (\code{invertTypes = FALSE}) or if they should be the
 only values that should be included during network construction
 (\code{invertTypes = TRUE}).}
+
+\item{x}{A \code{dna_phaseTransitions} object.}
+
+\item{...}{Additional arguments. Currently not in use.}
+
+\item{object}{A \code{"dna_phaseTransitions"} object.}
+
+\item{plots}{The plots to include in the output list. Can be one or more of
+the following: \code{"heatmap"}, \code{"silhouette"}, \code{"mds"},
+\code{"states"}.}
 }
 \description{
 Detect phase transitions and states in a discourse network.
+
+Show details of a \code{dna_phaseTransitions} object.
 }
 \details{
 This function applies the state dynamics methods of Masuda and Holme to a
@@ -348,6 +362,9 @@ For the dissimilarity, the sum of absolute edge weight differences and the
 Euclidean spectral distance are available. Several clustering techniques can
 be applied to identify the different stages and phases from the resulting
 distance matrix.
+
+Print a summary of a \code{dna_phaseTransitions} object, which can be created
+using the \link{dna_phaseTransitions} function.
 }
 \examples{
 \dontrun{
@@ -360,8 +377,9 @@ results <- dna_phaseTransitions(distanceMethod = "absdiff",
                                 clusterMethods = c("ward",
                                                    "pam",
                                                    "concor",
-                                                   "louvain"),
+                                                   "walktrap"),
                                 cores = 1,
+                                k.min = 2,
                                 k.max = 6,
                                 networkType = "onemode",
                                 variable1 = "organization",
@@ -374,4 +392,6 @@ results
 }
 \author{
 Philip Leifeld, Kristijan Garic
+
+Philip Leifeld
 }

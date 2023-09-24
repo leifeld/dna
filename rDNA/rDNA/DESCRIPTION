@@ -14,7 +14,7 @@ Authors@R:
     person(given = "Johannes B.",
            family = "Gruber",
            email = "j.b.gruber@vu.nl",
-           role = "ctb"))
+           role = "ctb"),
     person(given = "Kristijan",
            family = "Garic",
            email = "k.garic@essex.ac.uk",
@@ -34,7 +34,10 @@ Suggests:
     ggraph (>= 2.1.0),
     cluster (>= 1.12.0),
     sna (>= 2.4),
-    pbmcapply (>= 1.5.1)
+    pbmcapply (>= 1.5.1),
+    MASS (>= 7.3.60),
+    factoextra (>= 1.0.7),
+    heatmaply (>= 1.4.2)
 SystemRequirements: Java (>= 11)
 License: GPL-2
 LazyData: true
