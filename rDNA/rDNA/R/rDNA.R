@@ -4853,7 +4853,8 @@ print.dna_phaseTransitions <- function(x, ...) {
 #' @author Philip Leifeld, Kristijan Garic
 #' @importFrom ggplot2 autoplot ggplot aes geom_line geom_point xlab ylab
 #'   labs ggtitle theme_bw theme arrow unit scale_shape_manual element_text
-#'   scale_x_datetime scale_colour_manual guides rlang
+#'   scale_x_datetime scale_colour_manual guides
+#' @importFrom rlang .data
 #' @export
 autoplot.dna_phaseTransitions <- function(object, ..., plots = c("heatmap", "silhouette", "mds", "states")) {
   # settings for all plots
@@ -4908,6 +4909,10 @@ autoplot.dna_phaseTransitions <- function(object, ..., plots = c("heatmap", "sil
         nodes <- object$states
         nodes$date <- as.character(nodes$date)
         nodes$State <- as.factor(nodes$state)
+
+        # Extract state values
+        state_values <- nodes$State
+
         edges <- data.frame(sender = as.character(object$states$date),
                             receiver = c(as.character(object$states$date[2:(nrow(object$states))]), "NA"))
         edges <- edges[-nrow(edges), ]
@@ -4916,13 +4921,14 @@ autoplot.dna_phaseTransitions <- function(object, ..., plots = c("heatmap", "sil
           ggraph::geom_edge_link(arrow = ggplot2::arrow(type = "closed", length = ggplot2::unit(2, "mm")),
                                  start_cap = ggraph::circle(1, "mm"),
                                  end_cap = ggraph::circle(2, "mm")) +
-          ggraph::geom_node_point(ggplot2::aes(shape = rlang::.data[["State"]], fill = rlang::.data[["State"]], size = 2)) +
+          ggraph::geom_node_point(ggplot2::aes(shape = state_values, fill = state_values), size = 2) +
           ggplot2::scale_shape_manual(values = shapes) +
           ggplot2::ggtitle("Temporal embedding (MDS)") +
           ggplot2::xlab("Dimension 1") +
           ggplot2::ylab("Dimension 2") +
           ggplot2::theme_bw() +
-          ggplot2::guides(size = "none")
+          ggplot2::guides(size = "none") +
+          ggplot2::labs(shape = "State", fill = "State")
       }
     })
   }
@@ -4936,16 +4942,23 @@ autoplot.dna_phaseTransitions <- function(object, ..., plots = c("heatmap", "sil
         State = factor(object$states$state, levels = 1:k, labels = paste("State", 1:k)),
         time1 = as.Date(object$states$date)
       )
-      l[[length(l) + 1]] <- ggplot2::ggplot(d, ggplot2::aes(x = rlang::.data[["time"]], y = rlang::.data[["State"]], colour = rlang::.data[["State"]])) +
-        ggplot2::geom_line(ggplot2::aes(group = 1, linewidth = 1), color = "black", lineend = "square") +
-        ggplot2::geom_line(ggplot2::aes(group = rlang::.data[["id"]], linewidth = 1), lineend = "square") +
+
+      # Extracting values
+      time_values <- d$time
+      state_values <- d$State
+      id_values <- d$id
+
+      l[[length(l) + 1]] <- ggplot2::ggplot(d, ggplot2::aes(x = time_values, y = state_values, colour = state_values)) +
+        ggplot2::geom_line(aes(group = 1, linewidth = 0.2), color = "black", lineend = "square") +
+        ggplot2::geom_line(aes(group = id_values, linewidth = 0.2), lineend = "square") +
         ggplot2::scale_x_datetime(date_labels = "%b %Y", breaks = "4 months") + # format x-axis as month year
         ggplot2::xlab("Time") +
         ggplot2::ylab("") +
         ggplot2::ggtitle("State dynamics") +
         ggplot2::theme_bw() +
         ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1)) +
-        ggplot2::guides(linewidth = "none")
+        ggplot2::guides(linewidth = "none") +
+        ggplot2::labs(color = "State")
     })
   }
 
