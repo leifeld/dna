@@ -4949,8 +4949,8 @@ autoplot.dna_phaseTransitions <- function(object, ..., plots = c("heatmap", "sil
       id_values <- d$id
 
       l[[length(l) + 1]] <- ggplot2::ggplot(d, ggplot2::aes(x = time_values, y = state_values, colour = state_values)) +
-        ggplot2::geom_line(aes(group = 1, linewidth = 0.2), color = "black", lineend = "square") +
-        ggplot2::geom_line(aes(group = id_values, linewidth = 0.2), lineend = "square") +
+        ggplot2::geom_line(aes(group = 1), linewidth = 2, color = "black", lineend = "square") +
+        ggplot2::geom_line(aes(group = id_values), linewidth = 2, lineend = "square") +
         ggplot2::scale_x_datetime(date_labels = "%b %Y", breaks = "4 months") + # format x-axis as month year
         ggplot2::xlab("Time") +
         ggplot2::ylab("") +
