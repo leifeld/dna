@@ -2725,6 +2725,7 @@ print.dna_backbone <- function(x, trim = 50, ...) {
 #' @rdname dna_backbone
 #' @importFrom graphics lines
 #' @importFrom stats filter
+#' @importFrom rlang .data
 #' @export
 plot.dna_backbone <- function(x, ma = 500, ...) {
 
@@ -2850,7 +2851,7 @@ autoplot.dna_backbone <- function(object, ..., ma = 500) {
     g_accept <- ggplot2::ggplot(bd, ggplot2::aes(y = rlang::.data[["temperature"]], x = rlang::.data[["iteration"]])) +
       ggplot2::geom_line(color = "#a50f15") +
       ggplot2::geom_line(data = bd[bd$acceptance_prob >= 0, ],
-                         ggplot2::aes(y = .data[["acceptance_prob"]], x = rlang::.data[["iteration"]])) +
+                         ggplot2::aes(y = rlang::.data[["acceptance_prob"]], x = rlang::.data[["iteration"]])) +
       ggplot2::ylab("Acceptance probability") +
       ggplot2::xlab("Iteration") +
       ggplot2::ggtitle("Temperature and acceptance probability") +

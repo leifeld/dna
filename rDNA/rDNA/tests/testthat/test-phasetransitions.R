@@ -1,46 +1,43 @@
-context("Testing dna_phaseTransitions")
+context("Testing phase transitions")
 
 # Initialize DNA and sample database
 suppressPackageStartupMessages(library("rDNA"))
 dna_init()
 
-# example 1: testing with default values
-test_that("dna_phaseTransitions produces expected output with default settings", {
+# Create a function to set up the database for tests
+setup_dna_database <- function() {
   samp <- dna_sample()
   dna_openDatabase(samp, coderId = 1, coderPassword = "sample")
+  return(samp)
+}
+
+# Create a function to clean up after tests
+cleanup_dna_database <- function(samp) {
+  dna_closeDatabase()
+  unlink(samp)
+}
+
+test_that("dna_phaseTransitions produces expected output with default settings", {
+  samp <- setup_dna_database()
   result <- dna_phaseTransitions()
-  expect_s3_class(result, "dna_phaseTransitions")
+
+  expect_type(result, "dna_phaseTransitions")
   expect_true(!is.null(result$states))
   expect_true(!is.null(result$modularity))
   expect_true(!is.null(result$clusterMethod))
   expect_true(!is.null(result$distmat))
-  dna_closeDatabase()
-  unlink(samp)
+
+  cleanup_dna_database(samp)
 })
 
-# example 2: testing plotting function
-context("Testing autoplot.dna_phaseTransitions")
-
-
-set_up_test_data <- function() {
-  samp <- dna_sample()
-  dna_openDatabase(samp, coderId = 1, coderPassword = "sample")
-  phase_trans_obj <- dna_phaseTransitions()
-  return(list(samp = samp, pt_obj = phase_trans_obj))
-}
-
-
-clean_up_test_data <- function(samp) {
-  # Close the database and perform any cleanup operations
-  dna_closeDatabase()
-  unlink(samp)
-}
-
 test_that("autoplot.dna_phaseTransitions produces expected plots", {
-  test_data <- set_up_test_data()
-  plots <- autoplot.dna_phaseTransitions(test_data$pt_obj)
-  expect_is(plots, "list")
+  samp <- setup_dna_database()
+  phase_trans_obj <- dna_phaseTransitions()
+
+  plots <- autoplot.dna_phaseTransitions(phase_trans_obj)
+  expect_type(plots, "list")
   expect_length(plots, 4)
-  expect_is(plots[[1]], "ggplot")
-  clean_up_test_data(test_data$samp)
+  expect_type(plots[[1]], "ggplot")
+
+  cleanup_dna_database(samp)
 })
