@@ -2221,44 +2221,44 @@ autoplot.dna_barplot <- function(object,
 
   # Plot
   g <- ggplot2::ggplot(object2,
-                       ggplot2::aes(x = rlang::.data[["entity"]],
-                                           y = rlang::.data[["frequency"]],
-                                           fill = rlang::.data[["agreement"]],
-                                           group = rlang::.data[["agreement"]],
-                                           label = rlang::.data[["label"]]))
+                       ggplot2::aes(x = .data[["entity"]],
+                                           y = .data[["frequency"]],
+                                           fill = .data[["agreement"]],
+                                           group = .data[["agreement"]],
+                                           label = .data[["label"]]))
   if (binary) { # Bars for the binary case
-    g <- g + ggplot2::geom_bar(ggplot2::aes(fill = rlang::.data[["color"]],
-                                                   color = rlang::.data[["text_color"]]),
-                               stat = rlang::.data[["identity"]],
+    g <- g + ggplot2::geom_bar(ggplot2::aes(fill = .data[["color"]],
+                                                   color = .data[["text_color"]]),
+                               stat = .data[["identity"]],
                                width = barWidth,
                                show.legend = FALSE)
     # For the integer case with positive and negative values
   } else if (max(w) > 0 & min(w) < 0) {
-    g <- g + ggplot2::geom_bar(ggplot2::aes(fill = rlang::.data[["color"]],
-                                                   color = rlang::.data[["text_color"]]),
+    g <- g + ggplot2::geom_bar(ggplot2::aes(fill = .data[["color"]],
+                                                   color = .data[["text_color"]]),
                                stat = "identity",
                                width = barWidth,
                                show.legend = FALSE,
                                data = object2[as.numeric(as.character(object2$agreement)) >= 0, ],
                                position = ggplot2::position_stack(reverse = TRUE)) +
-      ggplot2::geom_bar(ggplot2::aes(fill = rlang::.data[["color"]],
-                                            color = rlang::.data[["text_color"]]),
+      ggplot2::geom_bar(ggplot2::aes(fill = .data[["color"]],
+                                            color = .data[["text_color"]]),
                         stat = "identity",
                         width = barWidth,
                         show.legend = FALSE,
                         data = object2[as.numeric(as.character(object2$agreement)) < 0, ])
     # For the integer case with positive values only
   } else if (min(w) >= 0) {
-    g <- g + ggplot2::geom_bar(ggplot2::aes(fill = rlang::.data[["color"]],
-                                                   color = rlang::.data[["text_color"]]),
+    g <- g + ggplot2::geom_bar(ggplot2::aes(fill = .data[["color"]],
+                                                   color = .data[["text_color"]]),
                                stat = "identity",
                                width = barWidth,
                                show.legend = FALSE,
                                position = ggplot2::position_stack(reverse = TRUE))
     # For the integer case with negative values only
   } else {
-    g <- g + ggplot2::geom_bar(ggplot2::aes(fill = rlang::.data[["color"]],
-                                                   color = rlang::.data[["text_color"]]),
+    g <- g + ggplot2::geom_bar(ggplot2::aes(fill = .data[["color"]],
+                                                   color = .data[["text_color"]]),
                                stat = "identity",
                                width = barWidth,
                                show.legend = FALSE)
@@ -2266,7 +2266,7 @@ autoplot.dna_barplot <- function(object,
   g <- g + ggplot2::coord_flip() +
     ggplot2::theme_minimal() +
     # Add intercept line
-    ggplot2::geom_line(ggplot2::aes(x = rlang::.data[["x"]], y = rlang::.data[["y"]]),
+    ggplot2::geom_line(ggplot2::aes(x = .data[["x"]], y = .data[["y"]]),
                        data = yintercepts,
                        linewidth = axisWidth,
                        inherit.aes = FALSE) +
@@ -2283,21 +2283,21 @@ autoplot.dna_barplot <- function(object,
   }
   if (binary) { # Add entity labels for binary case
     g <- g +
-      ggplot2::geom_text(ggplot2::aes(x = rlang::.data[["entity"]],
-                                             y = rlang::.data[["pos"]],
-                                             label = rlang::.data[["label"]]),
+      ggplot2::geom_text(ggplot2::aes(x = .data[["entity"]],
+                                             y = .data[["pos"]],
+                                             label = .data[["label"]]),
                          size = (fontSize / ggplot2::.pt),
                          inherit.aes = FALSE,
                          data = object2)
     # Add entity labels for integer case with positive and negative values
   } else if (max(w) > 0 & min(w) < 0) {
     g <- g +
-      ggplot2::geom_text(ggplot2::aes(color = rlang::.data[["text_color"]]),
+      ggplot2::geom_text(ggplot2::aes(color = .data[["text_color"]]),
                          size = (fontSize / ggplot2::.pt),
                          position = ggplot2::position_stack(vjust = 0.5, reverse = TRUE),
                          inherit.aes = TRUE,
                          data = object2[object2$frequency >= 0, ]) +
-      ggplot2::geom_text(ggplot2::aes(color = rlang::.data[["text_color"]]),
+      ggplot2::geom_text(ggplot2::aes(color = .data[["text_color"]]),
                          size = (fontSize / ggplot2::.pt),
                          position = ggplot2::position_stack(vjust = 0.5),
                          inherit.aes = TRUE,
@@ -2305,13 +2305,13 @@ autoplot.dna_barplot <- function(object,
     # Add entity labels for integer case with positive values only
   } else if (min(w) >= 0) {
     g <- g +
-      ggplot2::geom_text(ggplot2::aes(color = rlang::.data[["text_color"]]),
+      ggplot2::geom_text(ggplot2::aes(color = .data[["text_color"]]),
                          size = (fontSize / ggplot2::.pt),
                          position = ggplot2::position_stack(vjust = 0.5, reverse = TRUE),
                          inherit.aes = TRUE)
   } else {
     g <- g +
-      ggplot2::geom_text(ggplot2::aes(color = rlang::.data[["text_color"]]),
+      ggplot2::geom_text(ggplot2::aes(color = .data[["text_color"]]),
                          size = (fontSize / ggplot2::.pt),
                          position = ggplot2::position_stack(vjust = 0.5),
                          inherit.aes = TRUE)
@@ -2848,10 +2848,10 @@ autoplot.dna_backbone <- function(object, ..., ma = 500) {
     bd$accept_ratio <- stats::filter(bd$acceptance, rep(1 / ma, ma), sides = 1)
 
     # temperature and acceptance probability
-    g_accept <- ggplot2::ggplot(bd, ggplot2::aes(y = rlang::.data[["temperature"]], x = rlang::.data[["iteration"]])) +
+    g_accept <- ggplot2::ggplot(bd, ggplot2::aes(y = .data[["temperature"]], x = .data[["iteration"]])) +
       ggplot2::geom_line(color = "#a50f15") +
       ggplot2::geom_line(data = bd[bd$acceptance_prob >= 0, ],
-                         ggplot2::aes(y = rlang::.data[["acceptance_prob"]], x = rlang::.data[["iteration"]])) +
+                         ggplot2::aes(y = .data[["acceptance_prob"]], x = .data[["iteration"]])) +
       ggplot2::ylab("Acceptance probability") +
       ggplot2::xlab("Iteration") +
       ggplot2::ggtitle("Temperature and acceptance probability") +
@@ -2865,7 +2865,7 @@ autoplot.dna_backbone <- function(object, ..., ma = 500) {
       yl <- "Backbone loss"
       ti <- "Spectral backbone distance"
     }
-    g_loss <- ggplot2::ggplot(bd, ggplot2::aes(y = rlang::.data[["bb_loss"]], x = rlang::.data[["iteration"]])) +
+    g_loss <- ggplot2::ggplot(bd, ggplot2::aes(y = .data[["bb_loss"]], x = .data[["iteration"]])) +
       ggplot2::geom_line() +
       ggplot2::ylab(yl) +
       ggplot2::xlab("Iteration") +
@@ -2877,7 +2877,7 @@ autoplot.dna_backbone <- function(object, ..., ma = 500) {
                     size = c(bd$current_size_ma, bd$optimal_size_ma),
                     Criterion = c(rep("Current iteration", nrow(bd)),
                                   rep("Best solution", nrow(bd))))
-    g_size <- ggplot2::ggplot(d, ggplot2::aes(y = rlang::.data[["size"]], x = rlang::.data[["iteration"]], color = rlang::.data[["Criterion"]])) +
+    g_size <- ggplot2::ggplot(d, ggplot2::aes(y = .data[["size"]], x = .data[["iteration"]], color = .data[["Criterion"]])) +
       ggplot2::geom_line() +
       ggplot2::ylab(paste0("Number of elements (MA, last ", ma, ")")) +
       ggplot2::xlab("Iteration") +
@@ -2886,7 +2886,7 @@ autoplot.dna_backbone <- function(object, ..., ma = 500) {
       ggplot2::theme(legend.position = "bottom")
 
     # ratio of recent acceptances
-    g_ar <- ggplot2::ggplot(bd, ggplot2::aes(y = rlang::.data[["accept_ratio"]], x = rlang::.data[["iteration"]])) +
+    g_ar <- ggplot2::ggplot(bd, ggplot2::aes(y = .data[["accept_ratio"]], x = .data[["iteration"]])) +
       ggplot2::geom_line() +
       ggplot2::ylab(paste("Acceptance ratio in the last", ma, "iterations")) +
       ggplot2::xlab("Iteration") +
@@ -2937,7 +2937,7 @@ autoplot.dna_backbone <- function(object, ..., ma = 500) {
                               circular = FALSE,
                               height = height) + # TODO @Tim: "height" does not seem to exist
       ggraph::geom_edge_elbow() +
-      ggraph::geom_node_point(aes(filter = rlang::.data[["leaf"]])) +
+      ggraph::geom_node_point(aes(filter = .data[["leaf"]])) +
       ggplot2::theme_bw() +
       ggplot2::theme(panel.border = element_blank(),
                      axis.title = element_blank(),
