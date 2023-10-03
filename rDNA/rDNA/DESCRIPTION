@@ -27,6 +27,7 @@ Depends:
 Imports:
     rJava (>= 0.9-12),
     ggplot2 (>= 3.3.6)
+    rlang (>= 1.1.1)
 Suggests: 
     testthat,
     askpass (>= 1.1),
