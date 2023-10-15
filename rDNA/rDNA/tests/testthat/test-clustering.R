@@ -2,7 +2,6 @@ context("clustering")
 
 # Initialize DNA and sample database
 suppressPackageStartupMessages(library("rDNA"))
-dna_init()
 
 # example 1: compute 12 cluster solutions for one time point
 test_that("Example 1 produces expected output", {
@@ -12,6 +11,7 @@ test_that("Example 1 produces expected output", {
   skip_if_not_installed("sna", minimum_version = "2.4")
   skip_if_not_installed("cluster", minimum_version = "1.12.0")
   samp <- dna_sample()
+  dna_init(samp)
   dna_openDatabase(samp, coderId = 1, coderPassword = "sample")
   mc1 <- dna_multiclust(variable1 = "organization",
                         variable2 = "concept",
