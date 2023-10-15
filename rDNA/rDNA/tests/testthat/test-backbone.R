@@ -2,10 +2,10 @@ context("backbone")
 
 # Initialize DNA and sample database
 suppressPackageStartupMessages(library("rDNA"))
-dna_init()
 
 test_that("Penalized backbone works", {
   samp <- dna_sample()
+  dna_init()
   dna_openDatabase(samp, coderId = 1, coderPassword = "sample")
   b <- dna_backbone(method = "penalty",
                     penalty = 3.5,
