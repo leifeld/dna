@@ -12,7 +12,7 @@ dnaEnvironment <- new.env(hash = TRUE, parent = emptyenv())
     'Date:         ', desc$Date, '\n',
     'Author:       Philip Leifeld (University of Essex)\n',
     'Contributors: Tim Henrichsen (University of Warwick),\n',
-    '              Johannes B. Gruber (Vrije Universiteit Amsterdam)\n',
+    '              Johannes B. Gruber (University of Amsterdam)\n',
     '              Kristijan Garic (University of Essex)\n',
     'Project home: github.com/leifeld/dna'
   )
