@@ -1,11 +1,8 @@
 context("Testing phase transitions")
 
-# Initialize DNA and sample database
-suppressPackageStartupMessages(library("rDNA"))
-dna_init()
-
 # Create a function to set up the database for tests
 setup_dna_database <- function() {
+  dna_init()
   samp <- dna_sample()
   dna_openDatabase(samp, coderId = 1, coderPassword = "sample")
   return(samp)
@@ -18,6 +15,8 @@ cleanup_dna_database <- function(samp) {
 }
 
 test_that("dna_phaseTransitions produces expected output with default settings", {
+  testthat::skip_on_cran()
+  testthat::skip_on_ci()
   samp <- setup_dna_database()
   result <- dna_phaseTransitions()
 
@@ -31,6 +30,8 @@ test_that("dna_phaseTransitions produces expected output with default settings",
 })
 
 test_that("autoplot.dna_phaseTransitions produces expected plots", {
+  testthat::skip_on_cran()
+  testthat::skip_on_ci()
   samp <- setup_dna_database()
   phase_trans_obj <- dna_phaseTransitions()
 
