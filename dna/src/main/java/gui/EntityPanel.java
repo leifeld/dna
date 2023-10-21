@@ -38,7 +38,7 @@ class EntityPanel extends JPanel {
         hm.put("alias", "");
         hm.put("type", "");
         hm.put("notes", "");
-        Entity r = new Entity(0, 0, "variables", Color.BLACK, -1, false, hm);
+        Entity r = new Entity(0, 0, "variables", new model.Color(0, 0, 0), -1, false, hm);
         EntityTreeTableModel m = new EntityTreeTableModel(r);
         JXTreeTable tt2 = new JXTreeTable(m);
         EntityTreeCellRenderer entityRenderer = new EntityTreeCellRenderer();
@@ -49,14 +49,14 @@ class EntityPanel extends JPanel {
         tt2.setRowSelectionAllowed(true);
         tt2.setColumnSelectionAllowed(false);
         tt2.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        m.addEntity(new Entity(-1, 1, "person", Color.BLACK, 0, false, hm));
-        m.addEntity(new Entity(1, 1, "person 1", Color.GREEN, -1, false, hm));
-        m.addEntity(new Entity(2, 1, "person 2", Color.ORANGE, -1, false, hm));
-        m.addEntity(new Entity(3, 1, "person 3", Color.GRAY, 2, false, hm));
-        m.addEntity(new Entity(-2, 2, "organization", Color.BLACK, 0, false, hm));
-        m.addEntity(new Entity(4, 2, "organization 1", Color.GREEN, -2, false, hm));
-        m.addEntity(new Entity(5, 2, "organization 2", Color.ORANGE, -2, false, hm));
-        m.addEntity(new Entity(6, 2, "organization 3", Color.GRAY, 4, false, hm));
+        m.addEntity(new Entity(-1, 1, "person", new model.Color(0, 0, 0), 0, false, hm));
+        m.addEntity(new Entity(1, 1, "person 1", new model.Color(0, 255, 0), -1, false, hm));
+        m.addEntity(new Entity(2, 1, "person 2", new model.Color(255, 200, 0), -1, false, hm));
+        m.addEntity(new Entity(3, 1, "person 3", new model.Color(128, 128, 128), 2, false, hm));
+        m.addEntity(new Entity(-2, 2, "organization", new model.Color(0, 0, 0), 0, false, hm));
+        m.addEntity(new Entity(4, 2, "organization 1", new model.Color(0, 255, 0), -2, false, hm));
+        m.addEntity(new Entity(5, 2, "organization 2", new model.Color(255, 200, 0), -2, false, hm));
+        m.addEntity(new Entity(6, 2, "organization 3", new model.Color(128, 128, 128), 4, false, hm));
         JScrollPane scrollPane = new JScrollPane(tt2);
         this.add(scrollPane, BorderLayout.CENTER);
     }
@@ -122,7 +122,7 @@ class EntityPanel extends JPanel {
                     private static final long serialVersionUID = 1648028274961429514L;
                     public void paintComponent(Graphics g) {
                         super.paintComponent(g);
-                        g.setColor(e.getColor());
+                        g.setColor(e.getColor().toAWTColor());
                         g.fillRect(0, 0, 20, 8);
                     }
                 });

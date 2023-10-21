@@ -488,11 +488,11 @@ class StatementPanel extends JPanel {
 			setLayout(new BorderLayout());
 			setBorder(BorderFactory.createCompoundBorder(
 					BorderFactory.createEmptyBorder(2, 2, 2, 2),
-					BorderFactory.createLineBorder(Color.GRAY)));
+					BorderFactory.createLineBorder(java.awt.Color.GRAY)));
 			if (negate) {
-				setBackground(new Color(242, 187, 201));
+				setBackground(new java.awt.Color(242, 187, 201));
 			} else {
-				setBackground(new Color(187, 242, 201));
+				setBackground(new java.awt.Color(187, 242, 201));
 			}
 
 			String lab;

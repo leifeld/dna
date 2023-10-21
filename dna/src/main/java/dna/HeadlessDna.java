@@ -766,6 +766,7 @@ public class HeadlessDna implements Logger.LogListener {
 	 * @param invertTypes            boolean indicating whether the document-level type values should be included (= {@code true}) rather than excluded.
 	 * @return                       A double array with the loss for the backbone and redundant set.
 	 */
+	/*
 	public double[] rEvaluateBackboneSolution(String[] backboneEntities, int p, String statementType, String variable1, boolean variable1Document, String variable2,
 						  boolean variable2Document, String qualifier, boolean qualifierDocument, String qualifierAggregation, String normalization,
 						  String duplicates, String startDate, String stopDate, String startTime, String stopTime,
@@ -901,6 +902,7 @@ public class HeadlessDna implements Logger.LogListener {
 			}
 		}
 	}
+	*/
 
 	/* =================================================================================================================
 	 * Functions for managing variables
@@ -913,9 +915,11 @@ public class HeadlessDna implements Logger.LogListener {
 	 * @param statementTypeLabel  Label of the statement type for which variables should be retrieved.
 	 * @return                    Array list of {@link Value} objects representing variables.
 	 */
+	/*
 	public ArrayList<Value> getVariables(String statementTypeLabel) {
 		return Dna.sql.getStatementType(statementTypeLabel).getVariables();
 	}
+	*/
 
 	/**
 	 * Retrieve variables and data type definitions for a given statement type (via ID).
@@ -923,6 +927,7 @@ public class HeadlessDna implements Logger.LogListener {
 	 * @param statementTypeId  ID of the statement type for which variables should be retrieved.
 	 * @return                 Array list of {@link Value} objects representing variables.
 	 */
+	/*
 	public ArrayList<Value> getVariables(int statementTypeId) {
 		return Dna.sql.getStatementType(statementTypeId).getVariables();
 	}

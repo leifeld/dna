@@ -665,7 +665,7 @@ public class MainWindow extends JFrame {
 
 		// toolbar document filter field listener
 		JTextField documentFilterField = toolbar.getDocumentFilterField();
-		documentFilterField.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+		documentFilterField.setBorder(BorderFactory.createLineBorder(java.awt.Color.BLACK, 1));
 		documentFilterField.getDocument().addDocumentListener(new DocumentListener() {
 			@Override
 			public void changedUpdate(DocumentEvent arg0) {

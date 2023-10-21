@@ -375,8 +375,8 @@ public class NetworkExporter extends JDialog {
 				role1Box.setBorder(null);
 				role2Box.setBorder(null);
 			} else if (role1Box.getSelectedItem().equals(role2Box.getSelectedItem())) {
-				role1Box.setBorder(BorderFactory.createLineBorder(Color.RED));
-				role2Box.setBorder(BorderFactory.createLineBorder(Color.RED));
+				role1Box.setBorder(BorderFactory.createLineBorder(java.awt.Color.RED));
+				role2Box.setBorder(BorderFactory.createLineBorder(java.awt.Color.RED));
 			} else {
 				role1Box.setBorder(null);
 				role2Box.setBorder(null);

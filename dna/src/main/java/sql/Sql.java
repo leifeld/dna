@@ -4131,7 +4131,7 @@ public class Sql {
 			ResultSet r2;
 			Color color;
         	while (r1.next()) {
-				statementTypes.add(new StatementType(r1.getInt("ID"), r1.getString("Label"), new Color(r1.getInt("Red"), r1.getInt("Green"), r1.getInt("Blue"))));
+				statementTypes.add(new StatementType(r1.getInt("ID"), r1.getString("Label"), new model.Color(r1.getInt("Red"), r1.getInt("Green"), r1.getInt("Blue"))));
             }
         	LogEvent l = new LogEvent(Logger.MESSAGE,
         			"[SQL] Retrieved " + statementTypes.size() + " statement types from the database.",

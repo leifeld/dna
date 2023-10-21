@@ -248,7 +248,7 @@ class StatementTableModel extends AbstractTableModel {
 	 * @param coderName The new coder name.
 	 * @param coderColor The new coder color.
 	 */
-	void updateCoderInRow(int row, int coderId, String coderName, Color coderColor) {
+	void updateCoderInRow(int row, int coderId, String coderName, model.Color coderColor) {
 		this.rows.get(row).setCoderId(coderId);
 		this.rows.get(row).setCoderName(coderName);
 		this.rows.get(row).setCoderColor(coderColor);

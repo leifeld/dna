@@ -146,9 +146,9 @@ class TextPanel extends JPanel {
 						(textStatements.get(i).getCoderId() == Dna.sql.getActiveCoder().getId() || Dna.sql.getActiveCoder().isPermissionViewOthersStatements()) &&
 						(textStatements.get(i).getCoderId() == Dna.sql.getActiveCoder().getId() || Dna.sql.getActiveCoder().getCoderRelations().get(textStatements.get(i).getCoderId()).isViewStatements())) {
 					if (Dna.sql.getActiveCoder().isColorByCoder() == true) {
-						StyleConstants.setBackground(bgStyle, textStatements.get(i).getCoderColor());
+						StyleConstants.setBackground(bgStyle, textStatements.get(i).getCoderColor().toAWTColor());
 					} else {
-						StyleConstants.setBackground(bgStyle, textStatements.get(i).getStatementTypeColor());
+						StyleConstants.setBackground(bgStyle, textStatements.get(i).getStatementTypeColor().toAWTColor());
 					}
 				}
 				doc.setCharacterAttributes(start, textStatements.get(i).getStop() - start, bgStyle, false);

@@ -11,6 +11,7 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.awt.Color;
 import java.awt.event.*;
 import java.awt.image.BaseMultiResolutionImage;
 import java.util.ArrayList;
@@ -122,7 +123,7 @@ public class PopupMulti extends JDialog {
         this.tableStatement = tableStatement;
         this.los = location;
         this.textFieldWidth = coder.getPopupWidth();
-        this.color = tableStatement.getStatementTypeColor();
+        this.color = tableStatement.getStatementTypeColor().toAWTColor();
         this.eligibleCoders = eligibleCoders;
         this.coder = coder;
         if (coder.isPopupDecoration()) {
@@ -475,7 +476,7 @@ public class PopupMulti extends JDialog {
         public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
             Entity a = (Entity) value;
             JLabel label = new JLabel(a.getValue());
-            label.setForeground(a.getColor());
+            label.setForeground(a.getColor().toAWTColor());
             // list background
             Color selectedColor = javax.swing.UIManager.getColor("List.selectionBackground");
             Color notInDatabaseColor = new Color(255, 102, 102);
@@ -663,7 +664,7 @@ public class PopupMulti extends JDialog {
                     Color fg = javax.swing.UIManager.getColor("TextField.foreground"); // default unselected foreground color of JTextField
                     for (int j = 0; j < box.getModel().getSize(); j++) {
                         if (s.equals(box.getModel().getElementAt(j).getValue())) {
-                            fg = box.getModel().getElementAt(j).getColor();
+                            fg = box.getModel().getElementAt(j).getColor().toAWTColor();
                             break;
                         }
                     }
@@ -705,7 +706,7 @@ public class PopupMulti extends JDialog {
                                         currentText = currentText.substring(0, 190);
                                         box.setSelectedItem(currentText); // ensure the text in the box is never longer than 190 characters to comply with old MySQL requirements
                                     }
-                                    entity = new Entity(-1, roleValue.getVariableId(), currentText, Color.BLACK);
+                                    entity = new Entity(-1, roleValue.getVariableId(), currentText, new model.Color(0, 0, 0));
                                 }
                                 // save the selected entity in the modified table statement and update revert and save buttons
                                 RoleValuePanel.this.ts.getRoleValues().get(finalI1).setValue(entity);

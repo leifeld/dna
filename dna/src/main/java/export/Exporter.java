@@ -10,6 +10,7 @@ import logger.LogEvent;
 import logger.Logger;
 import me.tongfei.progressbar.ProgressBar;
 import model.*;
+import model.Color;
 import org.jdom.Attribute;
 import org.jdom.Comment;
 import org.jdom.Element;
@@ -75,7 +76,7 @@ public class Exporter {
 	/**
 	 * Holds the resulting backbone result.
 	 */
-	private BackboneResult backboneResult = null;
+	//private BackboneResult backboneResult = null;
 
 	// objects for backbone algorithm
 	private ArrayList<Double> temperatureLog, acceptanceProbabilityLog, penalizedBackboneLossLog, acceptanceRatioLastHundredIterationsLog;

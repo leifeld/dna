@@ -1,10 +1,5 @@
 package model;
 
-import javax.swing.*;
-import java.awt.Color;
-import java.util.ArrayList;
-import java.util.stream.Stream;
-
 /**
  * Represents a statement type.
  */
@@ -22,7 +17,7 @@ public class StatementType {
 	/**
 	 * The color associated with the statement type.
 	 */
-	private Color color;
+	private model.Color color;
 
 	/**
 	 * Create a statement type.
