@@ -139,7 +139,7 @@ public class HeadlessDna implements Logger.LogListener {
 	public boolean openConnectionProfile(String fileName, String clearCoderPassword) {
 		ConnectionProfile cp = null;
 		try {
-			cp = Dna.readConnectionProfile(fileName, clearCoderPassword);
+			cp = new ConnectionProfile(fileName, clearCoderPassword);
 		} catch (EncryptionOperationNotPossibleException e2) {
 			cp = null;
 			LogEvent l = new LogEvent(Logger.ERROR,
@@ -204,7 +204,7 @@ public class HeadlessDna implements Logger.LogListener {
 		boolean authenticated = Dna.sql.authenticate(-1, clearCoderPassword);
 		if (authenticated) {
 			// write the connection profile to disk, with an encrypted version of the password
-			Dna.writeConnectionProfile(fileName, new ConnectionProfile(Dna.sql.getConnectionProfile()), clearCoderPassword);
+			ConnectionProfile.writeConnectionProfile(fileName, new ConnectionProfile(Dna.sql.getConnectionProfile()), clearCoderPassword);
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"Connection profile saved to file.",
 					"A connection profile was successfully saved to the following file: \"" + fileName + "\".");

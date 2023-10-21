@@ -381,7 +381,7 @@ public class StatementRecoder extends JDialog {
 				Color fg = javax.swing.UIManager.getColor("TextField.foreground"); // default unselected foreground color of JTextField
 				for (int j = 0; j < box.getModel().getSize(); j++) {
 					if (s.equals(box.getModel().getElementAt(j).getValue())) {
-						fg = box.getModel().getElementAt(j).getColor();
+						fg = box.getModel().getElementAt(j).getColor().toAWTColor();
 					}
 				}
 				((JTextField) box.getEditor().getEditorComponent()).setSelectedTextColor(fg);
@@ -419,7 +419,7 @@ public class StatementRecoder extends JDialog {
 						Color fg = javax.swing.UIManager.getColor("TextField.foreground"); // default unselected foreground color of JTextField
 						for (int j = 0; j < box.getModel().getSize(); j++) {
 							if (((JTextField) box.getEditor().getEditorComponent()).getText().equals(box.getModel().getElementAt(j).getValue())) {
-								fg = box.getModel().getElementAt(j).getColor();
+								fg = box.getModel().getElementAt(j).getColor().toAWTColor();
 							}
 						}
 						((JTextField) box.getEditor().getEditorComponent()).setSelectedTextColor(fg);
@@ -1031,7 +1031,7 @@ public class StatementRecoder extends JDialog {
 		 */
 		public void applyAllCoder(int row) {
 			int coderId = statements.get(row).getCoderId();
-			Color coderColor = statements.get(row).getCoderColor();
+			model.Color coderColor = statements.get(row).getCoderColor();
 			String coderName = statements.get(row).getCoderName();
 			statements.stream().forEach(s -> {
 				s.setCoderId(coderId);
@@ -1049,7 +1049,7 @@ public class StatementRecoder extends JDialog {
 		 * @param coderName  The new coder name.
 		 * @param coderColor The new coder color.
 		 */
-		public void updateCoder(int row, int coderId, String coderName, Color coderColor) {
+		public void updateCoder(int row, int coderId, String coderName, model.Color coderColor) {
 			statements.get(row).setCoderId(coderId);
 			statements.get(row).setCoderName(coderName);
 			statements.get(row).setCoderColor(coderColor);

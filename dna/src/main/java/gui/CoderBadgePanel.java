@@ -50,7 +50,7 @@ public class CoderBadgePanel extends JPanel {
 	 */
 	public CoderBadgePanel() {
 		if (Dna.sql.getConnectionProfile() == null || Dna.sql.getActiveCoder() == null) {
-			this.coder = new Coder(-1, "(no coder)", Color.BLACK);
+			this.coder = new Coder(-1, "(no coder)", new model.Color(0, 0, 0));
 		} else {
 			this.coder = Dna.sql.getActiveCoder();
 		}
@@ -61,8 +61,7 @@ public class CoderBadgePanel extends JPanel {
 	/**
 	 * Creates the layout of the coder badge panel. For internal use in the
 	 * class.
-	 * 
-	 * @param coder          The coder.
+	 *
 	 * @param buttonSize     Height/width of the color button.
 	 * @param border         Border margin. Can be 0.
 	 * @param maxNameLength  Maximal character length of the name.
@@ -73,7 +72,7 @@ public class CoderBadgePanel extends JPanel {
 			private static final long serialVersionUID = -7254611710375602710L;
 			public void paintComponent(Graphics g) {
 				super.paintComponent(g);
-				g.setColor(CoderBadgePanel.this.coder.getColor());
+				g.setColor(CoderBadgePanel.this.coder.getColor().toAWTColor());
 				g.fillRect(0, 0, buttonSize, buttonSize);
 			}
 		});

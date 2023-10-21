@@ -1,6 +1,5 @@
 package model;
 
-
 /**
  * Represents values saved in a statement, corresponding to the variables saved
  * in the statement type that corresponds to the statement. 

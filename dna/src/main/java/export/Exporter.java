@@ -22,7 +22,6 @@ import org.ojalgo.function.aggregator.Aggregator;
 import org.ojalgo.matrix.Primitive64Matrix;
 import org.ojalgo.matrix.decomposition.Eigenvalue;
 
-import java.awt.*;
 import java.io.*;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;

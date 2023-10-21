@@ -1,7 +1,5 @@
 package model;
 
-import java.awt.Color;
-
 /**
  * A class for regular expression patterns to be highlighted in the document
  * text in a specified color. 

@@ -5,9 +5,9 @@ import export.DataFrame;
 import logger.LogEvent;
 import logger.Logger;
 import me.tongfei.progressbar.ProgressBar;
+import model.Color;
 import model.Entity;
 
-import java.awt.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -315,7 +315,7 @@ public class DataExchange {
                         for (int k = 4; k <df.ncol(); k++) {
                             av.put(df.getVariableName(k), (String) df.getValue(i, k));
                         }
-                        Color color = Color.decode((String) df.getValue(i, 2));
+                        Color color = new Color((String) df.getValue(i, 2));
                         e = new Entity((int) df.getValue(i, 0), variableId, (String) df.getValue(i, 1), color, -1, entityValues.containsKey((int) df.getValue(i, 0)), av);
                         duplicates.add(e);
                         rowIndicesOfDuplicates.add(i);
@@ -328,7 +328,7 @@ public class DataExchange {
                                 for (int k = 4; k <df.ncol(); k++) {
                                     av.put(df.getVariableName(k), (String) df.getValue(j, k));
                                 }
-                                color = Color.decode((String) df.getValue(j, 2));
+                                color = new Color((String) df.getValue(j, 2));
                                 e = new Entity((int) df.getValue(j, 0), variableId, (String) df.getValue(j, 1), color, -1, entityValues.containsKey((int) df.getValue(i, 0)), av);
                                 duplicates.add(e);
                                 rowIndicesOfDuplicates.add(j);
@@ -344,7 +344,7 @@ public class DataExchange {
                         for (int j = 0; j < duplicates.size(); j++) {
                             if (targetId == -1) { // pick the first duplicate as initial target ID
                                 targetId = duplicates.get(j).getId();
-                                targetColor = !duplicates.get(j).getColor().equals(Color.BLACK);
+                                targetColor = !duplicates.get(j).getColor().equals(new Color(0, 0, 0));
                                 targetAttributes = 0;
                                 for (int k = 4; k < df.ncol(); k++) {
                                     if (!duplicates.get(j).getAttributeValues().get(df.getVariableName(k)).equals("")) {
@@ -353,7 +353,7 @@ public class DataExchange {
                                 }
                                 targetInDatabase = duplicates.get(j).isInDatabase();
                             } else { // if not the first duplicate, compare with the previous target based on database presence, attribute values, and color
-                                boolean candidateColor = !duplicates.get(j).getColor().equals(Color.BLACK);
+                                boolean candidateColor = !duplicates.get(j).getColor().equals(new Color(0, 0, 0));
                                 int candidateAttributes = 0;
                                 for (int k = 4; k < df.ncol(); k++) {
                                     if (!duplicates.get(j).getAttributeValues().get(df.getVariableName(k)).equals("")) {
@@ -482,7 +482,7 @@ public class DataExchange {
                         // add into ENTITIES
                         s9.setInt(1, variableId);
                         s9.setString(2, (String) df.getValue(i, 1));
-                        color = Color.decode((String) df.getValue(i, 2));
+                        color = new Color((String) df.getValue(i, 2));
                         s9.setInt(3, color.getRed());
                         s9.setInt(4, color.getGreen());
                         s9.setInt(5, color.getBlue());
@@ -504,24 +504,21 @@ public class DataExchange {
                 // update entities and attribute values
                 pb.stepTo(12);
                 pb.setExtraMessage("Updating attribute values...");
-                int entityId, entityRed, entityGreen, entityBlue;
-                String entityHexColor;
+                int entityId;
+                Color entityColor;
                 for (int i = 0; i < df.nrow(); i++) {
                     // update ENTITIES table if necessary
                     entityId = (int) df.getValue(i, 0);
                     entityValue = (String) df.getValue(i, 1);
-                    entityHexColor = (String) df.getValue(i, 2);
-                    entityRed = Color.decode(entityHexColor).getRed();
-                    entityGreen = Color.decode(entityHexColor).getGreen();
-                    entityBlue = Color.decode(entityHexColor).getBlue();
+                    entityColor = new Color((String) df.getValue(i, 2));
                     if (!entityValue.equals(entityMap.get(entityId).getValue())
-                            || entityMap.get(entityId).getColor().getRed() != entityRed
-                            || entityMap.get(entityId).getColor().getGreen() != entityGreen
-                            || entityMap.get(entityId).getColor().getBlue() != entityBlue) {
+                            || entityMap.get(entityId).getColor().getRed() != entityColor.getRed()
+                            || entityMap.get(entityId).getColor().getGreen() != entityColor.getGreen()
+                            || entityMap.get(entityId).getColor().getBlue() != entityColor.getBlue()) {
                         s10.setString(1, entityValue);
-                        s10.setInt(2, entityRed);
-                        s10.setInt(3, entityGreen);
-                        s10.setInt(4, entityBlue);
+                        s10.setInt(2, entityColor.getRed());
+                        s10.setInt(3, entityColor.getGreen());
+                        s10.setInt(4, entityColor.getBlue());
                         s10.setInt(5, entityId);
                         s10.executeUpdate();
                         if (!entityValue.equals(entityMap.get(entityId).getValue())) {

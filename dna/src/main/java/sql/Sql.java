@@ -1,6 +1,5 @@
 package sql;
 
-import java.awt.Color;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -16,13 +15,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.sql.DataSource;
 
-import export.DataFrame;
 import gui.DocumentEditor;
-import me.tongfei.progressbar.ProgressBar;
 import org.jasypt.util.password.StrongPasswordEncryptor;
 import org.sqlite.SQLiteDataSource;
 
@@ -33,6 +29,7 @@ import com.zaxxer.hikari.pool.HikariPool.PoolInitializationException;
 import dna.Dna;
 import logger.LogEvent;
 import logger.Logger;
+import model.Color;
 import model.Entity;
 import model.Regex;
 import model.Coder;
