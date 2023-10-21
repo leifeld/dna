@@ -22,7 +22,7 @@ public class StatementTypeComboBoxRenderer implements ListCellRenderer<Object> {
             JButton colorRectangle = (new JButton() {
                 public void paintComponent(Graphics g) {
                     super.paintComponent(g);
-                    g.setColor(statementType.getColor());
+                    g.setColor(statementType.getColor().toAWTColor());
                     g.fillRect(2, 2, 14, 14);
                 }
             });

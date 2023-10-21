@@ -22,7 +22,7 @@ class AttributeComboBoxRenderer implements ListCellRenderer<Object> {
 	public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
 		Entity a = (Entity) value;
 		JLabel label = new JLabel(a.getValue());
-		label.setForeground(a.getColor());
+		label.setForeground(a.getColor().toAWTColor());
 		
 		// list background
 		Color selectedColor = javax.swing.UIManager.getColor("List.selectionBackground");

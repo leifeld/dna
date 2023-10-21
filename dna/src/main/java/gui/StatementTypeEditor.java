@@ -110,7 +110,7 @@ public class StatementTypeEditor extends JDialog {
 			public void actionPerformed(ActionEvent e) {
 				int dialog = JOptionPane.showConfirmDialog(StatementTypeEditor.this, "Add a new statement type to the database?\nThis action will be written to the database now.", "Confirmation", JOptionPane.YES_NO_OPTION);
 				if (dialog == 0) {
-					int id = Dna.sql.addStatementType("(New statement type)", new Color(181, 255, 0));
+					int id = Dna.sql.addStatementType("(New statement type)", new model.Color(181, 255, 0));
 					repopulateStatementTypeListFromDatabase(id);
 					updateUI(e.getSource());
 				}
@@ -188,9 +188,9 @@ public class StatementTypeEditor extends JDialog {
 		colorLabel.setEnabled(false);
 		colorButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				Color newColor = JColorChooser.showDialog(StatementTypeEditor.this, "Choose color...", colorButton.getColor());
+				Color newColor = JColorChooser.showDialog(StatementTypeEditor.this, "Choose color...", colorButton.getColor().toAWTColor());
 				if (newColor != null) {
-					colorButton.setColor(newColor);
+					colorButton.setColor(new model.Color(newColor.getRed(), newColor.getGreen(), newColor.getBlue()));
 				}
 				updateUI(e.getSource());
 			}
@@ -435,7 +435,7 @@ public class StatementTypeEditor extends JDialog {
 			if (!(source instanceof DocumentEvent)) {
 				nameField.setText("");
 			}
-			colorButton.setColor(Color.BLACK);
+			colorButton.setColor(new model.Color(0, 0, 0));
 		} else {
 			idField.setEnabled(true);
 			nameField.setEnabled(true);

@@ -70,6 +70,7 @@ dna_openDatabase(coderId = 1,
 \code{\link{dna_queryCoders}}
 
 Other {rDNA database connections}: 
+\code{\link{dna_api}()},
 \code{\link{dna_closeDatabase}()},
 \code{\link{dna_openConnectionProfile}()},
 \code{\link{dna_printDetails}()},

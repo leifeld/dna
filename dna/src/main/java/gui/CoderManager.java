@@ -142,10 +142,11 @@ class CoderManager extends JDialog {
 		colorLabel.setEnabled(false);
 		colorButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				Color newColor = JColorChooser.showDialog(CoderManager.this, "Choose color...", colorButton.getColor());
+				Color newColor = JColorChooser.showDialog(CoderManager.this, "Choose color...", colorButton.getColor().toAWTColor());
 				if (newColor != null) {
-					colorButton.setColor(newColor);
-					selectedCoderCopy.setColor(newColor);
+					model.Color modelColor = new model.Color(newColor.getRed(), newColor.getGreen(), newColor.getBlue());
+					colorButton.setColor(modelColor);
+					selectedCoderCopy.setColor(modelColor);
 					checkButtons();
 				}
 			}
@@ -469,7 +470,7 @@ class CoderManager extends JDialog {
 				AddCoderDialog addCoderDialog = new AddCoderDialog(frame);
 				String coderName = addCoderDialog.getCoderName();
 				String coderPasswordHash = addCoderDialog.getCoderPasswordHash();
-				Color coderColor = addCoderDialog.getCoderColor();
+				model.Color coderColor = addCoderDialog.getCoderColor();
 				addCoderDialog.dispose();
 				if (coderName != null && coderColor != null && coderPasswordHash != null) {
 					int coderId = Dna.sql.addCoder(coderName, coderColor, coderPasswordHash);
@@ -768,7 +769,7 @@ class CoderManager extends JDialog {
 			pw2Field.setEnabled(false);
 			
 			nameField.setText("");
-			colorButton.setColor(Color.BLACK);
+			colorButton.setColor(new model.Color(0, 0, 0));
 			
 			// coder relations
 			coderRelationsPanel.getModel().clear();
@@ -850,7 +851,7 @@ class CoderManager extends JDialog {
 		private JTextField addNameField;
 		private JPasswordField addPw1Field, addPw2Field;
 		private String name;
-		private Color color;
+		private model.Color color;
 		private String passwordHash;
 		
 		/**
@@ -883,15 +884,15 @@ class CoderManager extends JDialog {
 			});
 
 			ColorButton addColorButton = new ColorButton();
-			addColorButton.setColor(new Color(69, 212, 255));
+			addColorButton.setColor(new model.Color(69, 212, 255));
 			addColorButton.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
 			JLabel addColorLabel = new JLabel("Color", JLabel.TRAILING);
 			addColorLabel.setLabelFor(addColorButton);
 			addColorButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					Color newColor = JColorChooser.showDialog(AddCoderDialog.this, "Choose color...", colorButton.getColor());
+					Color newColor = JColorChooser.showDialog(AddCoderDialog.this, "Choose color...", colorButton.getColor().toAWTColor());
 					if (newColor != null) {
-						addColorButton.setColor(newColor);
+						addColorButton.setColor(new model.Color(newColor.getRed(), newColor.getGreen(), newColor.getBlue()));
 					}
 				}
 			});
@@ -1032,7 +1033,7 @@ class CoderManager extends JDialog {
 		 * 
 		 * @return The selected color.
 		 */
-		Color getCoderColor() {
+		model.Color getCoderColor() {
 			return this.color;
 		}
 	}

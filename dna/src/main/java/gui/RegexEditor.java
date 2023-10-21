@@ -86,13 +86,13 @@ class RegexEditor extends JDialog {
 		entryPanel.setBorder(new EmptyBorder(5, 10, 5, 10));
 		ColorButton colorButton = new ColorButton();
 		colorButton.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
-		colorButton.setColor(Color.RED);
+		colorButton.setColor(new model.Color(255, 0, 0));
 		colorButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				Color currentColor = colorButton.getColor();
-				Color newColor = JColorChooser.showDialog(RegexEditor.this, "Choose color...", currentColor);
+				model.Color currentColor = colorButton.getColor();
+				Color newColor = JColorChooser.showDialog(RegexEditor.this, "Choose color...", currentColor.toAWTColor());
 				if (newColor != null) {
-					colorButton.setColor(newColor);
+					colorButton.setColor(new model.Color(newColor.getRed(), newColor.getGreen(), newColor.getBlue()));
 				}
 			}
 		});
@@ -158,7 +158,7 @@ class RegexEditor extends JDialog {
 		addButton.setEnabled(false);
 		addButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				Color cl = colorButton.getColor();
+				model.Color cl = colorButton.getColor();
 				int red = cl.getRed();
 				int green = cl.getGreen();
 				int blue = cl.getBlue();
@@ -166,7 +166,7 @@ class RegexEditor extends JDialog {
 				boolean added = Dna.sql.addRegex(text, red, green, blue);
 				if (added) {
 					changed = true;
-					Regex regex = new Regex(text, new Color(red, green, blue));
+					Regex regex = new Regex(text, cl);
 					regexListModel.addElement(regex);
 					textField.setText("");
 					colorButton.setForeground(Color.RED);
@@ -238,7 +238,7 @@ class RegexEditor extends JDialog {
 		public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
 			JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 			label.setText((String)((Regex)value).getLabel());
-			label.setForeground((Color)((Regex)value).getColor());
+			label.setForeground(((Regex)value).getColor().toAWTColor());
 			label.setOpaque(true);
 			return label;
 		}

@@ -351,9 +351,9 @@ class StatementPanel extends JPanel {
             		cbp.setBackground(javax.swing.UIManager.getColor("Table.selectionBackground"));
 				} else {
 					if (Dna.sql.getActiveCoder().isColorByCoder()) {
-						cbp.setBackground(s.getCoderColor());
+						cbp.setBackground(s.getCoderColor().toAWTColor());
 					} else {
-						cbp.setBackground(s.getStatementTypeColor());
+						cbp.setBackground(s.getStatementTypeColor().toAWTColor());
 					}
 				}
 				return cbp;
@@ -362,9 +362,9 @@ class StatementPanel extends JPanel {
             		c.setBackground(javax.swing.UIManager.getColor("Table.selectionBackground"));
             	} else {
             		if (Dna.sql.getActiveCoder().isColorByCoder()) {
-						c.setBackground(s.getCoderColor());
+						c.setBackground(s.getCoderColor().toAWTColor());
 					} else {
-						c.setBackground(s.getStatementTypeColor());
+						c.setBackground(s.getStatementTypeColor().toAWTColor());
 					}
             	}
     	        return c;
@@ -640,7 +640,7 @@ class StatementPanel extends JPanel {
 						private static final long serialVersionUID = 435490918616472975L;
 						public void paintComponent(Graphics g) {
 							super.paintComponent(g);
-							g.setColor(s.getColor());
+							g.setColor(s.getColor().toAWTColor());
 							g.fillRect(2, 2, 14, 14);
 						}
 					});

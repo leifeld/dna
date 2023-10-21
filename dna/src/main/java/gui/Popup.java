@@ -49,7 +49,7 @@ class Popup extends JDialog {
 	private Container c;
 	private Statement statement;
 	private Point los;
-	private Color color;
+	private model.Color color;
 	private boolean windowDecoration, editable;
 	private JPanel gridBagPanel;
 	private int textFieldWidth;
@@ -63,12 +63,12 @@ class Popup extends JDialog {
 	 * Popup dialog window to display the contents of a statements. The user can
 	 * edit the values of each variable.
 	 * 
-	 * @param X         Horizontal coordinate for the window.
-	 * @param Y         Vertical coordinate for the window.
-	 * @param statement The {@link Statement} to be edited.
-	 * @param location  Location of the DNA text panel on screen.
-	 * @param coder     The current coder who is viewing the statement.
-	 * @param statementPanel A reference to the statement panel.
+	 * @param X              Horizontal coordinate for the window.
+	 * @param Y              Vertical coordinate for the window.
+	 * @param statement      The {@link Statement} to be edited.
+	 * @param location       Location of the DNA text panel on screen.
+	 * @param coder          The current coder who is viewing the statement.
+	 * @param eligibleCoders A list of coders with the permission to edit the statement.
 	 */
 	Popup(double X, double Y, Statement statement, Point location, Coder coder, ArrayList<Coder> eligibleCoders) {
 		this.statement = statement;
@@ -137,7 +137,7 @@ class Popup extends JDialog {
 		JSeparator sep = new JSeparator();
 		
 		JPanel colorPanel = new JPanel();
-		colorPanel.setBackground(color);
+		colorPanel.setBackground(color.toAWTColor());
 		colorPanel.setPreferredSize(new Dimension(4, 4));
 		
 		ImageIcon duplicateIcon = new ImageIcon(new ImageIcon(getClass().getResource("/icons/tabler-icon-copy.png")).getImage().getScaledInstance(h, h, Image.SCALE_SMOOTH));
@@ -236,7 +236,7 @@ class Popup extends JDialog {
 				Color fg = javax.swing.UIManager.getColor("TextField.foreground"); // default unselected foreground color of JTextField
 				for (int j = 0; j < box.getModel().getSize(); j++) {
 					if (s.equals(box.getModel().getElementAt(j).getValue())) {
-						fg = box.getModel().getElementAt(j).getColor();
+						fg = box.getModel().getElementAt(j).getColor().toAWTColor();
 					}
 				}
 				((JTextField) box.getEditor().getEditorComponent()).setSelectedTextColor(fg);
@@ -260,7 +260,7 @@ class Popup extends JDialog {
 						Color fg = javax.swing.UIManager.getColor("TextField.foreground"); // default unselected foreground color of JTextField
 						for (int i = 0; i < box.getModel().getSize(); i++) {
 							if (((JTextField) box.getEditor().getEditorComponent()).getText().equals(box.getModel().getElementAt(i).getValue())) {
-								fg = box.getModel().getElementAt(i).getColor();
+								fg = box.getModel().getElementAt(i).getColor().toAWTColor();
 							}
 						}
 						((JTextField) box.getEditor().getEditorComponent()).setSelectedTextColor(fg);

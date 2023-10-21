@@ -304,7 +304,7 @@ public class DocumentEditor extends JDialog {
 						.limit(2)
 						.count() <= 1);
 				if (!oneCoder) {
-					eligibleCoders.add(0, new Coder(-1, "(keep multiple coders)", Color.BLACK));
+					eligibleCoders.add(0, new Coder(-1, "(keep multiple coders)", new model.Color(0, 0, 0)));
 				}
 				
 				// create and populate combo box with coders

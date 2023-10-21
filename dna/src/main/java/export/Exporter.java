@@ -22,7 +22,6 @@ import org.ojalgo.function.aggregator.Aggregator;
 import org.ojalgo.matrix.Primitive64Matrix;
 import org.ojalgo.matrix.decomposition.Eigenvalue;
 
-import java.awt.*;
 import java.io.*;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -75,23 +74,34 @@ public class Exporter {
 	 * Holds the resulting matrices. Can have size 1.
 	 */
 	private ArrayList<Matrix> matrixResults;
-	/**
-	 * Holds the resulting backbone result.
-	 */
-	private BackboneResult backboneResult = null;
 
-	// objects for backbone algorithm
+	// common backbone algorithm objects
+	private String[] fullConcepts;
+	private Matrix fullMatrix;
+	private ArrayList<String> currentBackboneList, currentRedundantList;
+	private double[] eigenvaluesFull;
+
+	// objects for nested backbone algorithm
+	private int counter;
+	private int[] iteration, numStatements;
+	private String[] entity;
+	private double[] backboneLoss, redundantLoss;
+	ArrayList<Matrix> backboneMatrices = new ArrayList<>();
+	ArrayList<Matrix> redundantMatrices = new ArrayList<>();
+	private NestedBackboneResult nestedBackboneResult = null;
+
+	// objects for simulated annealing backbone algorithm
 	private ArrayList<Double> temperatureLog, acceptanceProbabilityLog, penalizedBackboneLossLog, acceptanceRatioLastHundredIterationsLog;
 	private ArrayList<Integer> acceptedLog, proposedBackboneSizeLog, acceptedBackboneSizeLog, finalBackboneSizeLog;
-	private String[] fullConcepts;
 	private String selectedAction;
-	private ArrayList<String> actionList, currentBackboneList, currentRedundantList, candidateBackboneList, candidateRedundantList, finalBackboneList, finalRedundantList;
+	private ArrayList<String> actionList, candidateBackboneList, candidateRedundantList, finalBackboneList, finalRedundantList;
 	private ArrayList<ExportStatement> currentStatementList, candidateStatementList, finalStatementList; // declare candidate statement list at t
-	private Matrix fullMatrix, currentMatrix, candidateMatrix, finalMatrix; // candidate matrix at the respective t, Y^{B^*_t}
+	private Matrix currentMatrix, candidateMatrix, finalMatrix; // candidate matrix at the respective t, Y^{B^*_t}
 	private boolean accept;
 	private double p, temperature, acceptance, r, oldLoss, newLoss, finalLoss, log;
-	private double[] eigenvaluesFull, eigenvaluesCurrent, eigenvaluesCandidate, eigenvaluesFinal;
-	private int T, t;
+	private double[] eigenvaluesCurrent, eigenvaluesCandidate, eigenvaluesFinal;
+	private int T, t, backboneSize;
+	private SimulatedAnnealingBackboneResult simulatedAnnealingBackboneResult = null;
 
 	/**
 	 * <p>Create a new Exporter class instance, holding an array list of export
@@ -419,7 +429,7 @@ public class Exporter {
 		this.qualifierAggregation = qualifierAggregation.toLowerCase();
 		this.qualifier = qualifier;
 		ArrayList<String> variables = Stream.of(this.statementType.getVariablesList(false, true, true, true)).collect(Collectors.toCollection(ArrayList::new));
-		if (this.qualifier != null && this.qualifierDocument == false && (!variables.contains(this.qualifier) || this.qualifier.equals(this.variable1) || this.qualifier.equals(this.variable2))) {
+		if (this.qualifier != null && !this.qualifierDocument && (!variables.contains(this.qualifier) || this.qualifier.equals(this.variable1) || this.qualifier.equals(this.variable2))) {
 			this.qualifier = null;
 			if (!this.qualifierAggregation.equals("ignore")) {
 				this.qualifierAggregation = "ignore";
@@ -1825,7 +1835,7 @@ public class Exporter {
 								currentWindowStatements.add(this.filteredStatements.get(i));
 							}
 						}
-						if (currentWindowStatements.size() > 0) {
+						// if (currentWindowStatements.size() > 0) {
 							Matrix m;
 							if (this.networkType.equals("twomode")) {
 								m = computeTwoModeMatrix(currentWindowStatements, windowStart, windowStop);
@@ -1835,7 +1845,7 @@ public class Exporter {
 							m.setDateTime(matrixTime);
 							m.setNumStatements(currentWindowStatements.size());
 							timeWindowMatrices.add(m);
-						}
+						// }
 					}
 					percent = 100 * (currentTime.toEpochSecond(ZoneOffset.UTC) - startCalendar.toEpochSecond(ZoneOffset.UTC)) / (stopCalendar.toEpochSecond(ZoneOffset.UTC) - startCalendar.toEpochSecond(ZoneOffset.UTC));
 					pb.stepTo(percent);
@@ -2591,6 +2601,347 @@ public class Exporter {
 	}
 
 	/**
+	 * Get the current iteration {@code t} of the simulated annealing algorithm.
+	 *
+	 * @return Current iteration {@code t}.
+	 */
+	public int getCurrentT() {
+		return this.t;
+	}
+
+	/**
+	 * Set the current iteration {@code t} of the simulated annealing algorithm.
+	 *
+	 * @return Current iteration {@code t}.
+	 */
+	public void setCurrentT(int t) {
+		this.t = t;
+	}
+
+	/**
+	 * Reduce the dimensions of a candidate matrix with all isolate nodes to the dimensions of the full matrix, which
+	 * does not contain isolate nodes.
+	 *
+	 * @param candidateMatrix The candidate matrix with isolates (to be reduced to smaller dimensions).
+	 * @param fullLabels The node labels of the full matrix without isolates.
+	 * @return A reduced candidate matrix with the same dimensions as the full matrix and the same node order.
+	 */
+	private Matrix reduceCandidateMatrix(Matrix candidateMatrix, String[] fullLabels) {
+		HashMap<Integer, Integer> map = new HashMap<Integer, Integer>();
+		for (int i = 0; i < fullLabels.length; i++) {
+			for (int j = 0; j < candidateMatrix.getRowNames().length; j++) {
+				if (fullLabels[i].equals(candidateMatrix.getRowNames()[j])) {
+					map.put(i, j);
+				}
+			}
+		}
+		double[][] mat = new double[fullLabels.length][fullLabels.length];
+		for (int i = 0; i < fullLabels.length; i++) {
+			for (int j = 0; j < fullLabels.length; j++) {
+				mat[i][j] = candidateMatrix.getMatrix()[map.get(i)][map.get(j)];
+			}
+		}
+		candidateMatrix.setMatrix(mat);
+		candidateMatrix.setRowNames(fullLabels);
+		candidateMatrix.setColumnNames(fullLabels);
+		return candidateMatrix;
+	}
+
+	/**
+	 * Compute matrix after final backbone iteration, collect results, and save in class.
+	 */
+	public void saveSimulatedAnnealingBackboneResult(boolean penalty) {
+		Collections.sort(finalBackboneList);
+		Collections.sort(finalRedundantList);
+
+		// create redundant matrix
+		ArrayList<ExportStatement> redundantStatementList = this.filteredStatements
+				.stream()
+				.filter(s -> currentRedundantList.contains(((Entity) s.get(this.variable2)).getValue()))
+				.collect(Collectors.toCollection(ArrayList::new));
+		Matrix redundantMatrix = this.computeOneModeMatrix(redundantStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
+
+		String method = "penalty";
+		if (!penalty) {
+			method = "fixed";
+			p = 0;
+		}
+		this.simulatedAnnealingBackboneResult = new SimulatedAnnealingBackboneResult(method,
+				finalBackboneList.toArray(String[]::new),
+				finalRedundantList.toArray(String[]::new),
+				spectralLoss(eigenvaluesFull, eigenvaluesCurrent),
+				spectralLoss(eigenvaluesFull, computeNormalizedEigenvalues(redundantMatrix.getMatrix())),
+				p,
+				T,
+				temperatureLog.stream().mapToDouble(v -> v.doubleValue()).toArray(),
+				acceptanceProbabilityLog.stream().mapToDouble(v -> v.doubleValue()).toArray(),
+				acceptedLog.stream().mapToInt(v -> v.intValue()).toArray(),
+				penalizedBackboneLossLog.stream().mapToDouble(v -> v.doubleValue()).toArray(),
+				proposedBackboneSizeLog.stream().mapToInt(v -> v.intValue()).toArray(),
+				acceptedBackboneSizeLog.stream().mapToInt(v -> v.intValue()).toArray(),
+				finalBackboneSizeLog.stream().mapToInt(v -> v.intValue()).toArray(),
+				acceptanceRatioLastHundredIterationsLog.stream().mapToDouble(v -> v.doubleValue()).toArray(),
+				fullMatrix.getMatrix(),
+				currentMatrix.getMatrix(),
+				redundantMatrix.getMatrix(),
+				fullMatrix.getRowNames(),
+				fullMatrix.getStart().toEpochSecond(ZoneOffset.UTC),
+				fullMatrix.getStop().toEpochSecond(ZoneOffset.UTC),
+				fullMatrix.getNumStatements());
+		this.nestedBackboneResult = null;
+	}
+
+	/**
+	 * Get the penalty backbone result that is saved in the class.
+	 *
+	 * @return The penalty backbone result (can be null if backbone function has not been executed).
+	 */
+	public SimulatedAnnealingBackboneResult getSimulatedAnnealingBackboneResult() {
+		return this.simulatedAnnealingBackboneResult;
+	}
+
+	/**
+	 * Use tools from the {@code ojalgo} library to compute eigenvalues of a symmetric matrix.
+	 *
+	 * @param matrix The matrix as a two-dimensional double array.
+	 * @return One-dimensional double array of eigenvalues.
+	 */
+	private double[] computeNormalizedEigenvalues(double[][] matrix) {
+		for (int i = 0; i < matrix.length; i++) {
+			for (int j = 0; j < matrix[0].length; j++) {
+				if (matrix[i][j] < 0) {
+					matrix[i][j] = 0.0;
+				}
+			}
+		}
+		Primitive64Matrix matrixPrimitive = Primitive64Matrix.FACTORY.rows(matrix); // create matrix
+		DenseArray<Double> rowSums = Primitive64Array.FACTORY.make(matrix.length); // container for row sums
+		matrixPrimitive.reduceRows(Aggregator.SUM, rowSums); // populate row sums into rowSums
+		Primitive64Matrix.SparseReceiver sr = Primitive64Matrix.FACTORY.makeSparse(matrix.length, matrix.length); // container for degree matrix
+		sr.fillDiagonal(rowSums); // put row sums onto diagonal
+		Primitive64Matrix laplacian = sr.get(); // put row sum container into a new degree matrix (the future Laplacian matrix)
+		laplacian.subtract(matrixPrimitive); // subtract adjacency matrix from degree matrix to create Laplacian matrix
+		Eigenvalue<Double> eig = Eigenvalue.PRIMITIVE.make(laplacian); // eigenvalues
+		eig.decompose(laplacian); // decomposition
+		double[] eigenvalues = eig.getEigenvalues().toRawCopy1D(); // extract eigenvalues and convert to double[]
+		double eigenvaluesSum = Arrays.stream(eigenvalues).sum(); // compute sum of eigenvalues
+		if (eigenvaluesSum > 0.0) {
+			eigenvalues = DoubleStream.of(eigenvalues).map(v -> v / eigenvaluesSum).toArray(); // normalise/scale to one
+		}
+
+		return eigenvalues;
+	}
+
+	/**
+	 * Compute penalized Euclidean spectral distance.
+	 *
+	 * @param eigenvalues1 Normalized eigenvalues of the full matrix.
+	 * @param eigenvalues2 Normalized eigenvalues of the current or candidate matrix.
+	 * @param p The penalty parameter. Typical values could be {@code 5.5}, {@code 7.5}, or {@code 12}, for example.
+	 * @param candidateBackboneSize The number of entities in the current or candidate backbone.
+	 * @param numEntitiesTotal The number of second-mode entities (e.g., concepts) in total.
+	 * @return Penalized loss.
+	 */
+	private double penalizedLoss(double[] eigenvalues1, double[] eigenvalues2, double p, int candidateBackboneSize, int numEntitiesTotal) {
+		double distance = 0.0; // Euclidean spectral distance
+		for (int i = 0; i < eigenvalues1.length; i++) {
+			distance = distance + Math.sqrt((eigenvalues1[i] - eigenvalues2[i]) * (eigenvalues1[i] - eigenvalues2[i]));
+		}
+		double penalty = Math.exp(-p * (((double) (numEntitiesTotal - candidateBackboneSize)) / ((double) numEntitiesTotal))); // compute penalty factor
+		return distance * penalty; // return penalised distance
+	}
+
+	/**
+	 * Write the backbone results to a JSON or XML file
+	 *
+	 * @param filename File name with absolute path as a string.
+	 */
+	public void writeBackboneToFile(String filename) {
+		File file = new File(filename);
+		String s = "";
+
+		if (filename.toLowerCase().endsWith(".xml")) {
+			XStream xstream = new XStream(new StaxDriver());
+			xstream.processAnnotations(SimulatedAnnealingBackboneResult.class);
+			StringWriter stringWriter = new StringWriter();
+			if (this.nestedBackboneResult != null) {
+				xstream.marshal(this.nestedBackboneResult, new PrettyPrintWriter(stringWriter));
+			} else if (this.simulatedAnnealingBackboneResult != null) {
+				xstream.marshal(this.simulatedAnnealingBackboneResult, new PrettyPrintWriter(stringWriter));
+			}
+			s = stringWriter.toString();
+		} else if (filename.toLowerCase().endsWith(".json")) {
+			Gson prettyGson = new GsonBuilder()
+					.setPrettyPrinting()
+					.serializeNulls()
+					.disableHtmlEscaping()
+					.create();
+			if (this.nestedBackboneResult != null) {
+				s = prettyGson.toJson(this.nestedBackboneResult);
+			} else if (this.simulatedAnnealingBackboneResult != null) {
+				s = prettyGson.toJson(this.simulatedAnnealingBackboneResult);
+			}
+		}
+		try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+			writer.write(s);
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"Backbone result was saved to disk.",
+					"Backbone result was saved to file: " + filename + ".");
+			Dna.logger.log(l);
+		} catch (IOException exception) {
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"Backbone result could not be saved to disk.",
+					"Attempted to save backbone results to file: \"" + filename + "\". The file saving operation did not work, possibly because the file could not be written to disk or because the results could not be converted to the final data format.",
+					exception);
+			Dna.logger.log(l);
+		}
+	}
+
+	/**
+	 * Compute penalized Euclidean spectral distance.
+	 *
+	 * @param eigenvalues1 Normalized eigenvalues of the full matrix.
+	 * @param eigenvalues2 Normalized eigenvalues of the current or candidate matrix.
+	 * @return Spectral loss.
+	 */
+	private double spectralLoss(double[] eigenvalues1, double[] eigenvalues2) {
+		double distance = 0.0; // Euclidean spectral distance
+		for (int i = 0; i < eigenvalues1.length; i++) {
+			distance = distance + Math.sqrt((eigenvalues1[i] - eigenvalues2[i]) * (eigenvalues1[i] - eigenvalues2[i]));
+		}
+		return distance;
+	}
+
+	/**
+	 * Get the size of the current backbone list.
+	 *
+	 * @return Backbone size at current iteration.
+	 */
+	public int getBackboneSize() {
+		return this.currentBackboneList.size();
+	}
+
+	/**
+	 * Get the number of variable 2 entities used for computing the full matrix (i.e., after filtering).
+	 *
+	 * @return Number of entities.
+	 */
+	public int getFullSize() {
+		return this.extractLabels(this.filteredStatements, this.variable2, this.variable2Document).length;
+	}
+
+	/**
+	 * Initialize the nested backbone algorithm by setting up the data structures.
+	 */
+	public void initializeNestedBackbone() {
+		this.isolates = false; // no isolates initially for full matrix; will be set to true after full matrix has been computed
+
+		// initial values before iterations start
+		this.originalStatements = this.filteredStatements; // to ensure not all isolates are included later
+
+		// full set of concepts C
+		fullConcepts = this.extractLabels(this.filteredStatements, this.variable2, this.variable2Document);
+
+		// full network matrix Y against which we compare in every iteration
+		fullMatrix = this.computeOneModeMatrix(this.filteredStatements, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
+		this.isolates = true; // include isolates in the iterations but not in the full matrix; will be adjusted to smaller full matrix dimensions without isolates manually each time in the iterations; necessary because some actors may be deleted in the backbone matrix otherwise after deleting their concepts
+
+		// compute normalised eigenvalues for the full matrix; no need to recompute every time as they do not change
+		eigenvaluesFull = computeNormalizedEigenvalues(fullMatrix.getMatrix());
+		iteration = new int[fullConcepts.length];
+		backboneLoss = new double[fullConcepts.length];
+		redundantLoss = new double[fullConcepts.length];
+		entity = new String[fullConcepts.length];
+		ArrayList<String> allConcepts = new ArrayList<>(); // convert fullConcepts to array to populate backbone concepts
+		for (int i = 0; i < fullConcepts.length; i++) {
+			allConcepts.add(fullConcepts[i]);
+		}
+		currentBackboneList = new ArrayList<>(allConcepts);
+		currentRedundantList = new ArrayList<>();
+		backboneMatrices = new ArrayList<>();
+		redundantMatrices = new ArrayList<>();
+		numStatements = new int[fullConcepts.length];
+		counter = 0;
+	}
+
+	/**
+	 * One iteration in the nested backbone algorithm. Needs to be called in a while loop until the backbone set is empty ({@code while (currentBackboneSet.size() > 0)}).
+	 */
+	public void iterateNestedBackbone() {
+		ArrayList<Matrix> candidateMatrices = new ArrayList<>();
+		double[] currentLosses = new double[currentBackboneList.size()];
+		int[] numStatementsCandidates = new int[currentBackboneList.size()];
+		for (int i = 0; i < currentBackboneList.size(); i++) {
+			ArrayList<String> candidate = new ArrayList<>(currentBackboneList);
+			candidate.remove(i);
+			final ArrayList<String> finalCandidate = new ArrayList<String>(candidate); // make it final, so it can be used in a stream
+			candidateStatementList = this.filteredStatements
+					.stream()
+					.filter(s -> finalCandidate.contains(((Entity) s.get(this.variable2)).getValue()))
+					.collect(Collectors.toCollection(ArrayList::new));
+			numStatementsCandidates[i] = candidateStatementList.size();
+			candidateMatrix = this.computeOneModeMatrix(candidateStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
+			candidateMatrix = this.reduceCandidateMatrix(candidateMatrix, fullMatrix.getRowNames()); // ensure it has the right dimensions by purging isolates relative to the full matrix
+			candidateMatrices.add(candidateMatrix);
+			eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix()); // normalised eigenvalues for the candidate matrix
+			currentLosses[i] = spectralLoss(eigenvaluesFull, eigenvaluesCandidate);
+		}
+		double smallestLoss = 0.0;
+		if (currentBackboneList.size() > 0) {
+			smallestLoss = Arrays.stream(currentLosses).min().getAsDouble();
+		}
+		for (int i = currentBackboneList.size() - 1; i >= 0; i--) {
+			if (currentLosses[i] == smallestLoss) {
+				iteration[counter] = counter + 1;
+				entity[counter] = currentBackboneList.get(i);
+				backboneLoss[counter] = smallestLoss;
+				currentRedundantList.add(currentBackboneList.get(i));
+				currentBackboneList.remove(i);
+				backboneMatrices.add(candidateMatrices.get(i));
+
+				// compute redundant matrix and loss at this level
+				final ArrayList<String> finalRedundantCandidate = new ArrayList<String>(currentRedundantList);
+				candidateStatementList = this.filteredStatements
+						.stream()
+						.filter(s -> finalRedundantCandidate.contains(((Entity) s.get(this.variable2)).getValue()))
+						.collect(Collectors.toCollection(ArrayList::new));
+				Matrix redundantMatrix = this.computeOneModeMatrix(candidateStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
+				redundantMatrix = this.reduceCandidateMatrix(redundantMatrix, fullMatrix.getRowNames());
+				redundantMatrices.add(redundantMatrix);
+				eigenvaluesCandidate = computeNormalizedEigenvalues(redundantMatrix.getMatrix());
+				redundantLoss[counter] = spectralLoss(eigenvaluesFull, eigenvaluesCandidate);
+				numStatements[counter] = numStatementsCandidates[i];
+				counter++;
+			}
+		}
+	}
+
+	/**
+	 * Get the nested backbone result that is saved in the class.
+	 *
+	 * @return The nested backbone result (can be null if backbone function has not been executed).
+	 */
+	public NestedBackboneResult getNestedBackboneResult() {
+		return this.nestedBackboneResult;
+	}
+
+	/**
+	 * Compute matrix after final backbone iteration, collect results, and save in class.
+	 */
+	public void saveNestedBackboneResult() {
+		Exporter.this.nestedBackboneResult = new NestedBackboneResult("nested",
+				iteration,
+				entity,
+				backboneLoss,
+				redundantLoss,
+				numStatements,
+				this.filteredStatements.size(),
+				fullMatrix.getStart().toEpochSecond(ZoneOffset.UTC),
+				fullMatrix.getStop().toEpochSecond(ZoneOffset.UTC));
+		Exporter.this.simulatedAnnealingBackboneResult = null;
+	}
+
+	/**
 	 * For a vector of document IDs (the already coded set of documents), generate a number of sequences of cumulative
 	 * additions to the network according to normalized Euclidean network distances between consecutively sampled
 	 * documents from the document ID vector.
@@ -2756,12 +3107,15 @@ public class Exporter {
 	 * Partition the discourse network into a backbone and redundant set of second-mode entities using penalised
 	 * spectral distances and simulated annealing. This method prepares the data before the algorithm starts.
 	 *
-	 * @param p Penalty parameter.
+	 * @param penalty Use penalty parameter? False if fixed backbone set.
+	 * @param p Penalty parameter. Only used if penalty parameter is true.
 	 * @param T Number of iterations.
+	 * @param size The (fixed) size of the backbone set. Only used if no penalty.
 	 */
-	public void backbone(double p, int T) {
+	public void initializeSimulatedAnnealingBackbone(boolean penalty, double p, int T, int size) {
 		this.p = p;
 		this.T = T;
+		this.backboneSize = size;
 		this.isolates = false; // no isolates initially for full matrix; will be set to true after full matrix has been computed
 
 		// initial values before iterations start
@@ -2777,20 +3131,44 @@ public class Exporter {
 		// compute normalised eigenvalues for the full matrix; no need to recompute every time as they do not change
 		eigenvaluesFull = computeNormalizedEigenvalues(fullMatrix.getMatrix());
 
-		// pick a random concept c_j from C and save its index
-		int randomConceptIndex = ThreadLocalRandom.current().nextInt(0, fullConcepts.length);
+		if (penalty) { // simulated annealing with penalty: initially one randomly chosen entity in the backbone set
+			// pick a random concept c_j from C and save its index
+			int randomConceptIndex = ThreadLocalRandom.current().nextInt(0, fullConcepts.length);
 
-		// final backbone list B, which contains only one random concept initially but will contain the final backbone set in the end
-		finalBackboneList = new ArrayList<String>();
+			// final backbone list B, which contains only one random concept initially but will contain the final backbone set in the end
+			finalBackboneList = new ArrayList<String>();
 
-		// add the one uniformly sampled concept c_j to the backbone as the initial solution at t = 0: B <- {c_j}
-		finalBackboneList.add(fullConcepts[randomConceptIndex]);
+			// add the one uniformly sampled concept c_j to the backbone as the initial solution at t = 0: B <- {c_j}
+			finalBackboneList.add(fullConcepts[randomConceptIndex]);
 
-		// final redundant set R, which is initially C without c_j
-		finalRedundantList = Arrays
-				.stream(fullConcepts)
-				.filter(c -> !c.equals(fullConcepts[randomConceptIndex]))
-				.collect(Collectors.toCollection(ArrayList::new));
+			// final redundant set R, which is initially C without c_j
+			finalRedundantList = Arrays
+					.stream(fullConcepts)
+					.filter(c -> !c.equals(fullConcepts[randomConceptIndex]))
+					.collect(Collectors.toCollection(ArrayList::new));
+		} else { // simulated annealing without penalty and fixed backbone set size: randomly sample as many initial entities as needed
+			// sample initial backbone set randomly
+			if (this.backboneSize > fullConcepts.length) {
+				LogEvent l = new LogEvent(Logger.ERROR,
+						"Backbone size parameter too large",
+						"The backbone size parameter of " + this.backboneSize + " is larger than the number of entities on the second mode, " + fullConcepts.length + ". It is impossible to choose a backbone set of that size. Please choose a smaller backbone size.");
+				Dna.logger.log(l);
+			} else if (this.backboneSize < 1) {
+				LogEvent l = new LogEvent(Logger.ERROR,
+						"Backbone size parameter too small",
+						"The backbone size parameter of " + size + " is smaller than 1. It is impossible to choose a backbone set of that size. Please choose a larger backbone size.");
+				Dna.logger.log(l);
+			}
+			finalBackboneList = new ArrayList<>();
+			while (finalBackboneList.size() < this.backboneSize) {
+				int randomConceptIndex = ThreadLocalRandom.current().nextInt(0, fullConcepts.length);
+				String entity = fullConcepts[randomConceptIndex];
+				if (!finalBackboneList.contains(entity)) {
+					finalBackboneList.add(entity);
+				}
+			}
+			finalRedundantList = Stream.of(fullConcepts).filter(c -> !finalBackboneList.contains(c)).collect(Collectors.toCollection(ArrayList::new));
+		}
 
 		// final statement list: filter the statement list by only retaining those statements that are in the final backbone set B
 		finalStatementList = this.filteredStatements
@@ -2800,16 +3178,16 @@ public class Exporter {
 
 		// final matrix based on the initial final backbone set, Y^B, which is initially identical to the previous matrix
 		finalMatrix = this.computeOneModeMatrix(finalStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
+		finalMatrix = this.reduceCandidateMatrix(finalMatrix, fullMatrix.getRowNames()); // ensure it has the right dimensions by purging isolates relative to the full matrix
+
+		// eigenvalues for final matrix
+		eigenvaluesFinal = computeNormalizedEigenvalues(finalMatrix.getMatrix()); // normalised eigenvalues for the candidate matrix
 
 		// create an initial current backbone set B_0, also with the one c_j concept like in B: B_0 <- {c_j}
-		currentBackboneList = new ArrayList<String>();
-		currentBackboneList.add(fullConcepts[randomConceptIndex]);
+		currentBackboneList = new ArrayList<String>(finalBackboneList);
 
 		// create an initial current redundant set R_t, which is C without c_j
-		currentRedundantList = Arrays
-				.stream(fullConcepts)
-				.filter(c -> !c.equals(fullConcepts[randomConceptIndex]))
-				.collect(Collectors.toCollection(ArrayList::new));
+		currentRedundantList = new ArrayList<String>(finalRedundantList);
 
 		// filter the statement list by only retaining those statements that are in the initial current backbone set B_0
 		currentStatementList = this.filteredStatements
@@ -2818,7 +3196,10 @@ public class Exporter {
 				.collect(Collectors.toCollection(ArrayList::new));
 
 		// create initial current matrix at t = 0
-		currentMatrix = this.computeOneModeMatrix(currentStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
+		currentMatrix = new Matrix(finalMatrix);
+
+		// initial current eigenvalues
+		eigenvaluesCurrent = eigenvaluesFinal;
 
 		// initialise (empty) action set S
 		this.actionList = new ArrayList<String>();
@@ -2833,16 +3214,20 @@ public class Exporter {
 		candidateRedundantList = new ArrayList<String>();
 
 		// declare loss comparison result variables
-		oldLoss = 0.0;
+		if (penalty) {
+			finalLoss = penalizedLoss(eigenvaluesFull, eigenvaluesFinal, p, currentBackboneList.size(), fullConcepts.length); // spectral distance between full and initial matrix
+		} else {
+			finalLoss = spectralLoss(eigenvaluesFull, eigenvaluesFinal); // spectral distance between full and initial matrix
+		}
+		oldLoss = finalLoss;
 		newLoss = 0.0;
-		finalLoss = 0.0;
 		accept = false;
 
 		// reporting
 		temperatureLog = new ArrayList<Double>();
 		acceptanceProbabilityLog = new ArrayList<Double>();
 		acceptedLog = new ArrayList<Integer>();
-		penalizedBackboneLossLog = new ArrayList<Double>();
+		penalizedBackboneLossLog = new ArrayList<Double>(); // penalised or not penalised, depending on algorithm
 		proposedBackboneSizeLog = new ArrayList<Integer>();
 		acceptedBackboneSizeLog = new ArrayList<Integer>();
 		finalBackboneSizeLog = new ArrayList<Integer>();
@@ -2851,43 +3236,31 @@ public class Exporter {
 		// matrix algebra declarations
 		eigenvaluesCurrent = new double[0];
 
-		// set to first iteration and start simulated annealing
+		// set to first iteration before starting simulated annealing
 		t = 1;
-	}
-
-	/**
-	 * Get the current iteration {@code t} of the simulated annealing algorithm.
-	 *
-	 * @return Current iteration {@code t}.
-	 */
-	public int getCurrentT() {
-		return this.t;
-	}
-
-	/**
-	 * Set the current iteration {@code t} of the simulated annealing algorithm.
-	 *
-	 * @return Current iteration {@code t}.
-	 */
-	public void setCurrentT(int t) {
-		this.t = t;
 	}
 
 	/**
 	 * Execute the next iteration of the simulated annealing backbone algorithm.
 	 */
-	public void iterateBackbone() {
-		// first step: make a random move by adding, removing, or swapping a concept and computing a new candidate
+	public void iterateSimulatedAnnealingBackbone(boolean penalty) {
+		// calculate temperature
+		temperature = 1 - (1 / (1 + Math.exp(-(-5 + (12.0 / T) * t)))); // temperature
+		temperatureLog.add(temperature);
+
+		// make a random move by adding, removing, or swapping a concept and computing a new candidate
 		actionList.clear(); // clear the set of possible actions and repopulate, depending on solution size
-		if (currentBackboneList.size() < 2) { // if there is only one concept, don't remove it because empty backbones do not work
+		if (currentBackboneList.size() < 2 && penalty) { // if there is only one concept, don't remove it because empty backbones do not work
 			actionList.add("add");
 			actionList.add("swap");
-		} else if (currentBackboneList.size() > fullConcepts.length - 2) { // do not create a backbone with all concepts because it would be useless
+		} else if (currentBackboneList.size() > fullConcepts.length - 2 && penalty) { // do not create a backbone with all concepts because it would be useless
 			actionList.add("remove");
 			actionList.add("swap");
-		} else { // everything in between one and |C| - 1 concepts: add all three possible moves to the action set
+		} else if (penalty) { // everything in between one and |C| - 1 concepts: add all three possible moves to the action set
 			actionList.add("add");
 			actionList.add("remove");
+			actionList.add("swap");
+		} else { // with fixed backbone set (i.e., no penalty), only allow horizontal swaps
 			actionList.add("swap");
 		}
 		Collections.shuffle(actionList); // randomly re-order the action set...
@@ -2913,29 +3286,27 @@ public class Exporter {
 			candidateBackboneList.remove(0); // then remove it from the backbone list
 		}
 		proposedBackboneSizeLog.add(candidateBackboneList.size()); // log number of concepts in candidate backbone in the current iteration
-		// after executing the action, filter the statement list based on the candidate backbone set B^*_t in order to create the candidate matrix
+
+		// after executing the action, filter the statement list based on the candidate backbone set B^*_t in order to create the candidate matrix, then compute eigenvalues and loss for the candidate
 		candidateStatementList = this.filteredStatements
 				.stream()
 				.filter(s -> candidateBackboneList.contains(((Entity) s.get(this.variable2)).getValue()))
 				.collect(Collectors.toCollection(ArrayList::new));
-		// create candidate matrix after filtering the statements based on the action that was executed
-		candidateMatrix = this.computeOneModeMatrix(candidateStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
+		candidateMatrix = this.computeOneModeMatrix(candidateStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime); // create candidate matrix after filtering the statements based on the action that was executed
 		candidateMatrix = this.reduceCandidateMatrix(candidateMatrix, fullMatrix.getRowNames()); // ensure it has the right dimensions by purging isolates relative to the full matrix
-
-		// second step: compare loss between full and previous matrix to loss between full and candidate matrix and accept or reject candidate
-		temperature = 1 - (1 / (1 + Math.exp(-(-5 + (12.0 / T) * t)))); // temperature
-		temperatureLog.add(temperature);
-		eigenvaluesCurrent = computeNormalizedEigenvalues(currentMatrix.getMatrix()); // normalised eigenvalues for the current matrix
 		eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix()); // normalised eigenvalues for the candidate matrix
-		oldLoss = penalizedLoss(eigenvaluesFull, eigenvaluesCurrent, p, currentBackboneList.size(), fullConcepts.length); // spectral distance between full and previous matrix
-		newLoss = penalizedLoss(eigenvaluesFull, eigenvaluesCandidate, p, candidateBackboneList.size(), fullConcepts.length); // spectral distance between full and candidate matrix
+		if (penalty) {
+			newLoss = penalizedLoss(eigenvaluesFull, eigenvaluesCandidate, p, candidateBackboneList.size(), fullConcepts.length); // spectral distance between full and candidate matrix
+		} else {
+			newLoss = spectralLoss(eigenvaluesFull, eigenvaluesCandidate); // spectral distance between full and candidate matrix
+		}
 		penalizedBackboneLossLog.add(newLoss); // log the penalised spectral distance between full and candidate solution
+
+		// compare loss between full and previous (current) matrix to loss between full and candidate matrix and accept or reject candidate
 		accept = false;
 		if (newLoss < oldLoss) { // if candidate is better than previous matrix, adopt it as current solution
 			accept = true; // flag this solution for acceptance
 			acceptanceProbabilityLog.add(-1.0); // log the acceptance probability as -1.0; technically it should be 1.0 because the solution was better and hence accepted, but it would be useless for plotting the acceptance probabilities as a diagnostic tool
-			eigenvaluesFinal = computeNormalizedEigenvalues(currentMatrix.getMatrix()); // normalised eigenvalues for the current matrix
-			finalLoss = penalizedLoss(eigenvaluesFull, eigenvaluesFinal, p, finalBackboneList.size(), fullConcepts.length); // test if also better than global optimum so far
 			if (newLoss <= finalLoss) { // if better than the best solution, adopt candidate as new final backbone solution
 				finalBackboneList.clear(); // clear the best solution list
 				finalBackboneList.addAll(candidateBackboneList); // and populate it with the concepts from the candidate solution instead
@@ -2944,6 +3315,8 @@ public class Exporter {
 				finalStatementList.clear(); // same with the final list of statements
 				finalStatementList.addAll(candidateStatementList);
 				finalMatrix = new Matrix(candidateMatrix); // save the candidate matrix as best solution matrix
+				eigenvaluesFinal = eigenvaluesCandidate;
+				finalLoss = newLoss; // save the candidate loss as the globally optimal loss so far
 			}
 		} else { // if the solution is worse than the previous one, apply Hastings ratio and temperature and compare with random number
 			r = Math.random(); // random double between 0 and 1
@@ -2961,6 +3334,8 @@ public class Exporter {
 			currentStatementList.clear(); // save candidate statement list as new current statement list
 			currentStatementList.addAll(candidateStatementList);
 			currentMatrix = new Matrix(candidateMatrix); // save candidate matrix as new current matrix
+			eigenvaluesCurrent = eigenvaluesCandidate;
+			oldLoss = newLoss; // save the corresponding candidate loss as the current/old loss
 			acceptedLog.add(1); // log the acceptance of the proposed candidate
 		} else {
 			acceptedLog.add(0); // log the non-acceptance of the proposed candidate
@@ -2976,166 +3351,62 @@ public class Exporter {
 	}
 
 	/**
-	 * Reduce the dimensions of a candidate matrix with all isolate nodes to the dimensions of the full matrix, which
-	 * does not contain isolate nodes.
+	 * Compute the spectral distance between the full network and the network based only on the backbone set and only the redundant set. The penalty parameter can be switched off by setting it to zero.
 	 *
-	 * @param candidateMatrix The candidate matrix with isolates (to be reduced to smaller dimensions).
-	 * @param fullLabels The node labels of the full matrix without isolates.
-	 * @return A reduced candidate matrix with the same dimensions as the full matrix and the same node order.
+	 * @param backboneEntities An array of entities (e.g., concepts) to construct a backbone set for computing the spectral distance.
+	 * @param p The penalty parameter. Can be \code{0} to switch off the penalty parameter.
+	 * @return A double array with the penalized loss for the backbone set and the redundant set.
 	 */
-	private Matrix reduceCandidateMatrix(Matrix candidateMatrix, String[] fullLabels) {
-		HashMap<Integer, Integer> map = new HashMap<Integer, Integer>();
-		for (int i = 0; i < fullLabels.length; i++) {
-			for (int j = 0; j < candidateMatrix.getRowNames().length; j++) {
-				if (fullLabels[i].equals(candidateMatrix.getRowNames()[j])) {
-					map.put(i, j);
-				}
+	public double[] evaluateBackboneSolution(String[] backboneEntities, int p) {
+		this.p = p;
+		double[] results = new double[2];
+		this.isolates = false; // no isolates initially for full matrix; will be set to true after full matrix has been computed
+
+		// initial values before iterations start
+		this.originalStatements = this.filteredStatements; // to ensure not all isolates are included later
+
+		// full set of concepts C
+		fullConcepts = this.extractLabels(this.filteredStatements, this.variable2, this.variable2Document);
+
+		// full network matrix Y against which we compare in every iteration
+		fullMatrix = this.computeOneModeMatrix(this.filteredStatements, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
+		this.isolates = true; // include isolates in the iterations; will be adjusted to full matrix without isolates manually each time
+
+		// compute normalised eigenvalues for the full matrix; no need to recompute every time as they do not change
+		eigenvaluesFull = computeNormalizedEigenvalues(fullMatrix.getMatrix());
+
+		// create copy of filtered statements and remove redundant entities
+		ArrayList<String> entityList = Stream.of(backboneEntities).collect(Collectors.toCollection(ArrayList<String>::new));
+		ArrayList<String> backboneSet = new ArrayList<>();
+		ArrayList<String> redundantSet = new ArrayList<>();
+		for (int i = 0; i < fullConcepts.length; i++) {
+			if (entityList.contains(fullConcepts[i])) {
+				backboneSet.add(fullConcepts[i]);
+			} else {
+				redundantSet.add(fullConcepts[i]);
 			}
 		}
-		double[][] mat = new double[fullLabels.length][fullLabels.length];
-		for (int i = 0; i < fullLabels.length; i++) {
-			for (int j = 0; j < fullLabels.length; j++) {
-				mat[i][j] = candidateMatrix.getMatrix()[map.get(i)][map.get(j)];
-			}
-		}
-		candidateMatrix.setMatrix(mat);
-		candidateMatrix.setRowNames(fullLabels);
-		candidateMatrix.setColumnNames(fullLabels);
-		return candidateMatrix;
-	}
 
-	/**
-	 * Compute matrix after final backbone iteration, collect results, and save in class.
-	 */
-	public void saveBackboneResult() {
-		Collections.sort(finalBackboneList);
-		Collections.sort(finalRedundantList);
-
-		// create redundant matrix
-		ArrayList<ExportStatement> redundantStatementList = this.filteredStatements
+		// spectral distance between full and backbone set
+		candidateStatementList = this.filteredStatements
 				.stream()
-				.filter(s -> currentRedundantList.contains(((Entity) s.get(this.variable2)).getValue()))
+				.filter(s -> backboneSet.contains(((Entity) s.get(this.variable2)).getValue()))
 				.collect(Collectors.toCollection(ArrayList::new));
-		Matrix redundantMatrix = this.computeOneModeMatrix(redundantStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
+		candidateMatrix = this.computeOneModeMatrix(candidateStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime); // create candidate matrix after filtering the statements based on the action that was executed
+		candidateMatrix = this.reduceCandidateMatrix(candidateMatrix, fullMatrix.getRowNames()); // ensure it has the right dimensions by purging isolates relative to the full matrix
+		eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix()); // normalised eigenvalues for the candidate matrix
+		results[0] = penalizedLoss(eigenvaluesFull, eigenvaluesCandidate, p, backboneSet.size(), fullConcepts.length); // spectral distance between full and candidate matrix
 
-		this.backboneResult = new BackboneResult(finalBackboneList.toArray(String[]::new),
-				finalRedundantList.toArray(String[]::new),
-				penalizedLoss(eigenvaluesFull, eigenvaluesCurrent, 0, currentBackboneList.size(), fullConcepts.length),
-				penalizedLoss(eigenvaluesFull, computeNormalizedEigenvalues(redundantMatrix.getMatrix()), 0, currentBackboneList.size(), fullConcepts.length),
-				p,
-				T,
-				temperatureLog.stream().mapToDouble(v -> v.doubleValue()).toArray(),
-				acceptanceProbabilityLog.stream().mapToDouble(v -> v.doubleValue()).toArray(),
-				acceptedLog.stream().mapToInt(v -> v.intValue()).toArray(),
-				penalizedBackboneLossLog.stream().mapToDouble(v -> v.doubleValue()).toArray(),
-				proposedBackboneSizeLog.stream().mapToInt(v -> v.intValue()).toArray(),
-				acceptedBackboneSizeLog.stream().mapToInt(v -> v.intValue()).toArray(),
-				finalBackboneSizeLog.stream().mapToInt(v -> v.intValue()).toArray(),
-				acceptanceRatioLastHundredIterationsLog.stream().mapToDouble(v -> v.doubleValue()).toArray(),
-				fullMatrix.getMatrix(),
-				currentMatrix.getMatrix(),
-				redundantMatrix.getMatrix(),
-				fullMatrix.getRowNames(),
-				fullMatrix.getStart().toEpochSecond(ZoneOffset.UTC),
-				fullMatrix.getStop().toEpochSecond(ZoneOffset.UTC),
-				fullMatrix.getNumStatements());
-	}
+		// spectral distance between full and redundant set
+		candidateStatementList = this.filteredStatements
+				.stream()
+				.filter(s -> redundantSet.contains(((Entity) s.get(this.variable2)).getValue()))
+				.collect(Collectors.toCollection(ArrayList::new));
+		candidateMatrix = this.computeOneModeMatrix(candidateStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime); // create candidate matrix after filtering the statements based on the action that was executed
+		candidateMatrix = this.reduceCandidateMatrix(candidateMatrix, fullMatrix.getRowNames()); // ensure it has the right dimensions by purging isolates relative to the full matrix
+		eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix()); // normalised eigenvalues for the candidate matrix
+		results[1] = penalizedLoss(eigenvaluesFull, eigenvaluesCandidate, p, redundantSet.size(), fullConcepts.length); // spectral distance between full and candidate matrix
 
-	/**
-	 * Get the backbone result that is saved in the class.
-	 *
-	 * @return The backbone result (can be null if backbone function has not been executed).
-	 */
-	public BackboneResult getBackboneResult() {
-		return this.backboneResult;
-	}
-
-	/**
-	 * Use tools from the {@code ojalgo} library to compute eigenvalues of a symmetric matrix.
-	 *
-	 * @param matrix The matrix as a two-dimensional double array.
-	 * @return One-dimensional double array of eigenvalues.
-	 */
-	private double[] computeNormalizedEigenvalues(double[][] matrix) {
-		for (int i = 0; i < matrix.length; i++) {
-			for (int j = 0; j < matrix[0].length; j++) {
-				if (matrix[i][j] < 0) {
-					matrix[i][j] = 0.0;
-				}
-			}
-		}
-		Primitive64Matrix matrixPrimitive = Primitive64Matrix.FACTORY.rows(matrix); // create matrix
-		DenseArray<Double> rowSums = Primitive64Array.FACTORY.make(matrix.length); // container for row sums
-		matrixPrimitive.reduceRows(Aggregator.SUM, rowSums); // populate row sums into rowSums
-		Primitive64Matrix.SparseReceiver sr = Primitive64Matrix.FACTORY.makeSparse(matrix.length, matrix.length); // container for degree matrix
-		sr.fillDiagonal(rowSums); // put row sums onto diagonal
-		Primitive64Matrix laplacian = sr.get(); // put row sum container into a new degree matrix (the future Laplacian matrix)
-		laplacian.subtract(matrixPrimitive); // subtract adjacency matrix from degree matrix to create Laplacian matrix
-		Eigenvalue<Double> eig = Eigenvalue.PRIMITIVE.make(laplacian); // eigenvalues
-		eig.decompose(laplacian); // decomposition
-		double[] eigenvalues = eig.getEigenvalues().toRawCopy1D(); // extract eigenvalues and convert to double[]
-		double eigenvaluesSum = Arrays.stream(eigenvalues).sum(); // compute sum of eigenvalues
-		if (eigenvaluesSum > 0.0) {
-			eigenvalues = DoubleStream.of(eigenvalues).map(v -> v / eigenvaluesSum).toArray(); // normalise/scale to one
-		}
-
-		return eigenvalues;
-	}
-
-	/**
-	 * Compute penalized Euclidean spectral distance.
-	 *
-	 * @param eigenvalues1 Normalized eigenvalues of the full matrix.
-	 * @param eigenvalues2 Normalized eigenvalues of the current or candidate matrix.
-	 * @param p The penalty parameter. Typical values could be {@code 5.5}, {@code 7.5}, or {@code 12}, for example. Use {@code 0} to switch off penalty.
-	 * @param candidateBackboneSize The number of entities in the current or candidate backbone.
-	 * @param numEntitiesTotal The number of second-mode entities (e.g., concepts) in total.
-	 * @return Penalized loss.
-	 */
-	private double penalizedLoss(double[] eigenvalues1, double[] eigenvalues2, double p, int candidateBackboneSize, int numEntitiesTotal) {
-		double distance = 0.0; // Euclidean spectral distance
-		for (int i = 0; i < eigenvalues1.length; i++) {
-			distance = distance + Math.sqrt((eigenvalues1[i] - eigenvalues2[i]) * (eigenvalues1[i] - eigenvalues2[i]));
-		}
-		double penalty = Math.exp(-p * (((double) (numEntitiesTotal - candidateBackboneSize)) / ((double) numEntitiesTotal))); // compute penalty factor
-		return distance * penalty; // return penalised distance
-	}
-
-	/**
-	 * Write the backbone results to a JSON or XML file
-	 *
-	 * @param filename File name with absolute path as a string.
-	 */
-	public void writeBackboneToFile(String filename) {
-		File file = new File(filename);
-		String s = "";
-
-		if (filename.toLowerCase().endsWith(".xml")) {
-			XStream xstream = new XStream(new StaxDriver());
-			xstream.processAnnotations(BackboneResult.class);
-			StringWriter stringWriter = new StringWriter();
-			xstream.marshal(this.backboneResult, new PrettyPrintWriter(stringWriter));
-			s = stringWriter.toString();
-		} else if (filename.toLowerCase().endsWith(".json")) {
-			Gson prettyGson = new GsonBuilder()
-					.setPrettyPrinting()
-					.serializeNulls()
-					.disableHtmlEscaping()
-					.create();
-			s = prettyGson.toJson(this.backboneResult);
-		}
-		try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-			writer.write(s);
-			LogEvent l = new LogEvent(Logger.MESSAGE,
-					"Backbone result was saved to disk.",
-					"Backbone result was saved to file: " + filename + ".");
-			Dna.logger.log(l);
-		} catch (IOException exception) {
-			LogEvent l = new LogEvent(Logger.ERROR,
-					"Backbone result could not be saved to disk.",
-					"Attempted to save backbone results to file: \"" + filename + "\". The file saving operation did not work, possibly because the file could not be written to disk or because the results could not be converted to the final data format.",
-					exception);
-			Dna.logger.log(l);
-		}
+		return results;
 	}
 }

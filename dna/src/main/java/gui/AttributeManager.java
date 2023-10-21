@@ -219,7 +219,7 @@ public class AttributeManager extends JDialog {
 					map.put(model.getAttributeVariables().get(i), "");
 				}
 				int variableId = ((Value) variableBox.getSelectedItem()).getVariableId();
-				Entity entity = new Entity(-1, variableId, newField.getText(), Color.BLACK, -1, false, map);
+				Entity entity = new Entity(-1, variableId, newField.getText(), new model.Color(0, 0, 0), -1, false, map);
 				Dna.sql.addEntity(entity);
 				refreshTable(variableId);
 				newField.setText("");
@@ -468,7 +468,7 @@ public class AttributeManager extends JDialog {
 				ResultSet r;
 				
 				// save entities in a list
-				Color color;
+				model.Color color;
 				int entityId;
 				s1.setInt(1, variableId);
 				r = s1.executeQuery();
@@ -476,7 +476,7 @@ public class AttributeManager extends JDialog {
 					if (isCancelled() || isDone()) {
 						return null;
 					}
-	            	color = new Color(r.getInt("Red"), r.getInt("Green"), r.getInt("Blue"));
+	            	color = new model.Color(r.getInt("Red"), r.getInt("Green"), r.getInt("Blue"));
 	            	entityId = r.getInt("ID");
 	            	indexMap.put(entityId, l.size());
 	            	l.add(new Entity(entityId, variableId, r.getString("Value"), color, r.getInt("ChildOf"), r.getInt("InDatabase") == 1, new HashMap<String, String>()));
@@ -635,8 +635,8 @@ public class AttributeManager extends JDialog {
 				}
 			} else if (col == 2) { // color
 				try {
-					Dna.sql.setEntityColor(this.rows.get(row).getId(), (Color) aValue);
-					this.rows.get(row).setColor((Color) aValue);
+					Dna.sql.setEntityColor(this.rows.get(row).getId(), (model.Color) aValue);
+					this.rows.get(row).setColor((model.Color) aValue);
 				} catch (SQLException ex) {
 		        	LogEvent l = new LogEvent(Logger.ERROR,
 		        			"[SQL] Entity color could not be updated in the database.",
@@ -831,7 +831,7 @@ public class AttributeManager extends JDialog {
 					private static final long serialVersionUID = 1648028274961429514L;
 					public void paintComponent(Graphics g) {
     					super.paintComponent(g);
-    					g.setColor(entity.getColor());
+    					g.setColor(entity.getColor().toAWTColor());
     					g.fillRect(0, 0, 30, 8);
     				}
     			});

@@ -1,7 +1,5 @@
 package model;
 
-import java.awt.Color;
-
 /**
  * Represents relations with a target coder. Any source coder can hold multiple
  * permissions for all other (target) coders in a hash map of coder relations.

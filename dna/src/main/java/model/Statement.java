@@ -1,7 +1,5 @@
 package model;
 
-
-import java.awt.Color;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
