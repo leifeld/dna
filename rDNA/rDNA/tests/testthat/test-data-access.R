@@ -23,10 +23,10 @@ test_that("DNA can use databases and profiles", {
   expect_false(dna_openConnectionProfile(file = "profile.dnc", coderPassword = "test"))
   expect_output(dna_openConnectionProfile(file = "profile.dnc", coderPassword = "sample"), "DNA database: ")
   unlink("profile.dnc")
+  unlink("sample.dna")
 })
 
 test_that("dna_sample works", {
-  unlink("sample.dna")
   expect_equal(dna_sample(), paste0(getwd(), "/sample.dna"))
   expect_true(file.exists(paste0(getwd(), "/sample.dna")))
   expect_gt(file.size(paste0(getwd(), "/sample.dna")), 200000)

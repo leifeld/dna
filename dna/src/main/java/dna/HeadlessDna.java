@@ -78,7 +78,7 @@ public class HeadlessDna implements Logger.LogListener {
 		Dna.logger.log(l);
 	}
 	*/
-	
+
 	/**
 	 * Open a database connection and authenticate the coder.
 	 * 
@@ -129,7 +129,7 @@ public class HeadlessDna implements Logger.LogListener {
 		return success;
 	}
 	*/
-	
+
 	/**
 	 * Open a connection profile and authenticate its coder.
 	 * 
@@ -143,7 +143,7 @@ public class HeadlessDna implements Logger.LogListener {
 	public boolean openConnectionProfile(String fileName, String clearCoderPassword) {
 		ConnectionProfile cp = null;
 		try {
-			cp = Dna.readConnectionProfile(fileName, clearCoderPassword);
+			cp = new ConnectionProfile(fileName, clearCoderPassword);
 		} catch (EncryptionOperationNotPossibleException e2) {
 			cp = null;
 			LogEvent l = new LogEvent(Logger.ERROR,
@@ -175,7 +175,7 @@ public class HeadlessDna implements Logger.LogListener {
 		return false;
 	}
 	*/
-	
+
 	/**
 	 * Save connection profile to a file.
 	 * 
@@ -209,7 +209,7 @@ public class HeadlessDna implements Logger.LogListener {
 		boolean authenticated = Dna.sql.authenticate(-1, clearCoderPassword);
 		if (authenticated) {
 			// write the connection profile to disk, with an encrypted version of the password
-			Dna.writeConnectionProfile(fileName, new ConnectionProfile(Dna.sql.getConnectionProfile()), clearCoderPassword);
+			ConnectionProfile.writeConnectionProfile(fileName, new ConnectionProfile(Dna.sql.getConnectionProfile()), clearCoderPassword);
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"Connection profile saved to file.",
 					"A connection profile was successfully saved to the following file: \"" + fileName + "\".");
@@ -557,8 +557,10 @@ public class HeadlessDna implements Logger.LogListener {
 	/**
 	 * Compute backbone and set of redundant entities on the second mode in a discourse network.
 	 *
-	 * @param p                      Penalty parameter, for example {@code 7.5}.
-	 * @param T                      Number of iterations, for example {@code 50000}.
+	 * @param method                 Backbone algorithm (can be {@code "nested"}, {@code "fixed"}, or {@code "penalty"}).
+	 * @param backboneSize           The number of elements in the backbone set, as a fixed parameter. Only used when {@code method = "size"}.
+	 * @param p                      Penalty parameter, for example {@code 7.5}. Only used when {@code method = "penalty"}.
+	 * @param T                      Number of iterations, for example {@code 50000}. Only used when {@code method = "penalty"}.
 	 * @param statementType          Statement type as a {@link String}.
 	 * @param variable1              First variable for export, provided as a {@link String}.
 	 * @param variable1Document      boolean indicating if the first variable is at the document level.
@@ -586,10 +588,10 @@ public class HeadlessDna implements Logger.LogListener {
 	 * @param invertTypes            boolean indicating whether the document-level type values should be included (= {@code true}) rather than excluded.
 	 * @param outfile                {@link String} with a file name under which the resulting network should be saved.
 	 * @param fileFormat             {@link String} with the file format. Valid values are {@code "xml"}, {@code "json"}, and {@code null} (for no file export).
-	 * @return                       A {@link BackboneResult} object containing the results.
+	 * @return                       A {@link SimulatedAnnealingBackboneResult} object containing the results.
 	 */
 	/*
-	public void rBackbone(double p, int T, String statementType, String variable1, boolean variable1Document, String variable2,
+	public void rBackbone(String method, int backboneSize, double p, int T, String statementType, String variable1, boolean variable1Document, String variable2,
 						  boolean variable2Document, String qualifier, boolean qualifierDocument, String qualifierAggregation, String normalization,
 						  String duplicates, String startDate, String stopDate, String startTime, String stopTime,
 						  String[] excludeVariables, String[] excludeValues, String[] excludeAuthors, String[] excludeSources, String[] excludeSections,
@@ -695,43 +697,234 @@ public class HeadlessDna implements Logger.LogListener {
 		}
 
 		// step 3: compute results
-		this.exporter.backbone(p, T); // initial results
-		try (ProgressBar pb = new ProgressBar("Simulated annealing...", T)) {
-			while (exporter.getCurrentT() <= T) { // run up to upper bound of iterations T, provided by the user
-				pb.stepTo(exporter.getCurrentT());
-				exporter.iterateBackbone();
+		if (method.equals("nested")) {
+			this.exporter.initializeNestedBackbone();
+			int iterations = 0;
+			for (int i = 0; i < exporter.getFullSize(); i++) {
+				iterations = iterations + (exporter.getFullSize() - i);
 			}
-			exporter.saveBackboneResult();
+			try (ProgressBar pb = new ProgressBar("Nested backbone...", iterations)) {
+				while (exporter.getBackboneSize() > 0) { // run up to the point where all concepts have been moved from the backbone set to the redundant set
+					int it = 1;
+					for (int i = 0; i < exporter.getFullSize() - exporter.getBackboneSize(); i++) {
+						it = it + (exporter.getFullSize() - i);
+					}
+					pb.stepTo(it); // go from empty backbone set to full backbone set
+					exporter.iterateNestedBackbone();
+				}
+				exporter.saveNestedBackboneResult();
 
-			// step 4: save to file
-			if (fileFormat != null && outfile != null) {
-				if (fileFormat.equals("json") && !outfile.toLowerCase().endsWith(".json")) {
-					outfile = outfile + ".json";
-					LogEvent le = new LogEvent(Logger.WARNING,
-							"Appended \".json\" to file name.",
-							"The outfile for the backbone export did not end with \".json\" although the \"json\" file format was chosen. Appending \".json\" to the file name.");
-					Dna.logger.log(le);
-				}
-				if (fileFormat.equals("xml") && !outfile.toLowerCase().endsWith(".xml")) {
-					outfile = outfile + ".xml";
-					LogEvent le = new LogEvent(Logger.WARNING,
-							"Appended \".xml\" to file name.",
-							"The outfile for the backbone export did not end with \".xml\" although the \"xml\" file format was chosen. Appending \".xml\" to the file name.");
-					Dna.logger.log(le);
-				}
-				if (!fileFormat.equals("xml") && !fileFormat.equals("json")) {
-					fileFormat = null;
-					LogEvent le = new LogEvent(Logger.WARNING,
-							"File format for backbone export not recognized.",
-							"The file format for saving a backbone and redundant set to disk was not recognized. Valid file formats are \"json\" and \"xml\". The file format you provided was \"" + fileFormat + "\". Not saving the file to disk because the file format is unknown.");
-					Dna.logger.log(le);
-				} else {
-					this.exporter.writeBackboneToFile(outfile);
-				}
+				// step 4: save to file
+				saveJsonXml(fileFormat, outfile);
+				pb.stepTo(iterations);
 			}
+		} else if (method.equals("fixed") || method.equals("penalty")) {
+			this.exporter.initializeSimulatedAnnealingBackbone(method.equals("penalty"), p, T, backboneSize); // initialize algorithm
+			try (ProgressBar pb = new ProgressBar("Simulated annealing...", T)) {
+				while (exporter.getCurrentT() <= T) { // run up to upper bound of iterations T, provided by the user
+					pb.stepTo(exporter.getCurrentT());
+					exporter.iterateSimulatedAnnealingBackbone(method.equals("penalty"));
+				}
+				exporter.saveSimulatedAnnealingBackboneResult(method.equals("penalty"));
 
-			pb.stepTo(T);
+				// step 4: save to file
+				saveJsonXml(fileFormat, outfile);
+				pb.stepTo(T);
+			}
 		}
+	}
+
+	/**
+	 * Compute the spectral loss for a given backbone set relative to the full network.
+	 *
+	 * @param backboneEntities       An array of entities (e.g., concepts) for which the spectral loss should be computed relative to the full network.
+	 * @param p                      The penalty parameter. Can be \code{0} to switch off the penalty.
+	 * @param statementType          Statement type as a {@link String}.
+	 * @param variable1              First variable for export, provided as a {@link String}.
+	 * @param variable1Document      boolean indicating if the first variable is at the document level.
+	 * @param variable2              Second variable for export, provided as a {@link String}.
+	 * @param variable2Document      boolean indicating if the second variable is at the document level.
+	 * @param qualifier              Qualifier variable as a {@link String}.
+	 * @param qualifierDocument      boolean indicating if the qualifier variable is at the document level.
+	 * @param qualifierAggregation   Aggregation rule for the qualifier variable (can be {@code "ignore"}, {@code "combine"}, {@code "subtract"}, {@code "congruence"}, or {@code "conflict"}). Note that negative values in the {@code "subtract"} case are replaced by {@code 0}.
+	 * @param normalization          Normalization setting as a {@link String}, as provided by rDNA (can be {@code "no"}, {@code "activity"}, {@code "prominence"}, {@code "average"}, {@code "jaccard"}, or {@code "cosine"}).
+	 * @param duplicates             An input {@link String} from rDNA that can be {@code "include"}, {@code "document"}, {@code "week"}, {@code "month"}, {@code "year"}, or {@code "acrossrange"}.
+	 * @param startDate              Start date for the export, provided as a {@link String} with format {@code "dd.MM.yyyy"}.
+	 * @param stopDate               Stop date for the export, provided as a {@link String} with format {@code "dd.MM.yyyy"}.
+	 * @param startTime              Start time for the export, provided as a {@link String} with format {@code "HH:mm:ss"}.
+	 * @param stopTime               Stop time for the export, provided as a {@link String} with format {@code "HH:mm:ss"}.
+	 * @param excludeVariables       A {@link String} array with n elements, indicating the variable of the n'th value.
+	 * @param excludeValues          A {@link String} array with n elements, indicating the value pertaining to the n'th variable {@link String}.
+	 * @param excludeAuthors         A {@link String} array of values to exclude in the {@code author} variable at the document level.
+	 * @param excludeSources         A {@link String} array of values to exclude in the {@code source} variable at the document level.
+	 * @param excludeSections        A {@link String} array of values to exclude in the {@code section} variable at the document level.
+	 * @param excludeTypes           A {@link String} array of values to exclude in the {@code "type"} variable at the document level.
+	 * @param invertValues           boolean indicating whether the statement-level exclude values should be included (= {@code true}) rather than excluded.
+	 * @param invertAuthors          boolean indicating whether the document-level author values should be included (= {@code true}) rather than excluded.
+	 * @param invertSources          boolean indicating whether the document-level source values should be included (= {@code true}) rather than excluded.
+	 * @param invertSections         boolean indicating whether the document-level section values should be included (= {@code true}) rather than excluded.
+	 * @param invertTypes            boolean indicating whether the document-level type values should be included (= {@code true}) rather than excluded.
+	 * @return                       A double array with the loss for the backbone and redundant set.
+	 */
+	public double[] rEvaluateBackboneSolution(String[] backboneEntities, int p, String statementType, String variable1, boolean variable1Document, String variable2,
+						  boolean variable2Document, String qualifier, boolean qualifierDocument, String qualifierAggregation, String normalization,
+						  String duplicates, String startDate, String stopDate, String startTime, String stopTime,
+						  String[] excludeVariables, String[] excludeValues, String[] excludeAuthors, String[] excludeSources, String[] excludeSections,
+						  String[] excludeTypes, boolean invertValues, boolean invertAuthors, boolean invertSources, boolean invertSections,
+						  boolean invertTypes) {
+
+		// step 1: preprocess arguments
+		StatementType st = Dna.sql.getStatementType(statementType); // format statement type
+
+		// format dates and times with input formats "dd.MM.yyyy" and "HH:mm:ss"
+		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
+		LocalDateTime ldtStart, ldtStop;
+		LocalDateTime[] dateRange = Dna.sql.getDateTimeRange();
+		if (startTime == null || startTime.equals("")) {
+			startTime = "00:00:00";
+		}
+		if (startDate == null || startDate.equals("") || startDate.equals("01.01.1900")) {
+			ldtStart = dateRange[0];
+		} else {
+			String startString = startDate + " " + startTime;
+			ldtStart = LocalDateTime.parse(startString, dtf);
+			if (!startString.equals(dtf.format(ldtStart))) {
+				ldtStart = dateRange[0];
+				LogEvent le = new LogEvent(Logger.WARNING,
+						"Start date or time is invalid.",
+						"When computing the backbone and redundant set of the network, the start date or time (" + startString + ") did not conform to the format dd.MM.yyyy HH:mm:ss and could not be interpreted. Assuming earliest date and time in the dataset: " + ldtStart.format(dtf) + ".");
+				Dna.logger.log(le);
+			}
+		}
+		if (stopTime == null || stopTime.equals("")) {
+			stopTime = "23:59:59";
+		}
+		if (stopDate == null || stopDate.equals("") || stopDate.equals("31.12.2099")) {
+			ldtStop = dateRange[1];
+		} else {
+			String stopString = stopDate + " " + stopTime;
+			ldtStop = LocalDateTime.parse(stopString, dtf);
+			if (!stopString.equals(dtf.format(ldtStop))) {
+				ldtStop = dateRange[1];
+				LogEvent le = new LogEvent(Logger.WARNING,
+						"End date or time is invalid.",
+						"When computing the spectral loss of a backbone set, the end date or time (" + stopString + ") did not conform to the format dd.MM.yyyy HH:mm:ss and could not be interpreted. Assuming latest date and time in the dataset: " + ldtStop.format(dtf) + ".");
+				Dna.logger.log(le);
+			}
+		}
+
+		// process exclude variables: create HashMap with variable:value pairs
+		HashMap<String, ArrayList<String>> map = new HashMap<String, ArrayList<String>>();
+		if (excludeVariables.length > 0) {
+			for (int i = 0; i < excludeVariables.length; i++) {
+				ArrayList<String> values = map.get(excludeVariables[i]);
+				if (values == null) {
+					values = new ArrayList<String>();
+				}
+				if (!values.contains(excludeValues[i])) {
+					values.add(excludeValues[i]);
+				}
+				Collections.sort(values);
+				map.put(excludeVariables[i], values);
+			}
+		}
+
+		// initialize Exporter class
+		this.exporter = new Exporter(
+				"onemode",
+				st,
+				variable1,
+				variable1Document,
+				variable2,
+				variable2Document,
+				qualifier,
+				qualifierDocument,
+				qualifierAggregation,
+				normalization,
+				true,
+				duplicates,
+				ldtStart,
+				ldtStop,
+				"no",
+				1,
+				map,
+				Stream.of(excludeAuthors).collect(Collectors.toCollection(ArrayList::new)),
+				Stream.of(excludeSources).collect(Collectors.toCollection(ArrayList::new)),
+				Stream.of(excludeSections).collect(Collectors.toCollection(ArrayList::new)),
+				Stream.of(excludeTypes).collect(Collectors.toCollection(ArrayList::new)),
+				invertValues,
+				invertAuthors,
+				invertSources,
+				invertSections,
+				invertTypes,
+				null,
+				null);
+
+		// step 2: filter
+		this.exporter.loadData();
+		this.exporter.filterStatements();
+		if (exporter.getFilteredStatements().size() == 0) {
+			LogEvent le = new LogEvent(Logger.ERROR,
+					"No statements left after filtering.",
+					"Attempted to filter the statements by date and other criteria before finding backbone. But no statements were left after applying the filters. Perhaps the time period was mis-specified?");
+			Dna.logger.log(le);
+		}
+
+		// step 3: compute and return results
+		return this.exporter.evaluateBackboneSolution(backboneEntities, p);
+	}
+
+	private void saveJsonXml(String fileFormat, String outfile) {
+		if (fileFormat != null && outfile != null) {
+			if (fileFormat.equals("json") && !outfile.toLowerCase().endsWith(".json")) {
+				outfile = outfile + ".json";
+				LogEvent le = new LogEvent(Logger.WARNING,
+						"Appended \".json\" to file name.",
+						"The outfile for the backbone export did not end with \".json\" although the \"json\" file format was chosen. Appending \".json\" to the file name.");
+				Dna.logger.log(le);
+			}
+			if (fileFormat.equals("xml") && !outfile.toLowerCase().endsWith(".xml")) {
+				outfile = outfile + ".xml";
+				LogEvent le = new LogEvent(Logger.WARNING,
+						"Appended \".xml\" to file name.",
+						"The outfile for the backbone export did not end with \".xml\" although the \"xml\" file format was chosen. Appending \".xml\" to the file name.");
+				Dna.logger.log(le);
+			}
+			if (!fileFormat.equals("xml") && !fileFormat.equals("json")) {
+				fileFormat = null;
+				LogEvent le = new LogEvent(Logger.WARNING,
+						"File format for backbone export not recognized.",
+						"The file format for saving a backbone and redundant set to disk was not recognized. Valid file formats are \"json\" and \"xml\". The file format you provided was \"" + fileFormat + "\". Not saving the file to disk because the file format is unknown.");
+				Dna.logger.log(le);
+			} else {
+				this.exporter.writeBackboneToFile(outfile);
+			}
+		}
+	}
+
+	/* =================================================================================================================
+	 * Functions for managing variables
+	 * =================================================================================================================
+	 */
+
+	/**
+	 * Retrieve variables and data type definitions for a given statement type (via label).
+	 *
+	 * @param statementTypeLabel  Label of the statement type for which variables should be retrieved.
+	 * @return                    Array list of {@link Value} objects representing variables.
+	 */
+	public ArrayList<Value> getVariables(String statementTypeLabel) {
+		return Dna.sql.getStatementType(statementTypeLabel).getVariables();
+	}
+
+	/**
+	 * Retrieve variables and data type definitions for a given statement type (via ID).
+	 *
+	 * @param statementTypeId  ID of the statement type for which variables should be retrieved.
+	 * @return                 Array list of {@link Value} objects representing variables.
+	 */
+	public ArrayList<Value> getVariables(int statementTypeId) {
+		return Dna.sql.getStatementType(statementTypeId).getVariables();
 	}
 	*/
 

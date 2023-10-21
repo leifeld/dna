@@ -14,10 +14,11 @@ import model.TableDocument;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.io.File;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -30,7 +31,7 @@ import java.util.List;
  * various kinds of networks.
  */
 public class BackboneExporter extends JDialog {
-	private static final long serialVersionUID = 3774134211831948308L;
+	private static final long serialVersionUID = 3774134211831448308L;
 	private LocalDateTime[] dateTimeRange = Dna.sql.getDateTimeRange();
 	private DateTimePicker startPicker, stopPicker;
 	private JCheckBox helpBox;
@@ -43,9 +44,12 @@ public class BackboneExporter extends JDialog {
 	private ArrayList<String> excludeAuthor, excludeSource, excludeSection, excludeType;
 	private JTextArea excludePreviewArea;
 	private Exporter exporter;
+	private GridBagLayout g;
+	private SpinnerNumberModel backboneSizeModel;
+	private JComboBox<String> backboneMethodBox;
 
 	/**
-	 * Constructor for GUI. Opens an Exporter window, which displays the GUI for exporting network data.
+	 * Constructor for GUI. Opens an Exporter window, which displays the GUI for exporting backbone data.
 	 */
 	public BackboneExporter(Frame parent) {
 		super(parent, "Backbone finder", true);
@@ -57,7 +61,7 @@ public class BackboneExporter extends JDialog {
 
 		/*
 		JPanel settingsPanel = new JPanel();
-		GridBagLayout g = new GridBagLayout();
+		g = new GridBagLayout();
 		settingsPanel.setLayout(g);
 		GridBagConstraints gbc = new GridBagConstraints();
 		gbc.anchor = GridBagConstraints.WEST;
@@ -75,25 +79,19 @@ public class BackboneExporter extends JDialog {
 				+ "Select here which statement type to use.</p></html>";
 		statementTypeLabel.setToolTipText(statementTypeToolTip);
 		settingsPanel.add(statementTypeLabel, gbc);
-		
-		gbc.gridx = 1;
-		JLabel penaltyLabel = new JLabel("Penalty parameter (p)");
-		String penaltyTooltipText = "<html><p width=\"500\">The penalty (p) determines how large the " +
-				"backbone set is, with larger penalties penalizing larger backbones more strongly, hence leading to " +
-				"smaller backbones and larger redundant sets. Typical values could be 5.5, 7.5, or 12.</p></html>";
-		penaltyLabel.setToolTipText(penaltyTooltipText);
-		settingsPanel.add(penaltyLabel, gbc);
 
-		gbc.gridx = 2;
-		JLabel iterationsLabel = new JLabel("Iterations (T)");
-		String iterationsTooltipText = "<html><p width=\"500\">The number of iterations (T) determines how long the " +
-				"algorithm should run. We have had good results with T = 50,000 iterations for a network of about " +
-				"200 actors and about 60 concepts, though fewer iterations might have been acceptable. The quality " +
-				"of the solution increases with larger T and reaches the global optimum asymptotically. How many " +
-				"iterations are required for a good solution depends on the number of entities on the second-mode " +
-				"variable.</p></html>";
-		iterationsLabel.setToolTipText(iterationsTooltipText);
-		settingsPanel.add(iterationsLabel, gbc);
+		gbc.gridx = 1;
+		JLabel backboneLabel = new JLabel("Backbone method");
+		String backboneMethodToolTip =
+				"<html><p width=\"500\">Which method should be used to partition the entities of the second variable (usually concepts) into a backbone set and a redundant set? Several methods are available:" +
+						"<dl>" +
+						"<dt><b>nested</b></dt><dd width=\"500\">A deterministic, agglomerative algorithm that starts with a full backbone set and empty redundant set and moves individual entities whose removal from the backbone would cause the lowest spectral loss step by step from the backbone set to the redundant set. The procedure creates a complete, nested hierarchy of entities. The method is relatively fast and deterministic. It computes the best solution given the constraint that the solution must be completely nested. Note that slightly better non-nested solutions may exist at any level.</dd>" +
+						"<dt><b>fixed</b></dt><dd width=\"500\">Simulated annealing without a penalty parameter and with a fixed number of entities in the backbone set. Results at different backbone size levels are not necessarily nested with this algorithm, which means sometimes backbone solutions with a smaller loss may not be fully contained within a larger backbone set. This combinatorial optimization algorithm returns an approximation, which should likely be the globally best solution but may sometimes deviate and provide a close to optimal solution because the solution space is not exhaustively explored. If you select this option, the simulated annealing algorithm will run once, for the specified backbone size (i.e., number of entities in the backbone set) specified as a parameter by the user. You can manually run this algorithm multiple times for different backbone sizes to compare the results.</dd>" +
+						"<dt><b>penalty</b></dt><dd width=\"500\">Simulated annealing with a penalty parameter and a defined number of iterations. The user does not have to specify how many entities precisely should be in the backbone set and how many should be in the redundant set. Instead, the algorithm may explore larger and smaller solutions in the search space but gravitate towards certain levels as defined by the penalty parameter. The penalty parameter is a real number, and useful values could be something like 3.5, 5.5, 7.5, or 12, for example. Larger penalties tend to produce smaller backbone sets and larger redundant sets. The number of iterations is larger than in the simulated annealing approach with a fixed number of entities and without penalty because there are many more possible solutions in the search space that need to be explored. Hence, due to more iterations required, the algorithm takes longer to compute the result. More iterations tend to approximate the globally optimal solution better. Useful numbers of iterations could be 10,000, 30,000, or 50,000, for example.</dd>" +
+						"</dl>" +
+						"</p></html>";
+		backboneLabel.setToolTipText(backboneMethodToolTip);
+		settingsPanel.add(backboneLabel, gbc);
 
 		gbc.gridx = 0;
 		gbc.gridy = 1;
@@ -157,22 +155,102 @@ public class BackboneExporter extends JDialog {
 			}
 		});
 
-
 		gbc.gridx = 1;
+		String[] methods = new String[] {"nested", "fixed", "penalty"};
+		backboneMethodBox = new JComboBox<>(methods);
+		backboneMethodBox.setSelectedIndex(0);
+		backboneMethodBox.setToolTipText(backboneMethodToolTip);
+		settingsPanel.add(backboneMethodBox, gbc);
+
+		// backbone size setting
+		JLabel backboneSizeLabel = new JLabel("Size of backbone set");
+		String backboneSizeTooltipText = "<html><p width=\"500\">The size of the backbone set to be generated, i.e., the number of entities that will be in the backbone set, rather than the redundant set.</p></html>";
+		backboneSizeLabel.setToolTipText(backboneSizeTooltipText);
+		backboneSizeModel = new SpinnerNumberModel(1, 1, 1, 1);
+		JSpinner backboneSizeSpinner = new JSpinner(backboneSizeModel);
+		((JSpinner.DefaultEditor) backboneSizeSpinner.getEditor()).getTextField().setColumns(4);
+		backboneSizeLabel.setLabelFor(backboneSizeSpinner);
+		backboneSizeSpinner.setToolTipText(backboneSizeTooltipText);
+
+		// penalty setting
+		JLabel penaltyLabel = new JLabel("Penalty parameter (p)");
+		String penaltyTooltipText = "<html><p width=\"500\">The penalty (p) determines how large the " +
+				"backbone set is, with larger penalties penalizing larger backbones more strongly, hence leading to " +
+				"smaller backbones and larger redundant sets. Typical values could be 5.5, 7.5, or 12.</p></html>";
+		penaltyLabel.setToolTipText(penaltyTooltipText);
 		SpinnerNumberModel penaltyModel = new SpinnerNumberModel(3.50, 0.00, 1000.00, 0.10);
 		JSpinner penaltySpinner = new JSpinner(penaltyModel);
 		penaltyLabel.setLabelFor(penaltySpinner);
 		((JSpinner.DefaultEditor) penaltySpinner.getEditor()).getTextField().setColumns(4);
 		penaltySpinner.setToolTipText(penaltyTooltipText);
-		settingsPanel.add(penaltySpinner, gbc);
 
-		gbc.gridx = 2;
+		// iterations setting
+		JLabel iterationsLabel = new JLabel("Iterations (T)");
+		String iterationsTooltipText = "<html><p width=\"500\">The number of iterations (T) determines how long the " +
+				"algorithm should run. We have had good results with T = 50,000 iterations for a network of about " +
+				"200 actors and about 60 concepts, though fewer iterations might have been acceptable. The quality " +
+				"of the solution increases with larger T and reaches the global optimum asymptotically. How many " +
+				"iterations are required for a good solution depends on the number of entities on the second-mode " +
+				"variable.</p></html>";
+		iterationsLabel.setToolTipText(iterationsTooltipText);
 		SpinnerNumberModel iterationsModel = new SpinnerNumberModel(10000, 0, 1000000, 1000);
 		JSpinner iterationsSpinner = new JSpinner(iterationsModel);
 		((JSpinner.DefaultEditor) iterationsSpinner.getEditor()).getTextField().setColumns(7);
 		iterationsLabel.setLabelFor(iterationsSpinner);
 		iterationsSpinner.setToolTipText(iterationsTooltipText);
-		settingsPanel.add(iterationsSpinner, gbc);
+
+		backboneMethodBox.addItemListener(new ItemListener() {
+			@Override
+			public void itemStateChanged(ItemEvent itemEvent) {
+				if (itemEvent.getItem().equals("nested")) {
+					removeComponentFromGridBagPanel(settingsPanel, 2, 0);
+					removeComponentFromGridBagPanel(settingsPanel, 3, 0);
+					removeComponentFromGridBagPanel(settingsPanel, 2, 1);
+					removeComponentFromGridBagPanel(settingsPanel, 3, 1);
+					settingsPanel.revalidate();
+					settingsPanel.repaint();
+				} else if (itemEvent.getItem().equals("fixed")) {
+					int size = Dna.sql.getUniqueValues(((StatementType) statementTypeBox.getSelectedItem()).getId(), (String) var2Box.getSelectedItem()).size();
+					backboneSizeModel.setMaximum(size);
+					backboneSizeModel.setValue(1);
+					removeComponentFromGridBagPanel(settingsPanel, 2, 0);
+					removeComponentFromGridBagPanel(settingsPanel, 3, 0);
+					removeComponentFromGridBagPanel(settingsPanel, 2, 1);
+					removeComponentFromGridBagPanel(settingsPanel, 3, 1);
+					gbc.gridwidth = 1;
+					gbc.gridy = 0;
+					gbc.gridx = 2;
+					settingsPanel.add(backboneSizeLabel, gbc);
+					gbc.gridy = 1;
+					settingsPanel.add(backboneSizeSpinner, gbc);
+					gbc.gridy = 0;
+					gbc.gridx = 3;
+					settingsPanel.add(iterationsLabel, gbc);
+					gbc.gridy = 1;
+					settingsPanel.add(iterationsSpinner, gbc);
+					settingsPanel.revalidate();
+					settingsPanel.repaint();
+				} else if (itemEvent.getItem().equals("penalty")) {
+					removeComponentFromGridBagPanel(settingsPanel, 2, 0);
+					removeComponentFromGridBagPanel(settingsPanel, 3, 0);
+					removeComponentFromGridBagPanel(settingsPanel, 2, 1);
+					removeComponentFromGridBagPanel(settingsPanel, 3, 1);
+					gbc.gridwidth = 1;
+					gbc.gridy = 0;
+					gbc.gridx = 2;
+					settingsPanel.add(penaltyLabel, gbc);
+					gbc.gridy = 1;
+					settingsPanel.add(penaltySpinner, gbc);
+					gbc.gridy = 0;
+					gbc.gridx = 3;
+					settingsPanel.add(iterationsLabel, gbc);
+					gbc.gridy = 1;
+					settingsPanel.add(iterationsSpinner, gbc);
+					settingsPanel.revalidate();
+					settingsPanel.repaint();
+				}
+			}
+		});
 
 		// second row of options
 		gbc.insets = new Insets(10, 3, 3, 3);
@@ -775,7 +853,7 @@ public class BackboneExporter extends JDialog {
 				"The <b>redundant set</b> is the complementary subset of entities/values of Variable 2 that do not " +
 				"contribute much additional value in structuring the one-mode network into clusters. A custom " +
 				"<b>simulated annealing</b> algorithm is employed to find the backbone and redundant sets by " +
-				"minimizing penalized Euclidean spectral distances between the backbone network and the full network. " +
+				"minimizing (penalized) Euclidean spectral distances between the backbone network and the full network. " +
 				"The results can inform how to recode entities or which entities to include or exclude during network " +
 				"export. By pressing this button, the calculation will start, but the results will not be saved to " +
 				"a file yet.</p></html>";
@@ -783,8 +861,10 @@ public class BackboneExporter extends JDialog {
 		buttonPanel.add(backboneButton);
 		backboneButton.addActionListener(al -> {
 			// read settings from GUI elements and translate into values for Exporter class
+			String method = (String) backboneMethodBox.getSelectedItem();
 			double penalty = (double) penaltySpinner.getValue();
 			int iterations = (int) iterationsSpinner.getValue();
+			int backboneSize = (int) backboneSizeSpinner.getValue();
 			StatementType statementType = (StatementType) statementTypeBox.getSelectedItem();
 			String variable1Name = (String) var1Box.getSelectedItem();
 			boolean variable1Document = var1Box.getSelectedIndex() > var1Box.getItemCount() - 7;
@@ -813,10 +893,10 @@ public class BackboneExporter extends JDialog {
 			LocalDateTime stopDateTime = stopPicker.getDateTimeStrict();
 
 			// start backbone thread
-			Thread backboneThread = new Thread(new GuiBackboneThread(penalty, iterations, statementType, variable1Name,
-					variable1Document, variable2Name, variable2Document, qualifier, qualifierDocument,
-					qualifierAggregation, normalization, duplicates, startDateTime, stopDateTime,
-					BackboneExporter.this.excludeValues, BackboneExporter.this.excludeAuthor,
+			Thread backboneThread = new Thread(new GuiBackboneThread(method, backboneSize, penalty, iterations,
+					statementType, variable1Name, variable1Document, variable2Name, variable2Document, qualifier,
+					qualifierDocument, qualifierAggregation, normalization, duplicates, startDateTime,
+					stopDateTime, BackboneExporter.this.excludeValues, BackboneExporter.this.excludeAuthor,
 					BackboneExporter.this.excludeSource, BackboneExporter.this.excludeSection,
 					BackboneExporter.this.excludeType, false, false, false,
 					false, false), "Find backbone");
@@ -915,7 +995,28 @@ public class BackboneExporter extends JDialog {
 		this.setLocationRelativeTo(null);
 		this.setVisible(true);
 	}
-	
+
+	/**
+	 * Remove a component from a panel with a GridBagLayout by locating the component through its coordinates. The panel is not revalidated and repainted; this needs to be done after calling this function.
+	 *
+	 * @param panel The panel from which to remove the component.
+	 * @param targetX The horizontal coordinate (gridx).
+	 * @param targetY The vertical coordinate (gridy).
+	 */
+	private void removeComponentFromGridBagPanel(JPanel panel, int targetX, int targetY) {
+		Component componentToRemove = null;
+		for (Component comp : panel.getComponents()) {
+			GridBagConstraints gc = g.getConstraints(comp);
+			if (gc.gridx == targetX && gc.gridy == targetY) {
+				componentToRemove = comp;
+				break;
+			}
+		}
+		if (componentToRemove != null) {
+			panel.remove(componentToRemove);
+		}
+	}
+
 	/**
 	 * Sets a new {@link DefaultListModel} in the excludeVariableList and adds variables conditional on the statement type selected
 	 */
@@ -952,11 +1053,11 @@ public class BackboneExporter extends JDialog {
 	}
 
 	/**
-	 * GUI backbone thread. This is where the computations are executed and the
-	 * data are written to a file.
+	 * GUI backbone thread. This is where the computations are executed and the data are written to a file.
 	 */
 	private class GuiBackboneThread implements Runnable {
-
+		private String method;
+		private int backboneSize;
 		private double p;
 		private int T;
 		private String variable1, variable2, qualifier, qualifierAggregation, normalization, duplicates;
@@ -968,6 +1069,8 @@ public class BackboneExporter extends JDialog {
 		private ProgressMonitor progressMonitor;
 
 		public GuiBackboneThread(
+				String method,
+				int backboneSize,
 				double p,
 				int T,
 				StatementType statementType,
@@ -992,6 +1095,8 @@ public class BackboneExporter extends JDialog {
 				boolean invertSources,
 				boolean invertSections,
 				boolean invertTypes) {
+			this.method = method;
+			this.backboneSize = backboneSize;
 			this.p = p;
 			this.T = T;
 			this.statementType = statementType;
@@ -1065,9 +1170,9 @@ public class BackboneExporter extends JDialog {
 					this.invertTypes,
 					null,
 					null);
+
 			if (progressMonitor.isCanceled()) {
 				proceed = false;
-				progressMonitor.setProgress(2);
 				progressMonitor.close();
 			}
 
@@ -1075,7 +1180,7 @@ public class BackboneExporter extends JDialog {
 			if (proceed) {
 				exporter.loadData();
 				exporter.filterStatements();
-				if (exporter.getFilteredStatements().size() == 0) {
+				if (exporter.getFilteredStatements().isEmpty()) {
 					proceed = false;
 					LogEvent le = new LogEvent(Logger.ERROR,
 							"No statements left after filtering.",
@@ -1083,37 +1188,84 @@ public class BackboneExporter extends JDialog {
 					Dna.logger.log(le);
 				}
 			}
+
+			// calculate maximum iterations for nested algorithm; necessary because the initial iterations take longer due to more loss comparisons, so it's best to count the number of loss comparisons rather than number of entities as iterations
+			if (this.method.equals("nested")) {
+				int iterations = 0;
+				for (int i = 0; i < exporter.getFullSize(); i++) {
+					iterations = iterations + (exporter.getFullSize() - i);
+				}
+				progressMonitor.setMaximum(iterations);
+				this.T = iterations;
+			}
+
+			// initialise algorithm
 			if (proceed) {
-				progressMonitor.setNote("Computing initial networks...");
-				exporter.backbone(p, T);
+				progressMonitor.setNote("Initializing algorithm...");
+				if (this.method.equals("nested")) {
+					exporter.initializeNestedBackbone();
+				} else if (this.method.equals("fixed")) {
+					exporter.initializeSimulatedAnnealingBackbone(false, p, T, backboneSize); // p is inconsequential because penalty = false
+				} else if (this.method.equals("penalty")) {
+					exporter.initializeSimulatedAnnealingBackbone(true, p, T, backboneSize); // backboneSize is inconsequential because penalty = true
+				}
 			}
 			if (!proceed || progressMonitor.isCanceled()) {
 				proceed = false;
 			}
 
-			// step 3: simulated annealing
+			// step 3: backbone iterations
 			if (proceed) {
-				progressMonitor.setNote("Simulated annealing...");
-				try (ProgressBar pb = new ProgressBar("Simulated annealing...", T)) {
-					while (exporter.getCurrentT() <= T && !progressMonitor.isCanceled()) { // run up to upper bound of iterations T, provided by the user
+				if (this.method.equals("nested")) {
+					progressMonitor.setNote("Nested backbone iterations...");
+					try (ProgressBar pb = new ProgressBar("Nested backbone...", this.T)) {
+						while (exporter.getBackboneSize() > 0 && !progressMonitor.isCanceled()) { // run up to the point where all concepts have been moved from the backbone set to the redundant set
+							if (progressMonitor.isCanceled()) {
+								pb.stepTo(exporter.getFullSize());
+								break;
+							} else {
+								int iterations = 1;
+								for (int i = 0; i < exporter.getFullSize() - exporter.getBackboneSize(); i++) {
+									iterations = iterations + (exporter.getFullSize() - i);
+								}
+								pb.stepTo(iterations); // go from empty backbone set to full backbone set
+								progressMonitor.setProgress(iterations);
+								exporter.iterateNestedBackbone();
+							}
+						}
+						if (!progressMonitor.isCanceled()) {
+							exporter.saveNestedBackboneResult();
+							BackboneExporter.this.exporter = exporter;
+							progressMonitor.setProgress(this.T);
+						}
+					} finally {
 						if (progressMonitor.isCanceled()) {
-							exporter.setCurrentT(T);
-							pb.stepTo(T);
-							break;
-						} else {
-							pb.stepTo(exporter.getCurrentT());
-							progressMonitor.setProgress(exporter.getCurrentT());
-							exporter.iterateBackbone();
+							System.err.println("Canceled.");
 						}
 					}
-					if (!progressMonitor.isCanceled()) {
-						exporter.saveBackboneResult();
-						BackboneExporter.this.exporter = exporter;
-						progressMonitor.setProgress(T);
-					}
-				} finally {
-					if (progressMonitor.isCanceled()) {
-						System.err.println("Canceled.");
+				} else if (this.method.equals("fixed") || this.method.equals("penalty")) {
+					progressMonitor.setNote("Simulated annealing...");
+					try (ProgressBar pb = new ProgressBar("Simulated annealing...", this.T)) {
+						while (exporter.getCurrentT() <= T && !progressMonitor.isCanceled()) { // run up to upper bound of iterations T, provided by the user
+							if (progressMonitor.isCanceled()) {
+								exporter.setCurrentT(T);
+								pb.stepTo(T);
+								break;
+							} else {
+								pb.stepTo(exporter.getCurrentT());
+								progressMonitor.setProgress(exporter.getCurrentT());
+								exporter.iterateSimulatedAnnealingBackbone(this.method.equals("penalty"));
+							}
+						}
+						if (!progressMonitor.isCanceled()) {
+							exporter.saveSimulatedAnnealingBackboneResult(this.method.equals("penalty"));
+							BackboneExporter.this.exporter = exporter;
+							progressMonitor.setProgress(T);
+						}
+					} finally {
+						if (progressMonitor.isCanceled()) {
+							System.err.println("Canceled.");
+						}
 					}
 				}
 			}

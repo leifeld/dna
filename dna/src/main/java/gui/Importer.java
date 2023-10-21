@@ -1,7 +1,6 @@
 package gui;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
@@ -810,7 +809,7 @@ class Importer extends JDialog {
 							rs.getInt("Frequency"),
 							new Coder(rs.getInt("CoderId"),
 									rs.getString("CoderName"),
-									new Color(rs.getInt("Red"), rs.getInt("Green"), rs.getInt("Blue"))),
+									new model.Color(rs.getInt("Red"), rs.getInt("Green"), rs.getInt("Blue"))),
 							rs.getString("Author"),
 							rs.getString("Source"),
 							rs.getString("Section"),
@@ -1332,7 +1331,7 @@ class Importer extends JDialog {
 					foreignStatementTypes.add(new StatementType(
 							r1.getInt("ID"),
 							r1.getString("Label"),
-							new Color(r1.getInt("Red"),
+							new model.Color(r1.getInt("Red"),
 									r1.getInt("Green"),
 									r1.getInt("Blue")),
 							variables));
@@ -1353,7 +1352,7 @@ class Importer extends JDialog {
 					domesticStatementTypes.add(new StatementType(
 							r1.getInt("ID"),
 							r1.getString("Label"),
-							new Color(r1.getInt("Red"),
+							new model.Color(r1.getInt("Red"),
 									r1.getInt("Green"),
 									r1.getInt("Blue")),
 							variables));

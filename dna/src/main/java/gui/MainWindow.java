@@ -573,7 +573,7 @@ public class MainWindow extends JFrame {
 				for (StatementType statementType : statementTypes) {
 					JMenuItem menuItem = new JMenuItem("Format as " + statementType.getLabel());
 					menuItem.setOpaque(true);
-					menuItem.setBackground(statementType.getColor());
+					menuItem.setBackground(statementType.getColor().toAWTColor());
 					popmen.add(menuItem);
 
 					menuItem.addActionListener(new ActionListener() {
@@ -1079,7 +1079,7 @@ public class MainWindow extends JFrame {
 							rs.getInt("Frequency"),
 							new Coder(rs.getInt("CoderId"),
 									rs.getString("CoderName"),
-									new Color(rs.getInt("Red"), rs.getInt("Green"), rs.getInt("Blue"))),
+									new model.Color(rs.getInt("Red"), rs.getInt("Green"), rs.getInt("Blue"))),
 							rs.getString("Author"),
 							rs.getString("Source"),
 							rs.getString("Section"),
@@ -1289,7 +1289,7 @@ public class MainWindow extends JFrame {
 					"SELECT DATABOOLEAN.StatementId, DATABOOLEAN.RoleVariableLinkId, RoleId, RoleName, VARIABLES.ID AS VariableId, VARIABLES.Variable AS VariableName, VARIABLES.DataType, " + q4castBoolean + ", ROLES.StatementTypeId FROM DATABOOLEAN INNER JOIN ROLEVARIABLELINKS ON ROLEVARIABLELINKS.ID = DATABOOLEAN.RoleVariableLinkId INNER JOIN VARIABLES ON VARIABLES.ID = ROLEVARIABLELINKS.VariableId INNER JOIN ROLES ON ROLES.ID = ROLEVARIABLELINKS.RoleId " + booleanStatementIds + ";";
 
 			int statementTypeId, statementId, variableId;
-			Color sColor, cColor;
+			model.Color sColor, cColor;
 			HashMap<Integer, TableStatement> statementMap = new HashMap<Integer, TableStatement>(); // statement ID to Statement
 			ResultSet r4;
 			try (Connection conn = Dna.sql.getDataSource().getConnection();
@@ -1301,8 +1301,8 @@ public class MainWindow extends JFrame {
 				while (r1.next()) {
 					statementId = r1.getInt("StatementId");
 				    statementTypeId = r1.getInt("StatementTypeId");
-				    sColor = new Color(r1.getInt("StatementTypeRed"), r1.getInt("StatementTypeGreen"), r1.getInt("StatementTypeBlue"));
-				    cColor = new Color(r1.getInt("CoderRed"), r1.getInt("CoderGreen"), r1.getInt("CoderBlue"));
+				    sColor = new model.Color(r1.getInt("StatementTypeRed"), r1.getInt("StatementTypeGreen"), r1.getInt("StatementTypeBlue"));
+				    cColor = new model.Color(r1.getInt("CoderRed"), r1.getInt("CoderGreen"), r1.getInt("CoderBlue"));
 
 					TableStatement tableStatement = new TableStatement(statementId,
 							r1.getInt("Start"),
@@ -1626,7 +1626,7 @@ public class MainWindow extends JFrame {
 			menuBar.adjustToChangedCoder();
 			coderSelectionPanel.changeCoderBadge();
 			MainWindow.this.regexPanel.refresh();
-			
+
 			LogEvent l = new LogEvent(Logger.MESSAGE,
 					"[GUI] Action executed: closed database.",
 					"Closed database connection from the GUI.");
@@ -1709,7 +1709,7 @@ public class MainWindow extends JFrame {
 						if (!key.equals("")) {
 							ConnectionProfile cp = null;
 							try {
-								cp = Dna.readConnectionProfile(filename, key);
+								cp = new ConnectionProfile(filename, key);
 							} catch (EncryptionOperationNotPossibleException e2) {
 								cp = null;
 							}
@@ -1802,7 +1802,7 @@ public class MainWindow extends JFrame {
 								boolean authenticated = Dna.sql.authenticate(-1, key);
 								if (authenticated) {
 									// write the connection profile to disk, with an encrypted version of the password
-									Dna.writeConnectionProfile(fc.getFiles()[0].getPath(), new ConnectionProfile(Dna.sql.getConnectionProfile()), key);
+									ConnectionProfile.writeConnectionProfile(fc.getFiles()[0].getPath(), new ConnectionProfile(Dna.sql.getConnectionProfile()), key);
 									validPasswordInput = true; // quit the while-loop after successful export
 									JOptionPane.showMessageDialog(MainWindow.this,
 											"The profile was saved as:\n" + fc.getFiles()[0].getAbsolutePath(),

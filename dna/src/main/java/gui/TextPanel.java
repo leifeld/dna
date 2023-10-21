@@ -158,13 +158,13 @@ class TextPanel extends JPanel {
 			ArrayList<Regex> regex = Dna.sql.getRegexes();
 			for (i = 0; i < regex.size(); i++) {
 				String label = regex.get(i).getLabel();
-				Color color = regex.get(i).getColor();
+				model.Color color = regex.get(i).getColor();
 				Pattern p = Pattern.compile(label, Pattern.CASE_INSENSITIVE);
 				Matcher m = p.matcher(textWindow.getText());
 				while(m.find()) {
 					start = m.start();
 					Style fgStyle = sc.addStyle("ConstantWidth", null);
-					StyleConstants.setForeground(fgStyle, color);
+					StyleConstants.setForeground(fgStyle, color.toAWTColor());
 					doc.setCharacterAttributes(start, m.end() - start, fgStyle, false);
 				}
 			}

@@ -1,6 +1,9 @@
 package model;
 
+import javax.swing.*;
 import java.awt.Color;
+import java.util.ArrayList;
+import java.util.stream.Stream;
 
 /**
  * Represents a statement type.

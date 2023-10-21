@@ -1,6 +1,5 @@
 package model;
 
-import java.awt.Color;
 import java.util.HashMap;
 
 /**
@@ -90,7 +89,7 @@ public class Entity implements Comparable<Entity> {
 		this.value = value;
 		this.id = -1;
 		this.variableId = -1;
-		this.color = Color.BLACK;
+		this.color = new Color(0, 0, 0);
 		this.inDatabase = false;
 		this.attributeValues = null;
 	}
