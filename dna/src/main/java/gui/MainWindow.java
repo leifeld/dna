@@ -1534,7 +1534,13 @@ public class MainWindow extends JFrame {
 		public void actionPerformed(ActionEvent e) {
 			NewDatabaseDialog n = new NewDatabaseDialog(MainWindow.this, true);
 			ConnectionProfile cp = n.getConnectionProfile();
-			if (cp != null) {
+			String version = new Sql(cp, false).getVersion();
+			if (!version.startsWith("3.0")) {
+				LogEvent le = new LogEvent(Logger.ERROR,
+						"[GUI] Tried to open an incompatible database version.",
+						"You tried to open a DNA database with version " + version + ", but you can only open databases with version 3.0. Data from version 2 databases can also be imported into a new or existing DNA 3 database using the importer in the Documents menu.");
+				Dna.logger.log(le);
+			} else if (cp != null) {
 				Dna.sql.setConnectionProfile(cp, false);
 				refreshDocumentTable();
 				refreshStatementTable(new int[0]);
@@ -1547,19 +1553,19 @@ public class MainWindow extends JFrame {
 				statementPanel.adjustToChangedConnection();
 				menuBar.adjustToChangedCoder();
 				coderSelectionPanel.changeCoderBadge();
-			}
-			
-			if (cp == null) {
-				LogEvent l = new LogEvent(Logger.MESSAGE,
-						"[GUI] Action executed: could not open database.",
-						"Started opening a database connection from the GUI, but the connection was not established.");
-				Dna.logger.log(l);
-			} else {
-				Dna.sql.setConnectionProfile(cp, false); // not a connection test, so false
-				LogEvent l = new LogEvent(Logger.MESSAGE,
-						"[GUI] Action executed: opened database.",
-						"Opened a database connection from the GUI.");
-				Dna.logger.log(l);
+
+				if (cp == null) {
+					LogEvent l = new LogEvent(Logger.MESSAGE,
+							"[GUI] Action executed: could not open database.",
+							"Started opening a database connection from the GUI, but the connection was not established.");
+					Dna.logger.log(l);
+				} else {
+					Dna.sql.setConnectionProfile(cp, false); // not a connection test, so false
+					LogEvent l = new LogEvent(Logger.MESSAGE,
+							"[GUI] Action executed: opened database.",
+							"Opened a database connection from the GUI.");
+					Dna.logger.log(l);
+				}
 			}
 		}
 	}
