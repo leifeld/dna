@@ -29,6 +29,18 @@ public class Matrix implements Cloneable {
 	}
 
 	/**
+	 * Constructor for empty object with only the dates inserted (useful for time slice creation).
+	 * @param start The start date.
+	 * @param dateTime The mid-point.
+	 * @param stop The end date.
+	 */
+	public Matrix(LocalDateTime start, LocalDateTime dateTime, LocalDateTime stop) {
+		this.start = start;
+		this.dateTime = dateTime;
+		this.stop = stop;
+	}
+
+	/**
 	 * Copy constructor.
 	 */
 	public Matrix(Matrix matrix) {

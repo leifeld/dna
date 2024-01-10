@@ -103,6 +103,13 @@ public class Exporter {
 	private int T, t, backboneSize;
 	private SimulatedAnnealingBackboneResult simulatedAnnealingBackboneResult = null;
 
+	// time smoothing
+	private String kernel = "no";
+
+	public void setKernelFunction(String kernel) {
+		this.kernel = kernel;
+	}
+
 	/**
 	 * <p>Create a new Exporter class instance, holding an array list of export
 	 * statements (i.e., statements with added document information and a hash
@@ -1252,7 +1259,11 @@ public class Exporter {
 		} else if (networkType.equals("twomode") && timeWindow.equals("no")) {
 			computeTwoModeMatrix();
 		} else if (!networkType.equals("eventlist") && !timeWindow.equals("no")) {
-			computeTimeWindowMatrices();
+			if (this.kernel.equals("no")) {
+				computeTimeWindowMatrices();
+			} else {
+				computeKernelSmoothedTimeSlices();
+			}
 		}
 	}
 	
@@ -1665,6 +1676,161 @@ public class Exporter {
 		Matrix matrix = new Matrix(mat, names1, names2, integerBoolean, start, stop); // assemble the Matrix object with labels
 		matrix.setNumStatements(this.filteredStatements.size());
 		return matrix;
+	}
+
+	public void computeKernelSmoothedTimeSlices() {
+		// initialise variables and constants
+		Collections.sort(this.filteredStatements); // probably not necessary, but can't hurt to have it
+		if (this.windowSize % 2 != 0) { // windowSize is the w constant in the paper; only even numbers are acceptable because adding or subtracting w / 2 to or from gamma would not yield integers
+			this.windowSize = this.windowSize + 1;
+		}
+		final int W_HALF = windowSize / 2;
+		LocalDateTime b = this.startDateTime; // start of statement list
+		LocalDateTime e = this.stopDateTime; // end of statement list
+		LocalDateTime gamma = b; // current time while progressing through list of statements
+
+		// create an array list of all time points, already saved in otherwise empty Matrix objects
+		Exporter.this.matrixResults = new ArrayList<Matrix>();
+		if (Exporter.this.kernel.equals("gaussian")) {
+			if (timeWindow.equals("minutes")) {
+				gamma = gamma.minusMinutes(1);
+				while (gamma.isBefore(e.plusMinutes(1))) {
+					gamma = gamma.plusMinutes(1);
+					Exporter.this.matrixResults.add(new Matrix(b, gamma, e));
+				}
+			} else if (timeWindow.equals("hours")) {
+				gamma = gamma.minusHours(1);
+				while (gamma.isBefore(e.plusHours(1))) {
+					gamma = gamma.plusHours(1);
+					Exporter.this.matrixResults.add(new Matrix(b, gamma, e));
+				}
+			} else if (timeWindow.equals("days")) {
+				gamma = gamma.minusDays(1);
+				while (gamma.isBefore(e.plusDays(1))) {
+					gamma = gamma.plusDays(1);
+					Exporter.this.matrixResults.add(new Matrix(b, gamma, e));
+				}
+			} else if (timeWindow.equals("weeks")) {
+				gamma = gamma.minusWeeks(1);
+				while (gamma.isBefore(e.plusWeeks(1))) {
+					gamma = gamma.plusWeeks(1);
+					Exporter.this.matrixResults.add(new Matrix(b, gamma, e));
+				}
+			} else if (timeWindow.equals("months")) {
+				gamma = gamma.minusMonths(1);
+				while (gamma.isBefore(e.plusMonths(1))) {
+					gamma = gamma.plusMonths(1);
+					Exporter.this.matrixResults.add(new Matrix(b, gamma, e));
+				}
+			} else if (timeWindow.equals("years")) {
+				gamma = gamma.minusYears(1);
+				while (gamma.isBefore(e.plusYears(1))) {
+					gamma = gamma.plusYears(1);
+					Exporter.this.matrixResults.add(new Matrix(b, gamma, e));
+				}
+			}
+		} else {
+			if (timeWindow.equals("minutes")) {
+				gamma = gamma.minusMinutes(1);
+				while (gamma.isBefore(e.plusMinutes(1))) {
+					gamma = gamma.plusMinutes(1);
+					Exporter.this.matrixResults.add(new Matrix(gamma.minusMinutes(W_HALF).isBefore(b) ? b : gamma.minusMinutes(W_HALF), gamma, gamma.plusMinutes(W_HALF).isAfter(e) ? e : gamma.plusMinutes(W_HALF)));
+				}
+			} else if (timeWindow.equals("hours")) {
+				gamma = gamma.minusHours(1);
+				while (gamma.isBefore(e.plusHours(1))) {
+					gamma = gamma.plusHours(1);
+					Exporter.this.matrixResults.add(new Matrix(gamma.minusHours(W_HALF).isBefore(b) ? b : gamma.minusHours(W_HALF), gamma, gamma.plusHours(W_HALF).isAfter(e) ? e : gamma.plusHours(W_HALF)));
+				}
+			} else if (timeWindow.equals("days")) {
+				gamma = gamma.minusDays(1);
+				while (gamma.isBefore(e.plusDays(1))) {
+					gamma = gamma.plusDays(1);
+					Exporter.this.matrixResults.add(new Matrix(gamma.minusDays(W_HALF).isBefore(b) ? b : gamma.minusDays(W_HALF), gamma, gamma.plusDays(W_HALF).isAfter(e) ? e : gamma.plusDays(W_HALF)));
+				}
+			} else if (timeWindow.equals("weeks")) {
+				gamma = gamma.minusWeeks(1);
+				while (gamma.isBefore(e.plusWeeks(1))) {
+					gamma = gamma.plusWeeks(1);
+					Exporter.this.matrixResults.add(new Matrix(gamma.minusWeeks(W_HALF).isBefore(b) ? b : gamma.minusWeeks(W_HALF), gamma, gamma.plusWeeks(W_HALF).isAfter(e) ? e : gamma.plusWeeks(W_HALF)));
+				}
+			} else if (timeWindow.equals("months")) {
+				gamma = gamma.minusMonths(1);
+				while (gamma.isBefore(e.plusMonths(1))) {
+					gamma = gamma.plusMonths(1);
+					Exporter.this.matrixResults.add(new Matrix(gamma.minusMonths(W_HALF).isBefore(b) ? b : gamma.minusMonths(W_HALF), gamma, gamma.plusMonths(W_HALF).isAfter(e) ? e : gamma.plusMonths(W_HALF)));
+				}
+			} else if (timeWindow.equals("years")) {
+				gamma = gamma.minusYears(1);
+				while (gamma.isBefore(e.plusYears(1))) {
+					gamma = gamma.plusYears(1);
+					Exporter.this.matrixResults.add(new Matrix(gamma.minusYears(W_HALF).isBefore(b) ? b : gamma.minusYears(W_HALF), gamma, gamma.plusYears(W_HALF).isAfter(e) ? e : gamma.plusYears(W_HALF)));
+				}
+			}
+		}
+
+		// process each matrix result in a parallel stream instead of for-loop and add calculation results
+		ArrayList<Matrix> processedResults = Exporter.this.matrixResults.parallelStream()
+				.map(matrixResult -> processTimeSlice(matrixResult, Exporter.this.filteredStatements))
+				.collect(Collectors.toCollection(ArrayList::new));
+		Exporter.this.matrixResults = processedResults;
+	}
+
+	/**
+	 * Add results to a matrix result by calculating the appropriate time slice projection and inserting it.
+	 *
+	 * @param matrixResult
+	 */
+	private Matrix processTimeSlice(Matrix matrixResult, List<ExportStatement> statements) {
+		List<ExportStatement> filteredStatements = new ArrayList<>(statements);
+		filteredStatements.removeIf(statement -> statement.getDateTime().isBefore(matrixResult.getStart()) || statement.getDateTime().isAfter(matrixResult.getStop()));
+		if (this.networkType.equals("twomode")) {
+			return(computeTwoModeMatrixSmoothed(filteredStatements, matrixResult));
+		} else {
+			return(computeOneModeMatrixSmoothed(filteredStatements, matrixResult));
+		}
+	}
+
+	/**
+	 * Compute a two-mode matrix, potentially with smoothing.
+	 *
+	 * @param statements A filtered list of statements corresponding to the respective time slice.
+	 * @param matrixResult An empty matrix containing only the start, mid, and end dates of the time slice.
+	 * @return A {@link Matrix} object.
+	 */
+	private Matrix computeTwoModeMatrixSmoothed(List<ExportStatement> statements, Matrix matrixResult) {
+
+		/*
+		if (Exporter.this.kernel.equals("gaussian")) {
+
+		} else {
+			if (Exporter.this.kernel.equals("uniform")) {
+
+			} else if (Exporter.this.kernel.equals("epanechnikov")) {
+
+			} else if (Exporter.this.kernel.equals("triangular")) {
+
+			}
+		}
+		*/
+
+		// TODO
+
+		return matrixResult;
+	}
+
+	/**
+	 * Compute a one-mode matrix, potentially with smoothing.
+	 *
+	 * @param statements A filtered list of statements corresponding to the respective time slice.
+	 * @param matrixResult An empty matrix containing only the start, mid, and end dates of the time slice.
+	 * @return A {@link Matrix} object.
+	 */
+	private Matrix computeOneModeMatrixSmoothed(List<ExportStatement> statements, Matrix matrixResult) {
+
+		// TODO
+
+		return matrixResult;
 	}
 
 	/**
