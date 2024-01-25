@@ -2229,7 +2229,7 @@ autoplot.dna_barplot <- function(object,
   if (binary) { # Bars for the binary case
     g <- g + ggplot2::geom_bar(ggplot2::aes(fill = .data[["color"]],
                                                    color = .data[["text_color"]]),
-                               stat = .data[["identity"]],
+                               stat = "identity",
                                width = barWidth,
                                show.legend = FALSE)
     # For the integer case with positive and negative values
