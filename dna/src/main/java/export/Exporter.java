@@ -23,7 +23,9 @@ import org.ojalgo.matrix.Primitive64Matrix;
 import org.ojalgo.matrix.decomposition.Eigenvalue;
 
 import java.io.*;
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.Period;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.WeekFields;
@@ -1678,7 +1680,25 @@ public class Exporter {
 		return matrix;
 	}
 
+    /**
+     * Compute a series of network matrices using kernel smoothing.
+     *
+     * This function creates a series of network matrices (one-mode or two-mode) similar to the time window approach,
+     * but using kernel smoothing around a forward-moving mid-point on the time axis (gamma). The networks are defined
+     * by the mid-point {@code gamma}, the window size {@code w}, and the kernel function. These parameters are saved in
+     * the fields of the class. All networks have the same dimensions, i.e., isolates are included at any time point, to
+     * make the networks comparable and amenable to distance functions and other pair-wise computations.
+     */
 	public void computeKernelSmoothedTimeSlices() {
+		// check and fix normalization setting for unimplemented normalization settings
+		if (Exporter.this.normalization.equals("jaccard") || Exporter.this.normalization.equals("cosine") || Exporter.this.normalization.equals("activity") || Exporter.this.normalization.equals("prominence")) {
+			LogEvent l = new LogEvent(Logger.WARNING,
+					Exporter.this.normalization + " normalization not implemented.",
+					Exporter.this.normalization + " normalization has not been implemented (yet?) for kernel-smoothed networks. Using \"average\" normalization instead.");
+			Exporter.this.normalization = "average";
+			Dna.logger.log(l);
+		}
+
 		// initialise variables and constants
 		Collections.sort(this.filteredStatements); // probably not necessary, but can't hurt to have it
 		if (this.windowSize % 2 != 0) { // windowSize is the w constant in the paper; only even numbers are acceptable because adding or subtracting w / 2 to or from gamma would not yield integers
@@ -1689,148 +1709,334 @@ public class Exporter {
 		LocalDateTime e = this.stopDateTime; // end of statement list
 		LocalDateTime gamma = b; // current time while progressing through list of statements
 
-		// create an array list of all time points, already saved in otherwise empty Matrix objects
+		// save the labels of the variables and qualifier and put indices in hash maps for fast retrieval
+		String[] var1Values = retrieveValues(Exporter.this.filteredStatements, Exporter.this.variable1, Exporter.this.variable1Document);
+		String[] var2Values = retrieveValues(Exporter.this.filteredStatements, Exporter.this.variable2, Exporter.this.variable2Document);
+		String[] qualValues = retrieveValues(Exporter.this.filteredStatements, Exporter.this.qualifier, Exporter.this.qualifierDocument);
+		if (dataTypes.get(Exporter.this.qualifier).equals("integer")) {
+			int[] qual = Exporter.this.originalStatements.stream().mapToInt(s -> (int) s.get(Exporter.this.qualifier)).distinct().sorted().toArray();
+			if (qual.length < qualValues.length) {
+				qualValues = IntStream.rangeClosed(qual[0], qual[qual.length - 1])
+						.mapToObj(i -> String.valueOf(i))
+						.toArray(String[]::new);
+			}
+		}
+		HashMap<String, Integer> var1Map = new HashMap<>();
+		for (int i = 0; i < var1Values.length; i++) {
+			var1Map.put(var1Values[i], i);
+		}
+		HashMap<String, Integer> var2Map = new HashMap<>();
+		for (int i = 0; i < var2Values.length; i++) {
+			var2Map.put(var2Values[i], i);
+		}
+		HashMap<String, Integer> qualMap = new HashMap<>();
+		for (int i = 0; i < qualValues.length; i++) {
+			qualMap.put(qualValues[i], i);
+		}
+
+		// create an array list of empty Matrix results, store all date-time stamps in them, and save indices in a hash map
 		Exporter.this.matrixResults = new ArrayList<Matrix>();
-		if (Exporter.this.kernel.equals("gaussian")) {
+		HashMap<LocalDateTime, Integer> timeMap = new HashMap<>();
+		if (Exporter.this.kernel.equals("gaussian")) { // for each mid-point gamma, create an empty Matrix and save the start, mid, and end time points in it as defined by the start and end of the whole time range; the actual matrix is injected later
 			if (timeWindow.equals("minutes")) {
 				gamma = gamma.minusMinutes(1);
 				while (gamma.isBefore(e.plusMinutes(1))) {
 					gamma = gamma.plusMinutes(1);
-					Exporter.this.matrixResults.add(new Matrix(b, gamma, e));
+					Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, b, gamma, e));
+					timeMap.put(gamma, Exporter.this.matrixResults.size() - 1);
 				}
 			} else if (timeWindow.equals("hours")) {
 				gamma = gamma.minusHours(1);
 				while (gamma.isBefore(e.plusHours(1))) {
 					gamma = gamma.plusHours(1);
-					Exporter.this.matrixResults.add(new Matrix(b, gamma, e));
+					Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, b, gamma, e));
+					timeMap.put(gamma, Exporter.this.matrixResults.size() - 1);
 				}
 			} else if (timeWindow.equals("days")) {
 				gamma = gamma.minusDays(1);
 				while (gamma.isBefore(e.plusDays(1))) {
 					gamma = gamma.plusDays(1);
-					Exporter.this.matrixResults.add(new Matrix(b, gamma, e));
+					Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, b, gamma, e));
+					timeMap.put(gamma, Exporter.this.matrixResults.size() - 1);
 				}
 			} else if (timeWindow.equals("weeks")) {
 				gamma = gamma.minusWeeks(1);
 				while (gamma.isBefore(e.plusWeeks(1))) {
 					gamma = gamma.plusWeeks(1);
-					Exporter.this.matrixResults.add(new Matrix(b, gamma, e));
+					Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, b, gamma, e));
+					timeMap.put(gamma, Exporter.this.matrixResults.size() - 1);
 				}
 			} else if (timeWindow.equals("months")) {
 				gamma = gamma.minusMonths(1);
 				while (gamma.isBefore(e.plusMonths(1))) {
 					gamma = gamma.plusMonths(1);
-					Exporter.this.matrixResults.add(new Matrix(b, gamma, e));
+					Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, b, gamma, e));
+					timeMap.put(gamma, Exporter.this.matrixResults.size() - 1);
 				}
 			} else if (timeWindow.equals("years")) {
 				gamma = gamma.minusYears(1);
 				while (gamma.isBefore(e.plusYears(1))) {
 					gamma = gamma.plusYears(1);
-					Exporter.this.matrixResults.add(new Matrix(b, gamma, e));
+					Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, b, gamma, e));
+					timeMap.put(gamma, Exporter.this.matrixResults.size() - 1);
 				}
 			}
-		} else {
+		} else { // for each mid-point gamma, create an empty Matrix and save the start, mid, and end time points in it as defined by width w; the actual matrix is injected later
 			if (timeWindow.equals("minutes")) {
 				gamma = gamma.minusMinutes(1);
 				while (gamma.isBefore(e.plusMinutes(1))) {
 					gamma = gamma.plusMinutes(1);
-					Exporter.this.matrixResults.add(new Matrix(gamma.minusMinutes(W_HALF).isBefore(b) ? b : gamma.minusMinutes(W_HALF), gamma, gamma.plusMinutes(W_HALF).isAfter(e) ? e : gamma.plusMinutes(W_HALF)));
+					Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, gamma.minusMinutes(W_HALF).isBefore(b) ? b : gamma.minusMinutes(W_HALF), gamma, gamma.plusMinutes(W_HALF).isAfter(e) ? e : gamma.plusMinutes(W_HALF)));
+					timeMap.put(gamma, Exporter.this.matrixResults.size() - 1);
 				}
 			} else if (timeWindow.equals("hours")) {
 				gamma = gamma.minusHours(1);
 				while (gamma.isBefore(e.plusHours(1))) {
 					gamma = gamma.plusHours(1);
-					Exporter.this.matrixResults.add(new Matrix(gamma.minusHours(W_HALF).isBefore(b) ? b : gamma.minusHours(W_HALF), gamma, gamma.plusHours(W_HALF).isAfter(e) ? e : gamma.plusHours(W_HALF)));
+					Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, gamma.minusHours(W_HALF).isBefore(b) ? b : gamma.minusHours(W_HALF), gamma, gamma.plusHours(W_HALF).isAfter(e) ? e : gamma.plusHours(W_HALF)));
+					timeMap.put(gamma, Exporter.this.matrixResults.size() - 1);
 				}
 			} else if (timeWindow.equals("days")) {
 				gamma = gamma.minusDays(1);
 				while (gamma.isBefore(e.plusDays(1))) {
 					gamma = gamma.plusDays(1);
-					Exporter.this.matrixResults.add(new Matrix(gamma.minusDays(W_HALF).isBefore(b) ? b : gamma.minusDays(W_HALF), gamma, gamma.plusDays(W_HALF).isAfter(e) ? e : gamma.plusDays(W_HALF)));
+					Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, gamma.minusDays(W_HALF).isBefore(b) ? b : gamma.minusDays(W_HALF), gamma, gamma.plusDays(W_HALF).isAfter(e) ? e : gamma.plusDays(W_HALF)));
+					timeMap.put(gamma, Exporter.this.matrixResults.size() - 1);
 				}
 			} else if (timeWindow.equals("weeks")) {
 				gamma = gamma.minusWeeks(1);
 				while (gamma.isBefore(e.plusWeeks(1))) {
 					gamma = gamma.plusWeeks(1);
-					Exporter.this.matrixResults.add(new Matrix(gamma.minusWeeks(W_HALF).isBefore(b) ? b : gamma.minusWeeks(W_HALF), gamma, gamma.plusWeeks(W_HALF).isAfter(e) ? e : gamma.plusWeeks(W_HALF)));
+					Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, gamma.minusWeeks(W_HALF).isBefore(b) ? b : gamma.minusWeeks(W_HALF), gamma, gamma.plusWeeks(W_HALF).isAfter(e) ? e : gamma.plusWeeks(W_HALF)));
+					timeMap.put(gamma, Exporter.this.matrixResults.size() - 1);
 				}
 			} else if (timeWindow.equals("months")) {
 				gamma = gamma.minusMonths(1);
 				while (gamma.isBefore(e.plusMonths(1))) {
 					gamma = gamma.plusMonths(1);
-					Exporter.this.matrixResults.add(new Matrix(gamma.minusMonths(W_HALF).isBefore(b) ? b : gamma.minusMonths(W_HALF), gamma, gamma.plusMonths(W_HALF).isAfter(e) ? e : gamma.plusMonths(W_HALF)));
+					Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, gamma.minusMonths(W_HALF).isBefore(b) ? b : gamma.minusMonths(W_HALF), gamma, gamma.plusMonths(W_HALF).isAfter(e) ? e : gamma.plusMonths(W_HALF)));
+					timeMap.put(gamma, Exporter.this.matrixResults.size() - 1);
 				}
 			} else if (timeWindow.equals("years")) {
 				gamma = gamma.minusYears(1);
 				while (gamma.isBefore(e.plusYears(1))) {
 					gamma = gamma.plusYears(1);
-					Exporter.this.matrixResults.add(new Matrix(gamma.minusYears(W_HALF).isBefore(b) ? b : gamma.minusYears(W_HALF), gamma, gamma.plusYears(W_HALF).isAfter(e) ? e : gamma.plusYears(W_HALF)));
+					Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, gamma.minusYears(W_HALF).isBefore(b) ? b : gamma.minusYears(W_HALF), gamma, gamma.plusYears(W_HALF).isAfter(e) ? e : gamma.plusYears(W_HALF)));
+					timeMap.put(gamma, Exporter.this.matrixResults.size() - 1);
 				}
 			}
 		}
 
+		// create a 4D array, go through the statements, and populate the array
+		int[][][][] X = new int[var1Values.length][var2Values.length][qualValues.length][Exporter.this.matrixResults.size()]; // var1 x var2 x qual x time
+		Exporter.this.filteredStatements.stream().forEach(s -> {
+			int var1Index = -1;
+			if (Exporter.this.variable1Document) {
+				if (Exporter.this.variable1.equals("author")) {
+					var1Index = var1Map.get(s.getAuthor());
+				} else if (Exporter.this.variable1.equals("source")) {
+					var1Index = var1Map.get(s.getSource());
+				} else if (Exporter.this.variable1.equals("section")) {
+					var1Index = var1Map.get(s.getSection());
+				} else if (Exporter.this.variable1.equals("type")) {
+					var1Index = var1Map.get(s.getType());
+				} else if (Exporter.this.variable1.equals("id")) {
+					var1Index = var1Map.get(s.getDocumentIdAsString());
+				} else if (Exporter.this.variable1.equals("title")) {
+					var1Index = var1Map.get(s.getTitle());
+				}
+			} else {
+				var1Index = var1Map.get((String) s.get(Exporter.this.variable1));
+			}
+			int var2Index = -1;
+			if (Exporter.this.variable2Document) {
+				if (Exporter.this.variable2.equals("author")) {
+					var2Index = var2Map.get(s.getAuthor());
+				} else if (Exporter.this.variable2.equals("source")) {
+					var2Index = var2Map.get(s.getSource());
+				} else if (Exporter.this.variable2.equals("section")) {
+					var2Index = var2Map.get(s.getSection());
+				} else if (Exporter.this.variable2.equals("type")) {
+					var2Index = var2Map.get(s.getType());
+				} else if (Exporter.this.variable2.equals("id")) {
+					var2Index = var2Map.get(s.getDocumentIdAsString());
+				} else if (Exporter.this.variable2.equals("title")) {
+					var2Index = var2Map.get(s.getTitle());
+				}
+			} else {
+				var2Index = var2Map.get((String) s.get(Exporter.this.variable2));
+			}
+			int qualIndex = -1;
+			if (Exporter.this.qualifierDocument) {
+				if (Exporter.this.qualifier.equals("author")) {
+					qualIndex = qualMap.get(s.getAuthor());
+				} else if (Exporter.this.qualifier.equals("source")) {
+					qualIndex = qualMap.get(s.getSource());
+				} else if (Exporter.this.qualifier.equals("section")) {
+					qualIndex = qualMap.get(s.getSection());
+				} else if (Exporter.this.qualifier.equals("type")) {
+					qualIndex = qualMap.get(s.getType());
+				} else if (Exporter.this.qualifier.equals("id")) {
+					qualIndex = qualMap.get(s.getDocumentIdAsString());
+				} else if (Exporter.this.qualifier.equals("title")) {
+					qualIndex = qualMap.get(s.getTitle());
+				}
+			} else {
+				if (dataTypes.get(Exporter.this.qualifier).equals("integer") || dataTypes.get(Exporter.this.qualifier).equals("boolean")) {
+					qualIndex = qualMap.get(String.valueOf((int) s.get(Exporter.this.qualifier)));
+				} else {
+					qualIndex = qualMap.get(s.get(Exporter.this.qualifier));
+				}
+			}
+			int timeIndex = timeMap.get(s.getDateTime());
+			X[var1Index][var2Index][qualIndex][timeIndex]++;
+		});
+
 		// process each matrix result in a parallel stream instead of for-loop and add calculation results
 		ArrayList<Matrix> processedResults = Exporter.this.matrixResults.parallelStream()
-				.map(matrixResult -> processTimeSlice(matrixResult, Exporter.this.filteredStatements))
+				.map(matrixResult -> processTimeSlice(matrixResult, X, Exporter.this.matrixResults))
 				.collect(Collectors.toCollection(ArrayList::new));
 		Exporter.this.matrixResults = processedResults;
 	}
 
 	/**
-	 * Add results to a matrix result by calculating the appropriate time slice projection and inserting it.
+     * Compute a one-mode or two-mode network matrix with kernel-weighting and inject it into a {@link Matrix} object.
 	 *
-	 * @param matrixResult
+     * To compute the kernel-weighted network projection, the 4D array X is needed because it stores the statement data,
+     * the current matrix result is needed because it stores the mid-point gamma, and the array list of all matrix
+     * results is needed because the mid-points of the matrices contain the time stamps for the time dimension in X,
+     * which is required to establish the time difference between the current matrix mid-point and the respective
+     * statement in X.
+	 *
+	 * @param matrixResult The matrix result into which the network matrix will be inserted.
+     * @param X A 4D array containing the data.
+     * @param matrixResults All matrix results, containing the temporal information for the fourth dimension of X.
+     * @return The matrix result after inserting the network matrix.
 	 */
-	private Matrix processTimeSlice(Matrix matrixResult, List<ExportStatement> statements) {
-		List<ExportStatement> filteredStatements = new ArrayList<>(statements);
-		filteredStatements.removeIf(statement -> statement.getDateTime().isBefore(matrixResult.getStart()) || statement.getDateTime().isAfter(matrixResult.getStop()));
+	private Matrix processTimeSlice(Matrix matrixResult, int[][][][] X, ArrayList<Matrix> matrixResults) {
 		if (this.networkType.equals("twomode")) {
-			return(computeTwoModeMatrixSmoothed(filteredStatements, matrixResult));
-		} else {
-			return(computeOneModeMatrixSmoothed(filteredStatements, matrixResult));
-		}
-	}
-
-	/**
-	 * Compute a two-mode matrix, potentially with smoothing.
-	 *
-	 * @param statements A filtered list of statements corresponding to the respective time slice.
-	 * @param matrixResult An empty matrix containing only the start, mid, and end dates of the time slice.
-	 * @return A {@link Matrix} object.
-	 */
-	private Matrix computeTwoModeMatrixSmoothed(List<ExportStatement> statements, Matrix matrixResult) {
-
-		/*
-		if (Exporter.this.kernel.equals("gaussian")) {
-
-		} else {
-			if (Exporter.this.kernel.equals("uniform")) {
-
-			} else if (Exporter.this.kernel.equals("epanechnikov")) {
-
-			} else if (Exporter.this.kernel.equals("triangular")) {
-
+			double[][] m = new double[X.length][X[0].length];
+			for (int i = 0; i < X.length; i++) {
+				for (int j = 0; j < X[0].length; j++) {
+					for (int k = 0; k < X[0][0].length; k++) {
+						for (int t = 0; t < X[0][0][0].length; t++) {
+							m[i][j] = k * X[i][j][k][t] * zeta(matrixResults.get(t).getDateTime(), matrixResult.getDateTime(), Exporter.this.windowSize, Exporter.this.timeWindow, Exporter.this.kernel);
+						}
+					}
+				}
 			}
+		} else if (this.networkType.equals("onemode")) {
+			double[][] m = new double[X.length][X.length];
+			double[][] norm = new double[X.length][X.length];
+			for (int i = 0; i < X.length; i++) {
+				for (int i2 = 0; i2 < X.length; i2++) {
+					for (int j = 0; j < X[0].length; j++) {
+						for (int k = 0; k < X[0][0].length; k++) {
+							for (int t = 0; t < X[0][0][0].length; t++) {
+								if (Exporter.this.normalization.equals("average")) {
+									norm[i][i2] = norm[i][i2] + 2.0 / (X[i][j][k][t] + X[i2][j][k][t]);
+								}
+								for (int k2 = 0; k2 < X[0][0].length; k2++) {
+									for (int t2 = 0; t2 < X[0][0][0].length; t2++) {
+										double cong = Math.sqrt(X[i][j][k][t] * X[i2][j][k2][t2]);
+										double qsim = 1.0;
+										if (!dataTypes.get(Exporter.this.qualifier).equals("short text") && !Exporter.this.qualifierDocument) {
+											qsim = Math.abs(1.0 - ((double) Math.abs(k - k2) / (double) Math.abs(X[0][0].length - 1)));
+										}
+										double qdiff = 1.0 - qsim;
+										double zeta = Math.sqrt(zeta(matrixResults.get(t).getDateTime(), matrixResult.getDateTime(), Exporter.this.windowSize, Exporter.this.timeWindow, Exporter.this.kernel) * zeta(matrixResults.get(t2).getDateTime(), matrixResult.getDateTime(), Exporter.this.windowSize, Exporter.this.timeWindow, Exporter.this.kernel));
+										if (Exporter.this.qualifierAggregation.equals("congruence")) {
+											m[i][i2] = cong * qsim * zeta;
+										} else if (Exporter.this.qualifierAggregation.equals("conflict")) {
+											m[i][i2] = cong * qdiff * zeta;
+										} else if (Exporter.this.qualifierAggregation.equals("subtract")) {
+											m[i][i2] = cong * qsim * zeta - cong * qdiff * zeta;
+										} else if (Exporter.this.qualifierAggregation.equals("ignore")) {
+											m[i][i2] = cong * zeta;
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			if (Exporter.this.normalization.equals("average")) {
+				for (int i = 0; i < X.length; i++) {
+					for (int i2 = 0; i2 < X.length; i2++) {
+						m[i][i2] = m[i][i2] * norm[i][i2];
+					}
+				}
+			}
+			matrixResult.setMatrix(m);
 		}
-		*/
-
-		// TODO
-
 		return matrixResult;
 	}
 
-	/**
-	 * Compute a one-mode matrix, potentially with smoothing.
-	 *
-	 * @param statements A filtered list of statements corresponding to the respective time slice.
-	 * @param matrixResult An empty matrix containing only the start, mid, and end dates of the time slice.
-	 * @return A {@link Matrix} object.
-	 */
-	private Matrix computeOneModeMatrixSmoothed(List<ExportStatement> statements, Matrix matrixResult) {
+    /**
+     * Return a standardized time weight after applying a kernel function to a time difference.
+     *
+     * @param t The current time in the time window.
+     * @param gamma The mid-point of the time window.
+     * @param w The width of the time window, which defines the beginning and end of the time window.
+     * @param timeWindow The time unit. Valid values are {@code "seconds"}, {@code "minutes"}, {@code "hours"}, {@code "days"}, {@code "weeks"}, {@code "months"}, and {@code "years"}.
+     * @param kernel The kernel function ({@code "uniform"}, {@code "epanechnikov"}, {@code "triangular"}, or {@code "gaussian"}).
+     * @return Kernel-weighted time difference between time points t and gamma.
+     */
+	private double zeta(LocalDateTime t, LocalDateTime gamma, int w, String timeWindow, String kernel) {
+		Duration duration = Duration.between(t, gamma);
+		Period period;
+		long diff = 0;
+        switch (timeWindow) {
+            case "seconds":
+                diff = duration.toSeconds();
+                break;
+            case "minutes":
+                diff = duration.toMinutes();
+                break;
+            case "hours":
+                diff = duration.toHours();
+                break;
+			case "days":
+				diff = duration.toDays();
+				break;
+			case "weeks":
+				diff = duration.toDays() / 7;
+				break;
+			case "months":
+				period = Period.between(t.toLocalDate(), gamma.toLocalDate());
+				diff = period.getMonths() + (long) period.getYears() * (long) 12;
+				break;
+			case "years":
+				period = Period.between(t.toLocalDate(), gamma.toLocalDate());
+				diff = period.getYears();
+				break;
+        }
 
-		// TODO
+		double diff_std = 2 * (double) diff / (double) w; // standardised time difference between -1 and 1
 
-		return matrixResult;
+		if (kernel.equals("uniform")) {
+			if (diff_std >= -1 && diff_std <= 1) {
+				return 0.5;
+			} else {
+				return 0.0;
+			}
+		} else if (kernel.equals("epanechnikov")) {
+			if (diff_std >= -1 && diff_std <= 1) {
+				return 0.75 * (1.0 - diff_std) * (1.0 - diff_std);
+			} else {
+				return 0.0;
+			}
+		} else if (kernel.equals("triangular")) {
+			if (diff_std >= -1 && diff_std <= 1) {
+				return Math.abs(1.0 - diff_std);
+			} else {
+				return 0.0;
+			}
+		} else if (kernel.equals("gaussian")) {
+			return (1.0 / Math.sqrt(2.0 * Math.PI)) * Math.exp(-0.5 * diff_std * diff_std);
+		}
+		return 0.0;
 	}
 
 	/**

@@ -364,6 +364,7 @@ public class HeadlessDna implements Logger.LogListener {
 	 * @param stopTime               Stop time for the export, provided as a {@link String} with format {@code "HH:mm:ss"}.
 	 * @param timeWindow             A {@link String} indicating the time window setting. Valid options are {@code "no"}, {@code "events"}, {@code "seconds"}, {@code "minutes"}, {@code "hours"}, {@code "days"}, {@code "weeks"}, {@code "months"}, and {@code "years"}.
 	 * @param windowSize             Duration of the time window in the units specified in the {@code timeWindow} argument.
+	 * @param kernel                 The kernel function for temporal smoothing: {@code "no"}, {@code "uniform"}, {@code "epanechnikov"}, {@code "triangular"}, or {@code "gaussian"}.
 	 * @param excludeVariables       A {@link String} array with n elements, indicating the variable of the n'th value.
 	 * @param excludeValues          A {@link String} array with n elements, indicating the value pertaining to the n'th variable {@link String}.
 	 * @param excludeAuthors         A {@link String} array of values to exclude in the {@code author} variable at the document level.
@@ -381,7 +382,7 @@ public class HeadlessDna implements Logger.LogListener {
 	 */
 	public void rNetwork(String networkType, String statementType, String variable1, boolean variable1Document, String variable2,
 						 boolean variable2Document, String qualifier, boolean qualifierDocument, String qualifierAggregation, String normalization, boolean includeIsolates,
-						 String duplicates, String startDate, String stopDate, String startTime, String stopTime, String timeWindow, int windowSize,
+						 String duplicates, String startDate, String stopDate, String startTime, String stopTime, String timeWindow, int windowSize, String kernel,
 						 String[] excludeVariables, String[] excludeValues, String[] excludeAuthors, String[] excludeSources, String[] excludeSections,
 						 String[] excludeTypes, boolean invertValues, boolean invertAuthors, boolean invertSources, boolean invertSections,
 						 boolean invertTypes, String outfile, String fileFormat) {
@@ -441,6 +442,7 @@ public class HeadlessDna implements Logger.LogListener {
 				invertTypes,
 				fileFormat,
 				outfile);
+		this.exporter.setKernelFunction(kernel);
 
 		// step 2: filter
 		this.exporter.loadData();
@@ -448,6 +450,7 @@ public class HeadlessDna implements Logger.LogListener {
 
 		// step 3: compute results
 		if (networkType.equals("eventlist")) {
+			// TODO
 		} else {
 			try {
 				this.exporter.computeResults();

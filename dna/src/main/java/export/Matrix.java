@@ -34,7 +34,10 @@ public class Matrix implements Cloneable {
 	 * @param dateTime The mid-point.
 	 * @param stop The end date.
 	 */
-	public Matrix(LocalDateTime start, LocalDateTime dateTime, LocalDateTime stop) {
+	public Matrix(String[] rowNames, String[] columnNames, boolean integer,  LocalDateTime start, LocalDateTime dateTime, LocalDateTime stop) {
+		this.rowNames = rowNames;
+		this.columnNames = columnNames;
+		this.integer = integer;
 		this.start = start;
 		this.dateTime = dateTime;
 		this.stop = stop;
