@@ -36,6 +36,7 @@ dna_init()
 }
 \seealso{
 Other {rDNA package startup}: 
+\code{\link{dna_getHeadlessDna}()},
 \code{\link{dna_jar}()},
 \code{\link{dna_sample}()}
 }

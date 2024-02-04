@@ -5,6 +5,8 @@ plugins {
 
 // create jar file, not just .class files
 jar {
+    inputs.dir '.'
+
     // point the manifest to the right class
     manifest {
         attributes 'Main-Class': 'dna.Dna'
@@ -77,4 +79,6 @@ dependencies {
     implementation group: 'me.tongfei', name: 'progressbar', version: '0.9.4'
     // https://mvnrepository.com/artifact/org.ojalgo/ojalgo
     implementation group: 'org.ojalgo', name: 'ojalgo', version: '51.4.1'
+    // https://mvnrepository.com/artifact/org.apache.commons/commons-math3
+    implementation group: 'org.apache.commons', name: 'commons-math3', version: '3.6.1'
 }

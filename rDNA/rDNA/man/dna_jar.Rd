@@ -33,6 +33,7 @@ file. If all of this fails, an error message is thrown.
 }
 \seealso{
 Other {rDNA package startup}: 
+\code{\link{dna_getHeadlessDna}()},
 \code{\link{dna_init}()},
 \code{\link{dna_sample}()}
 }

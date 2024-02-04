@@ -2,6 +2,7 @@
 % Please edit documentation in R/rDNA.R
 \name{dna_phaseTransitions}
 \alias{dna_phaseTransitions}
+\alias{dna_phaseTransitions2}
 \alias{print.dna_phaseTransitions}
 \alias{autoplot.dna_phaseTransitions}
 \title{Detect phase transitions and states in a discourse network}
@@ -32,6 +33,44 @@ dna_phaseTransitions(
   stop.time = "23:59:59",
   timeWindow = "days",
   windowSize = 150,
+  excludeValues = list(),
+  excludeAuthors = character(),
+  excludeSources = character(),
+  excludeSections = character(),
+  excludeTypes = character(),
+  invertValues = FALSE,
+  invertAuthors = FALSE,
+  invertSources = FALSE,
+  invertSections = FALSE,
+  invertTypes = FALSE
+)
+
+dna_phaseTransitions2(
+  distanceMethod = "absdiff",
+  normalizeNetwork = FALSE,
+  clusterMethods = c("single", "average", "complete", "ward", "kmeans", "pam",
+    "spectral", "fastgreedy", "walktrap"),
+  k.min = 2,
+  k.max = 6,
+  cores = 1,
+  networkType = "twomode",
+  statementType = "DNA Statement",
+  variable1 = "organization",
+  variable1Document = FALSE,
+  variable2 = "concept",
+  variable2Document = FALSE,
+  qualifier = "agreement",
+  qualifierDocument = FALSE,
+  qualifierAggregation = "subtract",
+  normalization = "no",
+  duplicates = "document",
+  start.date = "01.01.1900",
+  stop.date = "31.12.2099",
+  start.time = "00:00:00",
+  stop.time = "23:59:59",
+  timeWindow = "days",
+  windowSize = 150,
+  kernel = "no",
   excludeValues = list(),
   excludeAuthors = character(),
   excludeSources = character(),
@@ -143,7 +182,10 @@ the data in this case. Do not use with actor networks!}
 the \pkg{pbmcapply} package is used to parallelize the computation of the
 distance matrix and the clustering. Note that this method is based on
 forking and is only available on Unix operating systems, including MacOS
-and Linux.}
+and Linux. In the \code{dna_phaseTransitions2} function, only the
+clustering is done using this parallelization in R while the remaining
+computations are done in parallel using threads in Java, which is more
+efficient.}
 
 \item{networkType}{The kind of network to be computed. Can be
 \code{"twomode"}, \code{"onemode"}, or \code{"eventlist"}.}
@@ -339,6 +381,18 @@ construction (\code{invertTypes = FALSE}) or if they should be the
 only values that should be included during network construction
 (\code{invertTypes = TRUE}).}
 
+\item{kernel}{Use kernel smoothing for computing network time slices? The
+default value \code{kernel = "no"} switches off kernel smoothing, which
+means all statements within a time window are weighted equally. Other
+values down-weight statements the farther they are temporally away from the
+temporal mid-point of the respective time slice. Several kernel smoothing
+functions are available, similar to kernel density estimation:
+\code{"uniform"} is similar to \code{"no"} and weights all statements with
+a value of \code{0.5}. \code{"gaussian"} uses a standard normal
+distribution as a kernel smoother. \code{"epanechnikov"} uses an
+Epanechnikov kernel smoother. \code{"triangular"} uses a triangular kernel
+function.}
+
 \item{x}{A \code{dna_phaseTransitions} object.}
 
 \item{...}{Additional arguments. Currently not in use.}
@@ -362,6 +416,14 @@ For the dissimilarity, the sum of absolute edge weight differences and the
 Euclidean spectral distance are available. Several clustering techniques can
 be applied to identify the different stages and phases from the resulting
 distance matrix.
+
+In contrast to the \code{\link{dna_phaseTransitions}} function, the
+\code{\link{dna_phaseTransitions2}} function does not offer split nodes.
+However, it offers two advantages. The first one is faster computation and
+better parallelization in Java. The second one is kernel smoothing, which
+means the farther away from a time point a statement is, the less important
+it becomes for the network that is created around the time point. Several
+kernel smoothing functions are available; see the \code{kernel} argument.
 
 Print a summary of a \code{dna_phaseTransitions} object, which can be created
 using the \link{dna_phaseTransitions} function.
@@ -387,6 +449,25 @@ results <- dna_phaseTransitions(distanceMethod = "absdiff",
                                 timeWindow = "events",
                                 windowSize = 15)
 results
+
+# kernel smoothing and spectral distances using dna_phaseTransitions2
+results2 <- dna_phaseTransitions2(distanceMethod = "spectral",
+                                  clusterMethods = c("ward",
+                                                     "pam",
+                                                     "concor",
+                                                     "walktrap"),
+                                  k.min = 2,
+                                  k.max = 6,
+                                  networkType = "onemode",
+                                  variable1 = "organization",
+                                  variable2 = "concept",
+                                  timeWindow = "days",
+                                  windowSize = 15,
+                                  kernel = "gaussian")
+results2
+
+library("ggplot2")
+autoplot(results2)
 }
 
 }

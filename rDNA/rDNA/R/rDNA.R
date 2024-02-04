@@ -73,6 +73,34 @@ dna_init <- function(jarfile = dna_jar(), memory = 1024, returnString = FALSE) {
   }
 }
 
+#' Get headless DNA
+#'
+#' Get headless DNA.
+#'
+#' This function returns a reference to the Java class that represents the
+#' R interface of DNA, i.e., the headless API. Headless means that no graphical
+#' user interface is necessary to use the functions in DNA. This is the raw API
+#' interface and should only be used by expert users or to debug other rDNA
+#' functions. You can save the headless DNA object to an object in R and access
+#' its Java functions directly as slots using the "$" operator, for example
+#' \code{dna_getHeadlessDna()$getExport()} will return a reference to the
+#' \code{Exporter} class, which does all the network computations, and
+#' \code{dna_getHeadlessDna()$getAttributes()} will return attributes etc. You
+#' can view the different functions that are available by using the tab key to
+#' auto-complete function access after typing the "$" if the headless reference
+#' has been saved to an object in the workspace.
+#'
+#' @return Headless DNA reference.
+#'
+#' @author Philip Leifeld
+#'
+#' @family {rDNA package startup}
+#'
+#' @export
+dna_getHeadlessDna <- function() {
+  dnaEnvironment[["dna"]]$headlessDna
+}
+
 #' Identify and/or download and install the correct DNA jar file
 #'
 #' Identify and/or download and install the correct DNA jar file.
@@ -987,6 +1015,18 @@ dna_getAttributes <- function(statementType = NULL,
 #' @param windowSize The number of time units of which a moving time window is
 #'   comprised. This can be the number of statement events, the number of days
 #'   etc., as defined in the \code{"timeWindow"} argument.
+#' @param kernel Use kernel smoothing for computing time windows? This option
+#'   only matters if the \code{timeWindow} argument has a value other than
+#'   \code{"no"} or \code{"event"}. The default value \code{kernel = "no"}
+#'   switches off kernel smoothing, which means all statements within a time
+#'   window are weighted equally. Other values down-weight statements the
+#'   farther they are temporally away from the mid-point of the time window.
+#'   Several kernel smoothing functions are available, similar to kernel density
+#'   estimation: \code{"uniform"} is similar to \code{"no"} and weights all
+#'   statements with a value of \code{0.5}. \code{"gaussian"} uses a standard
+#'   normal distribution as a kernel smoother. \code{"epanechnikov"} uses an
+#'   Epanechnikov kernel smoother. \code{"triangular"} uses a triangular kernel
+#'   function. If in doubt, do not use kernel smoothing.
 #' @param excludeValues A list of named character vectors that contains entries
 #'   which should be excluded during network construction. For example,
 #'   \code{list(concept = c("A", "B"), organization = c("org A", "org B"))}
@@ -1083,6 +1123,7 @@ dna_network <- function(networkType = "twomode",
                         stop.time = "23:59:59",
                         timeWindow = "no",
                         windowSize = 100,
+                        kernel = "no",
                         excludeValues = list(),
                         excludeAuthors = character(),
                         excludeSources = character(),
@@ -1136,7 +1177,7 @@ dna_network <- function(networkType = "twomode",
   }
 
   # call rNetwork function to compute results
-  .jcall(dnaEnvironment[["dna"]]$headlessDna,
+  .jcall(dna_getHeadlessDna(),
          "V",
          "rNetwork",
          networkType,
@@ -1157,6 +1198,7 @@ dna_network <- function(networkType = "twomode",
          stop.time,
          timeWindow,
          as.integer(windowSize),
+         kernel,
          var,
          val,
          excludeAuthors,
@@ -1172,7 +1214,7 @@ dna_network <- function(networkType = "twomode",
          fileFormat
   )
 
-  exporter <- .jcall(dnaEnvironment[["dna"]]$headlessDna, "Lexport/Exporter;", "getExporter") # get a reference to the Exporter object, in which results are stored
+  exporter <- .jcall(dna_getHeadlessDna(), "Lexport/Exporter;", "getExporter") # get a reference to the Exporter object, in which results are stored
 
   if (networkType == "eventlist") { # assemble an event list in the form of a data frame of filtered statements
     f <- J(exporter, "getFilteredStatements", simplify = TRUE) # array list of filtered export statements; use J because array list return type not recognized using .jcall
@@ -4300,6 +4342,14 @@ print.dna_multiclust <- function(x, ...) {
 #' be applied to identify the different stages and phases from the resulting
 #' distance matrix.
 #'
+#' In contrast to the \code{\link{dna_phaseTransitions}} function, the
+#' \code{\link{dna_phaseTransitions2}} function does not offer split nodes.
+#' However, it offers two advantages. The first one is faster computation and
+#' better parallelization in Java. The second one is kernel smoothing, which
+#' means the farther away from a time point a statement is, the less important
+#' it becomes for the network that is created around the time point. Several
+#' kernel smoothing functions are available; see the \code{kernel} argument.
+#'
 #' @param distanceMethod The distance measure that expresses the dissimilarity
 #'   between any two network matrices. The following choices are available:
 #'   \itemize{
@@ -4388,7 +4438,21 @@ print.dna_multiclust <- function(x, ...) {
 #'   the \pkg{pbmcapply} package is used to parallelize the computation of the
 #'   distance matrix and the clustering. Note that this method is based on
 #'   forking and is only available on Unix operating systems, including MacOS
-#'   and Linux.
+#'   and Linux. In the \code{dna_phaseTransitions2} function, only the
+#'   clustering is done using this parallelization in R while the remaining
+#'   computations are done in parallel using threads in Java, which is more
+#'   efficient.
+#' @param kernel Use kernel smoothing for computing network time slices? The
+#'   default value \code{kernel = "no"} switches off kernel smoothing, which
+#'   means all statements within a time window are weighted equally. Other
+#'   values down-weight statements the farther they are temporally away from the
+#'   temporal mid-point of the respective time slice. Several kernel smoothing
+#'   functions are available, similar to kernel density estimation:
+#'   \code{"uniform"} is similar to \code{"no"} and weights all statements with
+#'   a value of \code{0.5}. \code{"gaussian"} uses a standard normal
+#'   distribution as a kernel smoother. \code{"epanechnikov"} uses an
+#'   Epanechnikov kernel smoother. \code{"triangular"} uses a triangular kernel
+#'   function.
 #' @inheritParams dna_network
 #'
 #' @examples
@@ -4412,6 +4476,25 @@ print.dna_multiclust <- function(x, ...) {
 #'                                 timeWindow = "events",
 #'                                 windowSize = 15)
 #' results
+#'
+#' # kernel smoothing and spectral distances using dna_phaseTransitions2
+#' results2 <- dna_phaseTransitions2(distanceMethod = "spectral",
+#'                                   clusterMethods = c("ward",
+#'                                                      "pam",
+#'                                                      "concor",
+#'                                                      "walktrap"),
+#'                                   k.min = 2,
+#'                                   k.max = 6,
+#'                                   networkType = "onemode",
+#'                                   variable1 = "organization",
+#'                                   variable2 = "concept",
+#'                                   timeWindow = "days",
+#'                                   windowSize = 15,
+#'                                   kernel = "gaussian")
+#' results2
+#'
+#' library("ggplot2")
+#' autoplot(results2)
 #' }
 #'
 #' @author Philip Leifeld, Kristijan Garic
@@ -4519,6 +4602,7 @@ dna_phaseTransitions <- function(distanceMethod = "absdiff",
                        stop.time = stop.time,
                        timeWindow = timeWindow,
                        windowSize = windowSize,
+                       kernel = "no",
                        excludeValues = excludeValues,
                        excludeAuthors = excludeAuthors,
                        excludeSources = excludeSources,
@@ -4599,6 +4683,7 @@ dna_phaseTransitions <- function(distanceMethod = "absdiff",
                       stop.time = stop.time,
                       timeWindow = timeWindow,
                       windowSize = windowSize,
+                      kernel = "no",
                       excludeValues = excludeValues,
                       excludeAuthors = excludeAuthors,
                       excludeSources = excludeSources,
@@ -4794,6 +4879,340 @@ dna_phaseTransitions <- function(distanceMethod = "absdiff",
   results$modularity <- mod[best]
   results$clusterMethod <- clusterMethods[best]
   dates <- sapply(nw, function(x) attributes(x)$middle)
+
+  # temporal embedding via MDS
+  if (!requireNamespace("MASS", quietly = TRUE)) {
+    mem <- data.frame("date" = as.POSIXct(dates, format = "%d-%m-%Y", tz = "UTC"),
+                      "state" = l[[best]]$memberships)
+    results$states <- mem
+    warning("Skipping temporal embedding because the 'MASS' package is not installed. Consider installing it.")
+  } else {
+    cat("Temporal embedding...\n")
+    a <- Sys.time()
+    distmat <- distance_mat + 1e-12
+    mds <- MASS::isoMDS(distmat) # MDS of distance matrix
+    points <- mds$points
+    mem <- data.frame("date" = as.POSIXct(dates, format = "%d-%m-%Y", tz = "UTC"),
+                      "state" = l[[best]]$memberships,
+                      "X1" = points[, 1],
+                      "X2" = points[, 2])
+    results$states <- mem
+    b <- Sys.time()
+    print(b - a)
+  }
+
+  results$distmat <- distance_mat
+  class(results) <- "dna_phaseTransitions"
+  attributes(results)$stress <- ifelse(ncol(results$states) == 2, NA, mds$stress)
+  attributes(results)$call <- mcall
+  return(results)
+}
+
+#' @rdname dna_phaseTransitions
+#' @author Philip Leifeld
+#' @importFrom stats dist
+#' @importFrom utils combn
+#' @importFrom rJava .jarray .jcall .jnull J
+#' @export
+dna_phaseTransitions2 <- function(distanceMethod = "absdiff",
+                                  normalizeNetwork = FALSE,
+                                  clusterMethods = c("single",
+                                                     "average",
+                                                     "complete",
+                                                     "ward",
+                                                     "kmeans",
+                                                     "pam",
+                                                     "spectral",
+                                                     "fastgreedy",
+                                                     "walktrap"),
+                                  k.min = 2,
+                                  k.max = 6,
+                                  cores = 1,
+                                  networkType = "twomode",
+                                  statementType = "DNA Statement",
+                                  variable1 = "organization",
+                                  variable1Document = FALSE,
+                                  variable2 = "concept",
+                                  variable2Document = FALSE,
+                                  qualifier = "agreement",
+                                  qualifierDocument = FALSE,
+                                  qualifierAggregation = "subtract",
+                                  normalization = "no",
+                                  duplicates = "document",
+                                  start.date = "01.01.1900",
+                                  stop.date = "31.12.2099",
+                                  start.time = "00:00:00",
+                                  stop.time = "23:59:59",
+                                  timeWindow = "days",
+                                  windowSize = 150,
+                                  kernel = "no",
+                                  excludeValues = list(),
+                                  excludeAuthors = character(),
+                                  excludeSources = character(),
+                                  excludeSections = character(),
+                                  excludeTypes = character(),
+                                  invertValues = FALSE,
+                                  invertAuthors = FALSE,
+                                  invertSources = FALSE,
+                                  invertSections = FALSE,
+                                  invertTypes = FALSE) {
+
+  # check arguments and packages
+  if (distanceMethod == "spectral" && networkType == "twomode") {
+    distanceMethod <- "absdiff"
+    warning("Spectral distances only work with one-mode networks. Using 'distanceMethod = \"absdiff\"' instead.")
+  }
+  if (cores > 1 && !requireNamespace("pbmcapply", quietly = TRUE)) {
+    pbmclapply <- FALSE
+    warning("Argument 'cores' requires the 'pbmcapply' package, which is not installed.\nSetting 'cores = 1'. Consider installing the 'pbmcapply' package if you use Linux or MacOS.")
+  }
+  igraphMethods <- c("louvain", "fastgreedy", "walktrap", "leading_eigen", "edge_betweenness", "infomap", "label_prop", "spinglass")
+  if (any(igraphMethods %in% clusterMethods) && !requireNamespace("igraph", quietly = TRUE)) {
+    clusterMethods <- clusterMethods[-igraphMethods]
+    warning("'igraph' package not installed. Dropping clustering methods from the 'igraph' package. Consider installing 'igraph'.")
+  }
+  if ("pam" %in% clusterMethods && !requireNamespace("cluster", quietly = TRUE)) {
+    clusterMethods <- clusterMethods[which(clusterMethods != "pam")]
+    warning("'cluster' package not installed. Dropping clustering methods from the 'cluster' package. Consider installing 'cluster'.")
+  }
+  if ("concor" %in% clusterMethods && k.min > 2) {
+    clusterMethods <- clusterMethods[which(clusterMethods != "concor")]
+    warning("Dropping 'concor' from clustering methods because the CONCOR implementation in rDNA can only find exactly two clusters, but the 'k.min' argument was larger than 2.")
+  }
+  clusterMethods <- rev(clusterMethods) # reverse order to save time during parallel computation by starting the computationally intensive methods first
+  mcall <- match.call() # save the arguments for storing them in the results later
+
+  # generate the time window networks
+  if (is.null(timeWindow) || is.na(timeWindow) || !is.character(timeWindow) || length(timeWindow) != 1 || !timeWindow %in% c("events", "seconds", "minutes", "hours", "days", "weeks", "months", "years")) {
+    timeWindow <- "events"
+    warning("The 'timeWindow' argument was invalid. Proceeding with 'timeWindow = \"events\" instead.")
+  }
+
+  # wrap the vectors of exclude values for document variables into Java arrays
+  excludeAuthors <- .jarray(excludeAuthors)
+  excludeSources <- .jarray(excludeSources)
+  excludeSections <- .jarray(excludeSections)
+  excludeTypes <- .jarray(excludeTypes)
+
+  # compile exclude variables and values vectors
+  dat <- matrix("", nrow = length(unlist(excludeValues)), ncol = 2)
+  count <- 0
+  if (length(excludeValues) > 0) {
+    for (i in 1:length(excludeValues)) {
+      if (length(excludeValues[[i]]) > 0) {
+        for (j in 1:length(excludeValues[[i]])) {
+          count <- count + 1
+          dat[count, 1] <- names(excludeValues)[i]
+          dat[count, 2] <- excludeValues[[i]][j]
+        }
+      }
+    }
+    var <- dat[, 1]
+    val <- dat[, 2]
+  } else {
+    var <- character()
+    val <- character()
+  }
+  var <- .jarray(var) # array of variable names of each excluded value
+  val <- .jarray(val) # array of values to be excluded
+
+  # encode R NULL as Java null value if necessary
+  if (is.null(qualifier) || is.na(qualifier)) {
+    qualifier <- .jnull(class = "java/lang/String")
+  }
+  fileFormat <- .jnull(class = "java/lang/String")
+  outfile <- .jnull(class = "java/lang/String")
+
+  # call rNetwork function to compute results
+  .jcall(dna_getHeadlessDna(),
+         "V",
+         "rNetwork",
+         networkType,
+         statementType,
+         variable1,
+         variable1Document,
+         variable2,
+         variable2Document,
+         qualifier,
+         qualifierDocument,
+         qualifierAggregation,
+         normalization,
+         TRUE,
+         duplicates,
+         start.date,
+         stop.date,
+         start.time,
+         stop.time,
+         timeWindow,
+         as.integer(windowSize),
+         kernel,
+         var,
+         val,
+         excludeAuthors,
+         excludeSources,
+         excludeSections,
+         excludeTypes,
+         invertValues,
+         invertAuthors,
+         invertSources,
+         invertSections,
+         invertTypes,
+         outfile,
+         fileFormat
+  )
+  exporter <- dna_getHeadlessDna()$getExporter() # save Java object reference to exporter class
+
+  # matrix normalization
+  if (normalizeNetwork) {
+    .jcall(exporter,
+           "V",
+           "normalizeMatrixResults")
+  }
+
+  # compute distance matrix
+  if (distanceMethod == "modularity") {
+    stop("Differences in modularity have not been implemented yet. Please use absolute differences or spectral Euclidean distance as a distance method.")
+  } else if (!distanceMethod %in% c("absdiff", "spectral")) {
+    stop("Distance method not recognized. Try \"absdiff\" or \"spectral\".")
+  }
+  distance_mat <- .jcall(exporter,
+                         "[[D",
+                         "computeDistanceMatrix",
+                         distanceMethod,
+                         simplify = TRUE)
+  distance_mat <- distance_mat / max(distance_mat) # rescale between 0 and 1
+
+  # retrieve mid-point dates (gamma)
+  m <- .jcall(exporter, "[Lexport/Matrix;", "getMatrixResultsArray") # get list of Matrix objects from Exporter object
+  dates <- sapply(m, function(x) as.POSIXct(.jcall(x, "J", "getDateTimeLong"), origin = "1970-01-01"))
+
+  # define clustering function
+  hclustMethods <- c("single", "average", "complete", "ward")
+  cl <- function(method, distmat) {
+    tryCatch({
+      similarity_mat <- 1 - distmat
+      g <- igraph::graph.adjacency(similarity_mat, mode = "undirected", weighted = TRUE, diag = FALSE) # graph needs to be based on similarity, not distance
+      if (method %in% hclustMethods) {
+        if (method == "single") {
+          suppressWarnings(cl <- stats::hclust(as.dist(distmat), method = "single"))
+        } else if (method == "average") {
+          suppressWarnings(cl <- stats::hclust(as.dist(distmat), method = "average"))
+        } else if (method == "complete") {
+          suppressWarnings(cl <- stats::hclust(as.dist(distmat), method = "complete"))
+        } else if (method == "ward") {
+          suppressWarnings(cl <- stats::hclust(as.dist(distmat), method = "ward.D2"))
+        }
+        opt_k <- lapply(k.min:k.max, function(x) {
+          mem <- stats::cutree(cl, k = x)
+          mod <- igraph::modularity(x = g, weights = igraph::E(g)$weight, membership = mem)
+          return(list(mem = mem, mod = mod))
+        })
+        mod <- sapply(opt_k, function(x) x$mod)
+        kk <- which.max(mod)
+        mem <- opt_k[[kk]]$mem
+      } else if (method == "kmeans") {
+        opt_k <- lapply(k.min:k.max, function(x) {
+          suppressWarnings(cl <- stats::kmeans(distmat, centers = x))
+          mem <- cl$cluster
+          mod <- igraph::modularity(x = g, weights = igraph::E(g)$weight, membership = mem)
+          return(list(cl = cl, mem = mem, mod = mod))
+        })
+        mod <- sapply(opt_k, function(x) x$mod)
+        kk <- which.max(mod)
+        mem <- opt_k[[kk]]$mem
+      } else if (method == "pam") {
+        opt_k <- lapply(k.min:k.max, function(x) {
+          suppressWarnings(cl <- cluster::pam(distmat, k = x))
+          mem <- cl$cluster
+          mod <- igraph::modularity(x = g, weights = igraph::E(g)$weight, membership = mem)
+          return(list(cl = cl, mem = mem, mod = mod))
+        })
+        mod <- sapply(opt_k, function(x) x$mod)
+        kk <- which.max(mod)
+        mem <- opt_k[[kk]]$mem
+      } else if (method == "spectral") {
+        sigma <- 1.0
+        affinity_matrix <- exp(-distmat^2 / (2 * sigma^2))
+        L <- diag(rowSums(affinity_matrix)) - affinity_matrix
+        D.sqrt.inv <- diag(1 / sqrt(rowSums(affinity_matrix)))
+        L.norm <- D.sqrt.inv %*% L %*% D.sqrt.inv
+        eigenvalues <- eigen(L.norm) # eigenvalue decomposition
+        opt_k <- lapply(k.min:k.max, function(x) {
+          U <- eigenvalues$vectors[, 1:x]
+          mem <- kmeans(U, centers = x)$cluster # cluster the eigenvectors
+          mod <- igraph::modularity(x = g, weights = igraph::E(g)$weight, membership = mem)
+          return(list(mem = mem, mod = mod))
+        })
+        mod <- sapply(opt_k, function(x) x$mod)
+        kk <- which.max(mod)
+        mem <- opt_k[[kk]]$mem
+      } else if (method == "concor") {
+        suppressWarnings(mi <- stats::cor(similarity_mat))
+        iter <- 1
+        while (any(abs(mi) <= 0.999) & iter <= 50) {
+          mi[is.na(mi)] <- 0
+          mi <- stats::cor(mi)
+          iter <- iter + 1
+        }
+        mem <- ((mi[, 1] > 0) * 1) + 1
+      } else if (method %in% igraphMethods) {
+        if (method == "fastgreedy") {
+          suppressWarnings(cl <- igraph::cluster_fast_greedy(g))
+        } else if (method == "walktrap") {
+          suppressWarnings(cl <- igraph::cluster_walktrap(g))
+        } else if (method == "leading_eigen") {
+          suppressWarnings(cl <- igraph::cluster_leading_eigen(g))
+        } else if (method == "edge_betweenness") {
+          suppressWarnings(cl <- igraph::cluster_edge_betweenness(g))
+        } else if (method == "spinglass") {
+          suppressWarnings(cl <- igraph::cluster_spinglass(g))
+        }
+        opt_k <- lapply(k.min:k.max, function(x) {
+          mem <- igraph::cut_at(communities = cl, no = x)
+          mod <- igraph::modularity(x = g, weights = igraph::E(g)$weight, membership = mem)
+          return(list(mem = mem, mod = mod))
+        })
+        mod <- sapply(opt_k, function(x) x$mod)
+        kk <- which.max(mod)
+        mem <- opt_k[[kk]]$mem
+      }
+      list(method = method,
+           modularity = igraph::modularity(x = g, weights = igraph::E(g)$weight, membership = mem),
+           memberships = mem)
+    },
+    error = function(e) {
+      warning("Cluster method '", method, "' could not be computed due to an error: ", e)
+    },
+    warning = function(w) {
+      warning("Cluster method '", method, "' threw a warning: ", w)
+    })
+  }
+
+  # apply all clustering methods to distance matrix
+  if (cores > 1) {
+    cat(paste("Clustering distance matrix on", cores, "cores.\n"))
+    a <- Sys.time()
+    l <- pbmcapply::pbmclapply(clusterMethods, cl, distmat = distance_mat, mc.cores = cores)
+    b <- Sys.time()
+  } else {
+    cat("Clustering distance matrix... ")
+    a <- Sys.time()
+    l <- lapply(clusterMethods, cl, distmat = distance_mat)
+    b <- Sys.time()
+    cat(intToUtf8(0x2714), "\n")
+  }
+  print(b - a)
+  for (i in length(l):1) {
+    if (length(l[[i]]) == 1) {
+      l <- l[-i]
+      clusterMethods <- clusterMethods[-i]
+    }
+  }
+  results <- list()
+  mod <- sapply(l, function(x) x$modularity)
+  best <- which(mod == max(mod))[1]
+  results$modularity <- mod[best]
+  results$clusterMethod <- clusterMethods[best]
 
   # temporal embedding via MDS
   if (!requireNamespace("MASS", quietly = TRUE)) {

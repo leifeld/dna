@@ -10,6 +10,9 @@ import logger.LogEvent;
 import logger.Logger;
 import me.tongfei.progressbar.ProgressBar;
 import model.*;
+import org.apache.commons.math3.linear.EigenDecomposition;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.jdom.Attribute;
 import org.jdom.Comment;
 import org.jdom.Element;
@@ -883,7 +886,7 @@ public class Exporter {
 	 * {@link #filteredStatements} slot of the class. 
 	 */
 	public void filterStatements() {
-		try (ProgressBar pb = new ProgressBar("Filtering statements...", this.originalStatements.size())) {
+		try (ProgressBar pb = new ProgressBar("Filtering statements", this.originalStatements.size())) {
 			pb.stepTo(0);
 
 			// create a deep copy of the original statements
@@ -1682,7 +1685,6 @@ public class Exporter {
 
     /**
      * Compute a series of network matrices using kernel smoothing.
-     *
      * This function creates a series of network matrices (one-mode or two-mode) similar to the time window approach,
      * but using kernel smoothing around a forward-moving mid-point on the time axis (gamma). The networks are defined
      * by the mid-point {@code gamma}, the window size {@code w}, and the kernel function. These parameters are saved in
@@ -1699,6 +1701,15 @@ public class Exporter {
 			Dna.logger.log(l);
 		}
 
+		// check and fix two-mode qualifier aggregation for unimplemented settings
+		if (Exporter.this.qualifierAggregation.equals("combine")) {
+			LogEvent l = new LogEvent(Logger.WARNING,
+					Exporter.this.qualifierAggregation + " qualifier aggregation not implemented.",
+					Exporter.this.qualifierAggregation + " qualifier aggregation has not been implemented for kernel-smoothed networks. Using \"subtract\" qualifier aggregation instead.");
+			Exporter.this.qualifierAggregation = "subtract";
+			Dna.logger.log(l);
+		}
+
 		// initialise variables and constants
 		Collections.sort(this.filteredStatements); // probably not necessary, but can't hurt to have it
 		if (this.windowSize % 2 != 0) { // windowSize is the w constant in the paper; only even numbers are acceptable because adding or subtracting w / 2 to or from gamma would not yield integers
@@ -1710,14 +1721,14 @@ public class Exporter {
 		LocalDateTime gamma = b; // current time while progressing through list of statements
 
 		// save the labels of the variables and qualifier and put indices in hash maps for fast retrieval
-		String[] var1Values = retrieveValues(Exporter.this.filteredStatements, Exporter.this.variable1, Exporter.this.variable1Document);
-		String[] var2Values = retrieveValues(Exporter.this.filteredStatements, Exporter.this.variable2, Exporter.this.variable2Document);
-		String[] qualValues = retrieveValues(Exporter.this.filteredStatements, Exporter.this.qualifier, Exporter.this.qualifierDocument);
+		String[] var1Values = extractLabels(Exporter.this.filteredStatements, Exporter.this.variable1, Exporter.this.variable1Document);
+		String[] var2Values = extractLabels(Exporter.this.filteredStatements, Exporter.this.variable2, Exporter.this.variable2Document);
+		String[] qualValues = extractLabels(Exporter.this.filteredStatements, Exporter.this.qualifier, Exporter.this.qualifierDocument);
 		if (dataTypes.get(Exporter.this.qualifier).equals("integer")) {
 			int[] qual = Exporter.this.originalStatements.stream().mapToInt(s -> (int) s.get(Exporter.this.qualifier)).distinct().sorted().toArray();
 			if (qual.length < qualValues.length) {
 				qualValues = IntStream.rangeClosed(qual[0], qual[qual.length - 1])
-						.mapToObj(i -> String.valueOf(i))
+						.mapToObj(String::valueOf)
 						.toArray(String[]::new);
 			}
 		}
@@ -1735,100 +1746,96 @@ public class Exporter {
 		}
 
 		// create an array list of empty Matrix results, store all date-time stamps in them, and save indices in a hash map
-		Exporter.this.matrixResults = new ArrayList<Matrix>();
-		HashMap<LocalDateTime, Integer> timeMap = new HashMap<>();
+		Exporter.this.matrixResults = new ArrayList<>();
 		if (Exporter.this.kernel.equals("gaussian")) { // for each mid-point gamma, create an empty Matrix and save the start, mid, and end time points in it as defined by the start and end of the whole time range; the actual matrix is injected later
 			if (timeWindow.equals("minutes")) {
 				gamma = gamma.minusMinutes(1);
-				while (gamma.isBefore(e.plusMinutes(1))) {
+				while (gamma.isBefore(e)) {
 					gamma = gamma.plusMinutes(1);
 					Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, b, gamma, e));
-					timeMap.put(gamma, Exporter.this.matrixResults.size() - 1);
 				}
 			} else if (timeWindow.equals("hours")) {
 				gamma = gamma.minusHours(1);
-				while (gamma.isBefore(e.plusHours(1))) {
+				while (gamma.isBefore(e)) {
 					gamma = gamma.plusHours(1);
 					Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, b, gamma, e));
-					timeMap.put(gamma, Exporter.this.matrixResults.size() - 1);
 				}
 			} else if (timeWindow.equals("days")) {
 				gamma = gamma.minusDays(1);
-				while (gamma.isBefore(e.plusDays(1))) {
+				while (gamma.isBefore(e)) {
 					gamma = gamma.plusDays(1);
 					Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, b, gamma, e));
-					timeMap.put(gamma, Exporter.this.matrixResults.size() - 1);
 				}
 			} else if (timeWindow.equals("weeks")) {
 				gamma = gamma.minusWeeks(1);
-				while (gamma.isBefore(e.plusWeeks(1))) {
+				while (gamma.isBefore(e)) {
 					gamma = gamma.plusWeeks(1);
 					Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, b, gamma, e));
-					timeMap.put(gamma, Exporter.this.matrixResults.size() - 1);
 				}
 			} else if (timeWindow.equals("months")) {
 				gamma = gamma.minusMonths(1);
-				while (gamma.isBefore(e.plusMonths(1))) {
+				while (gamma.isBefore(e)) {
 					gamma = gamma.plusMonths(1);
 					Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, b, gamma, e));
-					timeMap.put(gamma, Exporter.this.matrixResults.size() - 1);
 				}
 			} else if (timeWindow.equals("years")) {
 				gamma = gamma.minusYears(1);
-				while (gamma.isBefore(e.plusYears(1))) {
+				while (gamma.isBefore(e)) {
 					gamma = gamma.plusYears(1);
 					Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, b, gamma, e));
-					timeMap.put(gamma, Exporter.this.matrixResults.size() - 1);
 				}
 			}
 		} else { // for each mid-point gamma, create an empty Matrix and save the start, mid, and end time points in it as defined by width w; the actual matrix is injected later
 			if (timeWindow.equals("minutes")) {
 				gamma = gamma.minusMinutes(1);
-				while (gamma.isBefore(e.plusMinutes(1))) {
+				while (gamma.isBefore(e)) {
 					gamma = gamma.plusMinutes(1);
 					Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, gamma.minusMinutes(W_HALF).isBefore(b) ? b : gamma.minusMinutes(W_HALF), gamma, gamma.plusMinutes(W_HALF).isAfter(e) ? e : gamma.plusMinutes(W_HALF)));
-					timeMap.put(gamma, Exporter.this.matrixResults.size() - 1);
 				}
 			} else if (timeWindow.equals("hours")) {
 				gamma = gamma.minusHours(1);
-				while (gamma.isBefore(e.plusHours(1))) {
+				while (gamma.isBefore(e)) {
 					gamma = gamma.plusHours(1);
 					Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, gamma.minusHours(W_HALF).isBefore(b) ? b : gamma.minusHours(W_HALF), gamma, gamma.plusHours(W_HALF).isAfter(e) ? e : gamma.plusHours(W_HALF)));
-					timeMap.put(gamma, Exporter.this.matrixResults.size() - 1);
 				}
 			} else if (timeWindow.equals("days")) {
 				gamma = gamma.minusDays(1);
-				while (gamma.isBefore(e.plusDays(1))) {
+				while (gamma.isBefore(e)) {
 					gamma = gamma.plusDays(1);
 					Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, gamma.minusDays(W_HALF).isBefore(b) ? b : gamma.minusDays(W_HALF), gamma, gamma.plusDays(W_HALF).isAfter(e) ? e : gamma.plusDays(W_HALF)));
-					timeMap.put(gamma, Exporter.this.matrixResults.size() - 1);
 				}
 			} else if (timeWindow.equals("weeks")) {
 				gamma = gamma.minusWeeks(1);
-				while (gamma.isBefore(e.plusWeeks(1))) {
+				while (gamma.isBefore(e)) {
 					gamma = gamma.plusWeeks(1);
 					Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, gamma.minusWeeks(W_HALF).isBefore(b) ? b : gamma.minusWeeks(W_HALF), gamma, gamma.plusWeeks(W_HALF).isAfter(e) ? e : gamma.plusWeeks(W_HALF)));
-					timeMap.put(gamma, Exporter.this.matrixResults.size() - 1);
 				}
 			} else if (timeWindow.equals("months")) {
 				gamma = gamma.minusMonths(1);
-				while (gamma.isBefore(e.plusMonths(1))) {
+				while (gamma.isBefore(e)) {
 					gamma = gamma.plusMonths(1);
 					Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, gamma.minusMonths(W_HALF).isBefore(b) ? b : gamma.minusMonths(W_HALF), gamma, gamma.plusMonths(W_HALF).isAfter(e) ? e : gamma.plusMonths(W_HALF)));
-					timeMap.put(gamma, Exporter.this.matrixResults.size() - 1);
 				}
 			} else if (timeWindow.equals("years")) {
 				gamma = gamma.minusYears(1);
-				while (gamma.isBefore(e.plusYears(1))) {
+				while (gamma.isBefore(e)) {
 					gamma = gamma.plusYears(1);
 					Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, gamma.minusYears(W_HALF).isBefore(b) ? b : gamma.minusYears(W_HALF), gamma, gamma.plusYears(W_HALF).isAfter(e) ? e : gamma.plusYears(W_HALF)));
-					timeMap.put(gamma, Exporter.this.matrixResults.size() - 1);
 				}
 			}
 		}
 
-		// create a 4D array, go through the statements, and populate the array
-		int[][][][] X = new int[var1Values.length][var2Values.length][qualValues.length][Exporter.this.matrixResults.size()]; // var1 x var2 x qual x time
+		// create a 3D array, go through the statements, and populate the array
+		@SuppressWarnings("unchecked")
+		ArrayList<ExportStatement>[][][] X = (ArrayList<ExportStatement>[][][]) new ArrayList<?>[var1Values.length][var2Values.length][qualValues.length];
+		for (int i = 0; i < var1Values.length; i++) {
+			for (int j = 0; j < var2Values.length; j++) {
+				for (int k = 0; k < qualValues.length; k++) {
+					X[i][j][k] = new ArrayList<ExportStatement>();
+				}
+			}
+		}
+
 		Exporter.this.filteredStatements.stream().forEach(s -> {
 			int var1Index = -1;
 			if (Exporter.this.variable1Document) {
@@ -1846,7 +1853,7 @@ public class Exporter {
 					var1Index = var1Map.get(s.getTitle());
 				}
 			} else {
-				var1Index = var1Map.get((String) s.get(Exporter.this.variable1));
+				var1Index = var1Map.get(((Entity) s.get(Exporter.this.variable1)).getValue());
 			}
 			int var2Index = -1;
 			if (Exporter.this.variable2Document) {
@@ -1864,7 +1871,7 @@ public class Exporter {
 					var2Index = var2Map.get(s.getTitle());
 				}
 			} else {
-				var2Index = var2Map.get((String) s.get(Exporter.this.variable2));
+				var2Index = var2Map.get(((Entity) s.get(Exporter.this.variable2)).getValue());
 			}
 			int qualIndex = -1;
 			if (Exporter.this.qualifierDocument) {
@@ -1885,46 +1892,53 @@ public class Exporter {
 				if (dataTypes.get(Exporter.this.qualifier).equals("integer") || dataTypes.get(Exporter.this.qualifier).equals("boolean")) {
 					qualIndex = qualMap.get(String.valueOf((int) s.get(Exporter.this.qualifier)));
 				} else {
-					qualIndex = qualMap.get(s.get(Exporter.this.qualifier));
+					qualIndex = qualMap.get(((Entity) s.get(Exporter.this.qualifier)).getValue());
 				}
 			}
-			int timeIndex = timeMap.get(s.getDateTime());
-			X[var1Index][var2Index][qualIndex][timeIndex]++;
+			X[var1Index][var2Index][qualIndex].add(s);
 		});
 
 		// process each matrix result in a parallel stream instead of for-loop and add calculation results
-		ArrayList<Matrix> processedResults = Exporter.this.matrixResults.parallelStream()
-				.map(matrixResult -> processTimeSlice(matrixResult, X, Exporter.this.matrixResults))
+		ArrayList<Matrix> processedResults = ProgressBar.wrap(Exporter.this.matrixResults.parallelStream(), "Kernel smoothing")
+				.map(matrixResult -> processTimeSlice(matrixResult, X))
 				.collect(Collectors.toCollection(ArrayList::new));
 		Exporter.this.matrixResults = processedResults;
 	}
 
 	/**
-     * Compute a one-mode or two-mode network matrix with kernel-weighting and inject it into a {@link Matrix} object.
-	 *
-     * To compute the kernel-weighted network projection, the 4D array X is needed because it stores the statement data,
-     * the current matrix result is needed because it stores the mid-point gamma, and the array list of all matrix
-     * results is needed because the mid-points of the matrices contain the time stamps for the time dimension in X,
-     * which is required to establish the time difference between the current matrix mid-point and the respective
-     * statement in X.
+	 * Compute a one-mode or two-mode network matrix with kernel-weighting and inject it into a {@link Matrix} object.
+	 * To compute the kernel-weighted network projection, the 3D array X with statement array lists corresponding to
+	 * each i-j-k combination is needed because it stores the statement data including their date-time stamp, and
+	 * the current matrix result is needed because it stores the mid-point gamma. The kernel-weighted temporal distance
+	 * between the statement time and gamma is computed and used in creating the network.
 	 *
 	 * @param matrixResult The matrix result into which the network matrix will be inserted.
-     * @param X A 4D array containing the data.
-     * @param matrixResults All matrix results, containing the temporal information for the fourth dimension of X.
-     * @return The matrix result after inserting the network matrix.
+	 * @param X A 3D array containing the data.
+	 * @return The matrix result after inserting the network matrix.
 	 */
-	private Matrix processTimeSlice(Matrix matrixResult, int[][][][] X, ArrayList<Matrix> matrixResults) {
+	private Matrix processTimeSlice(Matrix matrixResult, ArrayList<ExportStatement>[][][] X) {
 		if (this.networkType.equals("twomode")) {
 			double[][] m = new double[X.length][X[0].length];
 			for (int i = 0; i < X.length; i++) {
 				for (int j = 0; j < X[0].length; j++) {
 					for (int k = 0; k < X[0][0].length; k++) {
-						for (int t = 0; t < X[0][0][0].length; t++) {
-							m[i][j] = k * X[i][j][k][t] * zeta(matrixResults.get(t).getDateTime(), matrixResult.getDateTime(), Exporter.this.windowSize, Exporter.this.timeWindow, Exporter.this.kernel);
+						for (int t = 0; t < X[i][j][k].size(); t++) {
+							if (Exporter.this.qualifierAggregation.equals("ignore")) {
+								m[i][j] = m[i][j] + zeta(X[i][j][k].get(t).getDateTime(), matrixResult.getDateTime(), Exporter.this.windowSize, Exporter.this.timeWindow, Exporter.this.kernel);
+							} else if (Exporter.this.qualifierAggregation.equals("subtract")) {
+								if (Exporter.this.dataTypes.get(Exporter.this.qualifier).equals("boolean")) {
+									m[i][j] = m[i][j] + (((double) k) - 0.5) * 2 * zeta(X[i][j][k].get(t).getDateTime(), matrixResult.getDateTime(), Exporter.this.windowSize, Exporter.this.timeWindow, Exporter.this.kernel);
+								} else if (Exporter.this.dataTypes.get(Exporter.this.qualifier).equals("integer")) {
+									m[i][j] = m[i][j] + k * zeta(X[i][j][k].get(t).getDateTime(), matrixResult.getDateTime(), Exporter.this.windowSize, Exporter.this.timeWindow, Exporter.this.kernel);
+								} else if (Exporter.this.dataTypes.get(Exporter.this.qualifier).equals("short text")) {
+									m[i][j] = m[i][j] + zeta(X[i][j][k].get(t).getDateTime(), matrixResult.getDateTime(), Exporter.this.windowSize, Exporter.this.timeWindow, Exporter.this.kernel);
+								}
+							}
 						}
 					}
 				}
 			}
+			matrixResult.setMatrix(m);
 		} else if (this.networkType.equals("onemode")) {
 			double[][] m = new double[X.length][X.length];
 			double[][] norm = new double[X.length][X.length];
@@ -1932,27 +1946,28 @@ public class Exporter {
 				for (int i2 = 0; i2 < X.length; i2++) {
 					for (int j = 0; j < X[0].length; j++) {
 						for (int k = 0; k < X[0][0].length; k++) {
-							for (int t = 0; t < X[0][0][0].length; t++) {
-								if (Exporter.this.normalization.equals("average")) {
-									norm[i][i2] = norm[i][i2] + 2.0 / (X[i][j][k][t] + X[i2][j][k][t]);
+							if (Exporter.this.normalization.equals("average") && X[i][j][k].size() + X[i2][j][k].size() != 0.0) {
+								norm[i][i2] = norm[i][i2] + 2.0 / (X[i][j][k].size() + X[i2][j][k].size());
+							}
+							for (int k2 = 0; k2 < X[0][0].length; k2++) {
+								double qsim = 1.0;
+								if (!dataTypes.get(Exporter.this.qualifier).equals("short text") && !Exporter.this.qualifierDocument) {
+									qsim = Math.abs(1.0 - ((double) Math.abs(k - k2) / (double) Math.abs(X[0][0].length - 1)));
 								}
-								for (int k2 = 0; k2 < X[0][0].length; k2++) {
-									for (int t2 = 0; t2 < X[0][0][0].length; t2++) {
-										double cong = Math.sqrt(X[i][j][k][t] * X[i2][j][k2][t2]);
-										double qsim = 1.0;
-										if (!dataTypes.get(Exporter.this.qualifier).equals("short text") && !Exporter.this.qualifierDocument) {
-											qsim = Math.abs(1.0 - ((double) Math.abs(k - k2) / (double) Math.abs(X[0][0].length - 1)));
-										}
-										double qdiff = 1.0 - qsim;
-										double zeta = Math.sqrt(zeta(matrixResults.get(t).getDateTime(), matrixResult.getDateTime(), Exporter.this.windowSize, Exporter.this.timeWindow, Exporter.this.kernel) * zeta(matrixResults.get(t2).getDateTime(), matrixResult.getDateTime(), Exporter.this.windowSize, Exporter.this.timeWindow, Exporter.this.kernel));
+								double qdiff = 1.0 - qsim;
+								for (int t = 0; t < X[i][j][k].size(); t++) {
+									double z1 = zeta(X[i][j][k].get(t).getDateTime(), matrixResult.getDateTime(), Exporter.this.windowSize, Exporter.this.timeWindow, Exporter.this.kernel);
+									for (int t2 = 0; t2 < X[i2][j][k2].size(); t2++) {
+										double z2 = zeta(X[i2][j][k2].get(t2).getDateTime(), matrixResult.getDateTime(), Exporter.this.windowSize, Exporter.this.timeWindow, Exporter.this.kernel);
+										double z = Math.sqrt(z1 * z2);
 										if (Exporter.this.qualifierAggregation.equals("congruence")) {
-											m[i][i2] = cong * qsim * zeta;
+											m[i][i2] = m[i][i2] + qsim * z;
 										} else if (Exporter.this.qualifierAggregation.equals("conflict")) {
-											m[i][i2] = cong * qdiff * zeta;
+											m[i][i2] = m[i][i2] + qdiff * z;
 										} else if (Exporter.this.qualifierAggregation.equals("subtract")) {
-											m[i][i2] = cong * qsim * zeta - cong * qdiff * zeta;
+											m[i][i2] = m[i][i2] + qsim * z - qdiff * z;
 										} else if (Exporter.this.qualifierAggregation.equals("ignore")) {
-											m[i][i2] = cong * zeta;
+											m[i][i2] = m[i][i2] + z;
 										}
 									}
 								}
@@ -1964,7 +1979,9 @@ public class Exporter {
 			if (Exporter.this.normalization.equals("average")) {
 				for (int i = 0; i < X.length; i++) {
 					for (int i2 = 0; i2 < X.length; i2++) {
-						m[i][i2] = m[i][i2] * norm[i][i2];
+						if (m[i][i2] != 0.0 && norm[i][i2] != 0.0) {
+							m[i][i2] = m[i][i2] * norm[i][i2];
+						}
 					}
 				}
 			}
@@ -2040,6 +2057,69 @@ public class Exporter {
 	}
 
 	/**
+	 * Normalize all values in each results matrix to make them sum to 1.0. Useful for phase transition methods.
+	 */
+	public void normalizeMatrixResults() {
+		try (ProgressBar pb = new ProgressBar("Matrix normalization", Exporter.this.matrixResults.size())) {
+			for (Matrix matrixResult : Exporter.this.matrixResults) {
+				double[][] matrix = matrixResult.getMatrix();
+				double sum = 0.0;
+				for (double[] rows : matrix) {
+					for (int j = 0; j < matrix[0].length; j++) {
+						sum += rows[j];
+					}
+				}
+				if (sum != 0.0) {
+					for (int i = 0; i < matrix.length; i++) {
+						for (int j = 0; j < matrix[0].length; j++) {
+							matrix[i][j] = matrix[i][j] / sum;
+						}
+					}
+				}
+				pb.step();
+			}
+		}
+	}
+
+	/**
+	 * Compute a distance matrix for the elements of the matrix results stored in the Exporter class.
+	 *
+	 * @param distanceMethod The distance method: {@code "absdiff"} for the sum of element-wise absolute differences or {@code "spectral"} for normalized Laplacian distances
+	 * @return The distance matrix as a 2D array.
+	 */
+	public double[][] computeDistanceMatrix(String distanceMethod) {
+		int t = Exporter.this.matrixResults.size();
+		double[][] distanceMatrix = new double[t][t];
+		int dim = Exporter.this.matrixResults.get(0).getMatrix().length;
+		double[][] eigenvalues = new double[t][dim];
+
+		// precompute eigenvalues to avoid race conditions
+		if (distanceMethod.equals("spectral")) {
+			ProgressBar.wrap(IntStream.range(0, Exporter.this.matrixResults.size()).parallel(), "Normalized eigenvalues").forEach(i -> {
+				eigenvalues[i] = computeNormalizedEigenvalues(Exporter.this.matrixResults.get(i).getMatrix(), "ojalgo"); // TODO: try out "apache", debug, and compare speed
+			});
+		}
+
+		ProgressBar.wrap(IntStream.range(0, Exporter.this.matrixResults.size()).parallel(), "Distance matrix").forEach(i -> {
+			IntStream.range(i + 1, Exporter.this.matrixResults.size()).forEach(j -> { // start from i + 1 to ensure symmetry and avoid redundant computation (= upper triangle)
+				double distance = 0.0;
+				if (distanceMethod.equals("spectral")) {
+					distance = spectralLoss(eigenvalues[i], eigenvalues[j]);
+				} else if (distanceMethod.equals("absdiff")) { // sum of element-wise absolute differences
+					for (int a = 0; a < Exporter.this.matrixResults.get(i).getMatrix().length; a++) {
+						for (int b = 0; b < Exporter.this.matrixResults.get(j).getMatrix()[0].length; b++) {
+							distance += Math.abs(Exporter.this.matrixResults.get(i).getMatrix()[a][b] - Exporter.this.matrixResults.get(j).getMatrix()[a][b]);
+						}
+					}
+				}
+				distanceMatrix[i][j] = distance;
+				distanceMatrix[j][i] = distance; // since the distance matrix is symmetric, set both [i][j] and [j][i]
+			});
+		});
+		return distanceMatrix;
+	}
+
+	/**
 	 * Create a series of one-mode or two-mode networks using a moving time window.
 	 */
 	public void computeTimeWindowMatrices() {
@@ -2051,7 +2131,7 @@ public class Exporter {
 		ArrayList<ExportStatement> beforeStatements = new ArrayList<ExportStatement>(); // holds all statements between (and excluding) the time stamp of the first statement in the window and the focal statement
 		ArrayList<ExportStatement> afterStatements = new ArrayList<ExportStatement>(); // holds all statements between (and excluding) the focal statement and the time stamp of the last statement in the window
 		if (this.timeWindow.equals("events")) {
-			try (ProgressBar pb = new ProgressBar("Time window matrices...", this.filteredStatements.size())) {
+			try (ProgressBar pb = new ProgressBar("Time window matrices", this.filteredStatements.size())) {
 				pb.stepTo(0);
 				if (this.windowSize < 2) {
 					LogEvent l = new LogEvent(Logger.WARNING,
@@ -2155,7 +2235,7 @@ public class Exporter {
 				}
 			}
 		} else {
-			try (ProgressBar pb = new ProgressBar("Time window matrices...", 100)) {
+			try (ProgressBar pb = new ProgressBar("Time window matrices", 100)) {
 				long percent = 0;
 				pb.stepTo(percent);
 				LocalDateTime startCalendar = this.startDateTime; // start of statement list
@@ -2281,7 +2361,7 @@ public class Exporter {
 	 * can be used for estimating relational event models.
 	 */
 	private void eventCSV() {
-		try (ProgressBar pb = new ProgressBar("Exporting events...", this.filteredStatements.size())) {
+		try (ProgressBar pb = new ProgressBar("Exporting events", this.filteredStatements.size())) {
 			pb.stepTo(0);
 			String key;
 			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -2340,7 +2420,7 @@ public class Exporter {
 	 * Export {@link Matrix Matrix} to a CSV matrix file.
 	 */
 	private void exportCSV() {
-		try (ProgressBar pb = new ProgressBar("Exporting networks...", this.matrixResults.size())) {
+		try (ProgressBar pb = new ProgressBar("Exporting networks", this.matrixResults.size())) {
 			pb.stepTo(0);
 			String filename2;
 			String filename1 = this.outfile.substring(0, this.outfile.length() - 4);
@@ -2397,7 +2477,7 @@ public class Exporter {
 	 * Export network to a DL fullmatrix file for the software UCINET.
 	 */
 	private void exportDL() {
-		try (ProgressBar pb = new ProgressBar("Exporting networks...", this.matrixResults.size())) {
+		try (ProgressBar pb = new ProgressBar("Exporting networks", this.matrixResults.size())) {
 			pb.stepTo(0);
 			String filename2;
 			String filename1 = this.outfile.substring(0, this.outfile.length() - 4);
@@ -2476,7 +2556,7 @@ public class Exporter {
 	 * Export filter for graphML files.
 	 */
 	private void exportGraphml() {
-		try (ProgressBar pb = new ProgressBar("Exporting networks...", this.matrixResults.size())) {
+		try (ProgressBar pb = new ProgressBar("Exporting networks", this.matrixResults.size())) {
 			pb.stepTo(0);
 
 			// set up file name components for time window (in case this will be required later)
@@ -3042,7 +3122,7 @@ public class Exporter {
 				finalBackboneList.toArray(String[]::new),
 				finalRedundantList.toArray(String[]::new),
 				spectralLoss(eigenvaluesFull, eigenvaluesCurrent),
-				spectralLoss(eigenvaluesFull, computeNormalizedEigenvalues(redundantMatrix.getMatrix())),
+				spectralLoss(eigenvaluesFull, computeNormalizedEigenvalues(redundantMatrix.getMatrix(), "ojalgo")),
 				p,
 				T,
 				temperatureLog.stream().mapToDouble(v -> v.doubleValue()).toArray(),
@@ -3076,9 +3156,10 @@ public class Exporter {
 	 * Use tools from the {@code ojalgo} library to compute eigenvalues of a symmetric matrix.
 	 *
 	 * @param matrix The matrix as a two-dimensional double array.
+	 * @param library The linear algebra Java library to use as a back-end: {@code "ojalgo"} or {@code "apache"}.
 	 * @return One-dimensional double array of eigenvalues.
 	 */
-	private double[] computeNormalizedEigenvalues(double[][] matrix) {
+	private double[] computeNormalizedEigenvalues(double[][] matrix, String library) {
 		for (int i = 0; i < matrix.length; i++) {
 			for (int j = 0; j < matrix[0].length; j++) {
 				if (matrix[i][j] < 0) {
@@ -3086,21 +3167,36 @@ public class Exporter {
 				}
 			}
 		}
-		Primitive64Matrix matrixPrimitive = Primitive64Matrix.FACTORY.rows(matrix); // create matrix
-		DenseArray<Double> rowSums = Primitive64Array.FACTORY.make(matrix.length); // container for row sums
-		matrixPrimitive.reduceRows(Aggregator.SUM, rowSums); // populate row sums into rowSums
-		Primitive64Matrix.SparseReceiver sr = Primitive64Matrix.FACTORY.makeSparse(matrix.length, matrix.length); // container for degree matrix
-		sr.fillDiagonal(rowSums); // put row sums onto diagonal
-		Primitive64Matrix laplacian = sr.get(); // put row sum container into a new degree matrix (the future Laplacian matrix)
-		laplacian.subtract(matrixPrimitive); // subtract adjacency matrix from degree matrix to create Laplacian matrix
-		Eigenvalue<Double> eig = Eigenvalue.PRIMITIVE.make(laplacian); // eigenvalues
-		eig.decompose(laplacian); // decomposition
-		double[] eigenvalues = eig.getEigenvalues().toRawCopy1D(); // extract eigenvalues and convert to double[]
-		double eigenvaluesSum = Arrays.stream(eigenvalues).sum(); // compute sum of eigenvalues
-		if (eigenvaluesSum > 0.0) {
-			eigenvalues = DoubleStream.of(eigenvalues).map(v -> v / eigenvaluesSum).toArray(); // normalise/scale to one
+		double[] eigenvalues;
+		if (library.equals("apache")) {
+			RealMatrix realMatrix = new Array2DRowRealMatrix(matrix); // create a real matrix from the 2D array
+			EigenDecomposition decomposition = new EigenDecomposition(realMatrix); // perform eigen decomposition
+			eigenvalues = decomposition.getRealEigenvalues(); // get the real parts of the eigenvalues
+			// normalize the eigenvalues
+			double eigenvaluesSum = Arrays.stream(eigenvalues).sum();
+			if (eigenvaluesSum > 0.0) {
+				for (int i = 0; i < eigenvalues.length; i++) {
+					eigenvalues[i] /= eigenvaluesSum;
+				}
+			}
+		} else if (library.equals("ojalgo")) {
+			Primitive64Matrix matrixPrimitive = Primitive64Matrix.FACTORY.rows(matrix); // create matrix
+			DenseArray<Double> rowSums = Primitive64Array.FACTORY.make(matrix.length); // container for row sums
+			matrixPrimitive.reduceRows(Aggregator.SUM, rowSums); // populate row sums into rowSums
+			Primitive64Matrix.SparseReceiver sr = Primitive64Matrix.FACTORY.makeSparse(matrix.length, matrix.length); // container for degree matrix
+			sr.fillDiagonal(rowSums); // put row sums onto diagonal
+			Primitive64Matrix laplacian = sr.get(); // put row sum container into a new degree matrix (the future Laplacian matrix)
+			laplacian.subtract(matrixPrimitive); // subtract adjacency matrix from degree matrix to create Laplacian matrix
+			Eigenvalue<Double> eig = Eigenvalue.PRIMITIVE.make(laplacian); // eigenvalues
+			eig.decompose(laplacian); // decomposition
+			eigenvalues = eig.getEigenvalues().toRawCopy1D(); // extract eigenvalues and convert to double[]
+			double eigenvaluesSum = Arrays.stream(eigenvalues).sum(); // compute sum of eigenvalues
+			if (eigenvaluesSum > 0.0) {
+				eigenvalues = DoubleStream.of(eigenvalues).map(v -> v / eigenvaluesSum).toArray(); // normalize/scale to one
+			}
+		} else {
+			eigenvalues = new double[matrix.length]; // return zeroes if library not recognized; don't log error because it would be very slow
 		}
-
 		return eigenvalues;
 	}
 
@@ -3219,7 +3315,7 @@ public class Exporter {
 		this.isolates = true; // include isolates in the iterations but not in the full matrix; will be adjusted to smaller full matrix dimensions without isolates manually each time in the iterations; necessary because some actors may be deleted in the backbone matrix otherwise after deleting their concepts
 
 		// compute normalised eigenvalues for the full matrix; no need to recompute every time as they do not change
-		eigenvaluesFull = computeNormalizedEigenvalues(fullMatrix.getMatrix());
+		eigenvaluesFull = computeNormalizedEigenvalues(fullMatrix.getMatrix(), "ojalgo");
 		iteration = new int[fullConcepts.length];
 		backboneLoss = new double[fullConcepts.length];
 		redundantLoss = new double[fullConcepts.length];
@@ -3255,7 +3351,7 @@ public class Exporter {
 			candidateMatrix = this.computeOneModeMatrix(candidateStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
 			candidateMatrix = this.reduceCandidateMatrix(candidateMatrix, fullMatrix.getRowNames()); // ensure it has the right dimensions by purging isolates relative to the full matrix
 			candidateMatrices.add(candidateMatrix);
-			eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix()); // normalised eigenvalues for the candidate matrix
+			eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix(), "ojalgo"); // normalised eigenvalues for the candidate matrix
 			currentLosses[i] = spectralLoss(eigenvaluesFull, eigenvaluesCandidate);
 		}
 		double smallestLoss = 0.0;
@@ -3280,7 +3376,7 @@ public class Exporter {
 				Matrix redundantMatrix = this.computeOneModeMatrix(candidateStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
 				redundantMatrix = this.reduceCandidateMatrix(redundantMatrix, fullMatrix.getRowNames());
 				redundantMatrices.add(redundantMatrix);
-				eigenvaluesCandidate = computeNormalizedEigenvalues(redundantMatrix.getMatrix());
+				eigenvaluesCandidate = computeNormalizedEigenvalues(redundantMatrix.getMatrix(), "ojalgo");
 				redundantLoss[counter] = spectralLoss(eigenvaluesFull, eigenvaluesCandidate);
 				numStatements[counter] = numStatementsCandidates[i];
 				counter++;
@@ -3339,7 +3435,7 @@ public class Exporter {
 		this.isolates = true; // include isolates in the iterations; will be adjusted to full matrix without isolates manually each time
 
 		// compute normalised eigenvalues for the full matrix; no need to recompute every time as they do not change
-		eigenvaluesFull = computeNormalizedEigenvalues(fullMatrix.getMatrix());
+		eigenvaluesFull = computeNormalizedEigenvalues(fullMatrix.getMatrix(), "ojalgo");
 
 		if (penalty) { // simulated annealing with penalty: initially one randomly chosen entity in the backbone set
 			// pick a random concept c_j from C and save its index
@@ -3391,7 +3487,7 @@ public class Exporter {
 		finalMatrix = this.reduceCandidateMatrix(finalMatrix, fullMatrix.getRowNames()); // ensure it has the right dimensions by purging isolates relative to the full matrix
 
 		// eigenvalues for final matrix
-		eigenvaluesFinal = computeNormalizedEigenvalues(finalMatrix.getMatrix()); // normalised eigenvalues for the candidate matrix
+		eigenvaluesFinal = computeNormalizedEigenvalues(finalMatrix.getMatrix(), "ojalgo"); // normalised eigenvalues for the candidate matrix
 
 		// create an initial current backbone set B_0, also with the one c_j concept like in B: B_0 <- {c_j}
 		currentBackboneList = new ArrayList<String>(finalBackboneList);
@@ -3504,7 +3600,7 @@ public class Exporter {
 				.collect(Collectors.toCollection(ArrayList::new));
 		candidateMatrix = this.computeOneModeMatrix(candidateStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime); // create candidate matrix after filtering the statements based on the action that was executed
 		candidateMatrix = this.reduceCandidateMatrix(candidateMatrix, fullMatrix.getRowNames()); // ensure it has the right dimensions by purging isolates relative to the full matrix
-		eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix()); // normalised eigenvalues for the candidate matrix
+		eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix(), "ojalgo"); // normalised eigenvalues for the candidate matrix
 		if (penalty) {
 			newLoss = penalizedLoss(eigenvaluesFull, eigenvaluesCandidate, p, candidateBackboneList.size(), fullConcepts.length); // spectral distance between full and candidate matrix
 		} else {
@@ -3583,7 +3679,7 @@ public class Exporter {
 		this.isolates = true; // include isolates in the iterations; will be adjusted to full matrix without isolates manually each time
 
 		// compute normalised eigenvalues for the full matrix; no need to recompute every time as they do not change
-		eigenvaluesFull = computeNormalizedEigenvalues(fullMatrix.getMatrix());
+		eigenvaluesFull = computeNormalizedEigenvalues(fullMatrix.getMatrix(), "ojalgo");
 
 		// create copy of filtered statements and remove redundant entities
 		ArrayList<String> entityList = Stream.of(backboneEntities).collect(Collectors.toCollection(ArrayList<String>::new));
@@ -3604,7 +3700,7 @@ public class Exporter {
 				.collect(Collectors.toCollection(ArrayList::new));
 		candidateMatrix = this.computeOneModeMatrix(candidateStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime); // create candidate matrix after filtering the statements based on the action that was executed
 		candidateMatrix = this.reduceCandidateMatrix(candidateMatrix, fullMatrix.getRowNames()); // ensure it has the right dimensions by purging isolates relative to the full matrix
-		eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix()); // normalised eigenvalues for the candidate matrix
+		eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix(), "ojalgo"); // normalised eigenvalues for the candidate matrix
 		results[0] = penalizedLoss(eigenvaluesFull, eigenvaluesCandidate, p, backboneSet.size(), fullConcepts.length); // spectral distance between full and candidate matrix
 
 		// spectral distance between full and redundant set
@@ -3614,7 +3710,7 @@ public class Exporter {
 				.collect(Collectors.toCollection(ArrayList::new));
 		candidateMatrix = this.computeOneModeMatrix(candidateStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime); // create candidate matrix after filtering the statements based on the action that was executed
 		candidateMatrix = this.reduceCandidateMatrix(candidateMatrix, fullMatrix.getRowNames()); // ensure it has the right dimensions by purging isolates relative to the full matrix
-		eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix()); // normalised eigenvalues for the candidate matrix
+		eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix(), "ojalgo"); // normalised eigenvalues for the candidate matrix
 		results[1] = penalizedLoss(eigenvaluesFull, eigenvaluesCandidate, p, redundantSet.size(), fullConcepts.length); // spectral distance between full and candidate matrix
 
 		return results;
