@@ -4882,7 +4882,7 @@ dna_phaseTransitions <- function(distanceMethod = "absdiff",
 
   # temporal embedding via MDS
   if (!requireNamespace("MASS", quietly = TRUE)) {
-    mem <- data.frame("date" = as.POSIXct(dates, format = "%d-%m-%Y", tz = "UTC"),
+    mem <- data.frame("date" = as.POSIXct(dates, tz = "UTC", origin = "1970-01-01"),
                       "state" = l[[best]]$memberships)
     results$states <- mem
     warning("Skipping temporal embedding because the 'MASS' package is not installed. Consider installing it.")
@@ -4892,7 +4892,7 @@ dna_phaseTransitions <- function(distanceMethod = "absdiff",
     distmat <- distance_mat + 1e-12
     mds <- MASS::isoMDS(distmat) # MDS of distance matrix
     points <- mds$points
-    mem <- data.frame("date" = as.POSIXct(dates, format = "%d-%m-%Y", tz = "UTC"),
+    mem <- data.frame("date" = as.POSIXct(dates, tz = "UTC", origin = "1970-01-01"),
                       "state" = l[[best]]$memberships,
                       "X1" = points[, 1],
                       "X2" = points[, 2])
@@ -5084,7 +5084,7 @@ dna_phaseTransitions2 <- function(distanceMethod = "absdiff",
 
   # retrieve mid-point dates (gamma)
   m <- .jcall(exporter, "[Lexport/Matrix;", "getMatrixResultsArray") # get list of Matrix objects from Exporter object
-  dates <- sapply(m, function(x) as.POSIXct(.jcall(x, "J", "getDateTimeLong"), origin = "1970-01-01"))
+  dates <- sapply(m, function(x) .jcall(x, "J", "getDateTimeLong")) # long integers, still needs conversion to date
 
   # define clustering function
   hclustMethods <- c("single", "average", "complete", "ward")
@@ -5216,7 +5216,7 @@ dna_phaseTransitions2 <- function(distanceMethod = "absdiff",
 
   # temporal embedding via MDS
   if (!requireNamespace("MASS", quietly = TRUE)) {
-    mem <- data.frame("date" = as.POSIXct(dates, format = "%d-%m-%Y", tz = "UTC"),
+    mem <- data.frame("date" = as.POSIXct(dates, tz = "UTC", origin = "1970-01-01"),
                       "state" = l[[best]]$memberships)
     results$states <- mem
     warning("Skipping temporal embedding because the 'MASS' package is not installed. Consider installing it.")
@@ -5226,7 +5226,7 @@ dna_phaseTransitions2 <- function(distanceMethod = "absdiff",
     distmat <- distance_mat + 1e-12
     mds <- MASS::isoMDS(distmat) # MDS of distance matrix
     points <- mds$points
-    mem <- data.frame("date" = as.POSIXct(dates, format = "%d-%m-%Y", tz = "UTC"),
+    mem <- data.frame("date" = as.POSIXct(dates, tz = "UTC", origin = "1970-01-01"),
                       "state" = l[[best]]$memberships,
                       "X1" = points[, 1],
                       "X2" = points[, 2])
