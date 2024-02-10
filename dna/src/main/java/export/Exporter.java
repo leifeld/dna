@@ -33,6 +33,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.WeekFields;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
@@ -1923,15 +1924,17 @@ public class Exporter {
 				for (int j = 0; j < X[0].length; j++) {
 					for (int k = 0; k < X[0][0].length; k++) {
 						for (int t = 0; t < X[i][j][k].size(); t++) {
-							if (Exporter.this.qualifierAggregation.equals("ignore")) {
-								m[i][j] = m[i][j] + zeta(X[i][j][k].get(t).getDateTime(), matrixResult.getDateTime(), Exporter.this.windowSize, Exporter.this.timeWindow, Exporter.this.kernel);
-							} else if (Exporter.this.qualifierAggregation.equals("subtract")) {
-								if (Exporter.this.dataTypes.get(Exporter.this.qualifier).equals("boolean")) {
-									m[i][j] = m[i][j] + (((double) k) - 0.5) * 2 * zeta(X[i][j][k].get(t).getDateTime(), matrixResult.getDateTime(), Exporter.this.windowSize, Exporter.this.timeWindow, Exporter.this.kernel);
-								} else if (Exporter.this.dataTypes.get(Exporter.this.qualifier).equals("integer")) {
-									m[i][j] = m[i][j] + k * zeta(X[i][j][k].get(t).getDateTime(), matrixResult.getDateTime(), Exporter.this.windowSize, Exporter.this.timeWindow, Exporter.this.kernel);
-								} else if (Exporter.this.dataTypes.get(Exporter.this.qualifier).equals("short text")) {
+							if (Exporter.this.kernel.equals("gaussian") || (!X[i][j][k].get(t).getDateTime().isBefore(matrixResult.getStart()) && !X[i][j][k].get(t).getDateTime().isAfter(matrixResult.getStop()))) { // for computational efficiency, don't include statements outside of temporal bandwidth in computations if not necessary
+								if (Exporter.this.qualifierAggregation.equals("ignore")) {
 									m[i][j] = m[i][j] + zeta(X[i][j][k].get(t).getDateTime(), matrixResult.getDateTime(), Exporter.this.windowSize, Exporter.this.timeWindow, Exporter.this.kernel);
+								} else if (Exporter.this.qualifierAggregation.equals("subtract")) {
+									if (Exporter.this.dataTypes.get(Exporter.this.qualifier).equals("boolean")) {
+										m[i][j] = m[i][j] + (((double) k) - 0.5) * 2 * zeta(X[i][j][k].get(t).getDateTime(), matrixResult.getDateTime(), Exporter.this.windowSize, Exporter.this.timeWindow, Exporter.this.kernel);
+									} else if (Exporter.this.dataTypes.get(Exporter.this.qualifier).equals("integer")) {
+										m[i][j] = m[i][j] + k * zeta(X[i][j][k].get(t).getDateTime(), matrixResult.getDateTime(), Exporter.this.windowSize, Exporter.this.timeWindow, Exporter.this.kernel);
+									} else if (Exporter.this.dataTypes.get(Exporter.this.qualifier).equals("short text")) {
+										m[i][j] = m[i][j] + zeta(X[i][j][k].get(t).getDateTime(), matrixResult.getDateTime(), Exporter.this.windowSize, Exporter.this.timeWindow, Exporter.this.kernel);
+									}
 								}
 							}
 						}
@@ -1956,18 +1959,22 @@ public class Exporter {
 								}
 								double qdiff = 1.0 - qsim;
 								for (int t = 0; t < X[i][j][k].size(); t++) {
-									double z1 = zeta(X[i][j][k].get(t).getDateTime(), matrixResult.getDateTime(), Exporter.this.windowSize, Exporter.this.timeWindow, Exporter.this.kernel);
-									for (int t2 = 0; t2 < X[i2][j][k2].size(); t2++) {
-										double z2 = zeta(X[i2][j][k2].get(t2).getDateTime(), matrixResult.getDateTime(), Exporter.this.windowSize, Exporter.this.timeWindow, Exporter.this.kernel);
-										double z = Math.sqrt(z1 * z2);
-										if (Exporter.this.qualifierAggregation.equals("congruence")) {
-											m[i][i2] = m[i][i2] + qsim * z;
-										} else if (Exporter.this.qualifierAggregation.equals("conflict")) {
-											m[i][i2] = m[i][i2] + qdiff * z;
-										} else if (Exporter.this.qualifierAggregation.equals("subtract")) {
-											m[i][i2] = m[i][i2] + qsim * z - qdiff * z;
-										} else if (Exporter.this.qualifierAggregation.equals("ignore")) {
-											m[i][i2] = m[i][i2] + z;
+									if (Exporter.this.kernel.equals("gaussian") || (!X[i][j][k].get(t).getDateTime().isBefore(matrixResult.getStart()) && !X[i][j][k].get(t).getDateTime().isAfter(matrixResult.getStop()))) { // for computational efficiency, don't include statements outside of temporal bandwidth in computations if not necessary
+										double z1 = zeta(X[i][j][k].get(t).getDateTime(), matrixResult.getDateTime(), Exporter.this.windowSize, Exporter.this.timeWindow, Exporter.this.kernel);
+										for (int t2 = 0; t2 < X[i2][j][k2].size(); t2++) {
+											if (Exporter.this.kernel.equals("gaussian") || (!X[i2][j][k2].get(t2).getDateTime().isBefore(matrixResult.getStart()) && !X[i2][j][k2].get(t2).getDateTime().isAfter(matrixResult.getStop()))) { // for computational efficiency, don't include statements outside of temporal bandwidth in computations if not necessary
+												double z2 = zeta(X[i2][j][k2].get(t2).getDateTime(), matrixResult.getDateTime(), Exporter.this.windowSize, Exporter.this.timeWindow, Exporter.this.kernel);
+												double z = Math.sqrt(z1 * z2);
+												if (Exporter.this.qualifierAggregation.equals("congruence")) {
+													m[i][i2] = m[i][i2] + qsim * z;
+												} else if (Exporter.this.qualifierAggregation.equals("conflict")) {
+													m[i][i2] = m[i][i2] + qdiff * z;
+												} else if (Exporter.this.qualifierAggregation.equals("subtract")) {
+													m[i][i2] = m[i][i2] + qsim * z - qdiff * z;
+												} else if (Exporter.this.qualifierAggregation.equals("ignore")) {
+													m[i][i2] = m[i][i2] + z;
+												}
+											}
 										}
 									}
 								}
