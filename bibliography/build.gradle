@@ -22,8 +22,20 @@ task bibliographyPdflatex {
         exec {
             workingDir 'temp'
             commandLine 'pdflatex', "bibliography.tex"
+        }
+
+        exec {
+            workingDir 'temp'
             commandLine 'bibtex', "bibliography"
+        }
+
+        exec {
+            workingDir 'temp'
             commandLine 'pdflatex', "bibliography.tex"
+        }
+
+        exec {
+            workingDir 'temp'
             commandLine 'pdflatex', "bibliography.tex"
         }
 
