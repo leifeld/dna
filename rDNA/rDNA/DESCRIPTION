@@ -1,15 +1,15 @@
 Package: rDNA
 Version: 3.0.11
-Date: 2024-02-10
+Date: 2024-07-16
 Title: Discourse Network Analysis in R
 Authors@R: 
   c(person(given = "Philip",
            family = "Leifeld",
-           email = "Philip.Leifeld@essex.ac.uk",
+           email = "philip.leifeld@manchester.ac.uk",
            role = c("aut", "cre", "cph")),
     person(given = "Tim",
            family = "Henrichsen",
-           email = "Tim.Henrichsen@warwick.ac.uk",
+           email = "t.henrichsen@bham.ac.uk",
            role = "ctb"),
     person(given = "Johannes B.",
            family = "Gruber",
@@ -19,7 +19,7 @@ Authors@R:
            family = "Garic",
            email = "k.garic@essex.ac.uk",
            role = "ctb"))
-Maintainer: Philip Leifeld <Philip.Leifeld@essex.ac.uk>
+Maintainer: Philip Leifeld <philip.leifeld@manchester.ac.uk>
 Description: Qualitative content analysis and discourse network analysis 
     using the Java software Discourse Network Analyzer (DNA).
 Depends:
