@@ -121,14 +121,21 @@ public class Exporter {
 	 * start date and the last mid-point be half a bandwidth or duration before the last date to allow sufficient data
 	 * around the end points of the timeline?
 	 */
-	private boolean indentBandwidth = true;
+	private boolean indentTime = true;
 
 	public void setKernelFunction(String kernel) {
 		this.kernel = kernel;
 	}
 
-	public void setIndentBandwidth(boolean indentBandwidth) {
-		this.indentBandwidth = indentBandwidth;
+
+	/**
+	 * Set the value of the indentBandwidth field in this class. It indicates if the start and end date of the time
+	 * window algorithm should be adjusted to include only networks that entirely fit into the set timeline.
+	 *
+	 * @param indentTime Parameter setting. Should the start and stop date and time be indented?
+	 */
+	public void setIndentTime(boolean indentTime) {
+		this.indentTime = indentTime;
 	}
 
 	/**
@@ -1738,7 +1745,7 @@ public class Exporter {
 		LocalDateTime e = this.stopDateTime.isAfter(lastDate) ? lastDate : this.stopDateTime;  // end of statement list
 		LocalDateTime gamma = b; // current time while progressing through list of statements
 		LocalDateTime e2 = e; // indented end point (e minus half w)
-		if (Exporter.this.indentBandwidth) {
+		if (Exporter.this.indentTime) {
 			if (timeWindow.equals("minutes")) {
 				gamma = gamma.plusMinutes(W_HALF);
 				e2 = e.minusMinutes(W_HALF);
@@ -2091,9 +2098,10 @@ public class Exporter {
 	}
 
 	/**
-	 * Normalize all values in each results matrix to make them sum to 1.0. Useful for phase transition methods.
+	 * Normalize all values in each results matrix to make them sum to 1.0. Useful for phase transition methods. Called
+	 * directly from R.
 	 */
-	public void normalizeMatrixResults() {
+	public void normalizeMatrixResultsToOne() {
 		try (ProgressBar pb = new ProgressBar("Matrix normalization", Exporter.this.matrixResults.size())) {
 			for (Matrix matrixResult : Exporter.this.matrixResults) {
 				double[][] matrix = matrixResult.getMatrix();

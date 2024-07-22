@@ -2,52 +2,12 @@
 % Please edit documentation in R/rDNA.R
 \name{dna_phaseTransitions}
 \alias{dna_phaseTransitions}
-\alias{dna_phaseTransitions2}
 \alias{print.dna_phaseTransitions}
 \alias{autoplot.dna_phaseTransitions}
 \title{Detect phase transitions and states in a discourse network}
 \usage{
 dna_phaseTransitions(
   distanceMethod = "absdiff",
-  normalizeNetwork = FALSE,
-  clusterMethods = c("single", "average", "complete", "ward", "kmeans", "pam",
-    "spectral", "fastgreedy", "walktrap"),
-  k.min = 2,
-  k.max = 6,
-  splitNodes = FALSE,
-  cores = 1,
-  networkType = "twomode",
-  statementType = "DNA Statement",
-  variable1 = "organization",
-  variable1Document = FALSE,
-  variable2 = "concept",
-  variable2Document = FALSE,
-  qualifier = "agreement",
-  qualifierDocument = FALSE,
-  qualifierAggregation = "subtract",
-  normalization = "no",
-  duplicates = "document",
-  start.date = "01.01.1900",
-  stop.date = "31.12.2099",
-  start.time = "00:00:00",
-  stop.time = "23:59:59",
-  timeWindow = "days",
-  windowSize = 150,
-  excludeValues = list(),
-  excludeAuthors = character(),
-  excludeSources = character(),
-  excludeSections = character(),
-  excludeTypes = character(),
-  invertValues = FALSE,
-  invertAuthors = FALSE,
-  invertSources = FALSE,
-  invertSections = FALSE,
-  invertTypes = FALSE
-)
-
-dna_phaseTransitions2(
-  distanceMethod = "absdiff",
-  normalizeNetwork = FALSE,
   clusterMethods = c("single", "average", "complete", "ward", "kmeans", "pam",
     "spectral", "fastgreedy", "walktrap"),
   k.min = 2,
@@ -69,8 +29,10 @@ dna_phaseTransitions2(
   start.time = "00:00:00",
   stop.time = "23:59:59",
   timeWindow = "days",
-  windowSize = 150,
-  kernel = "no",
+  windowSize = 200,
+  kernel = "uniform",
+  normalizeToOne = FALSE,
+  indentTime = TRUE,
   excludeValues = list(),
   excludeAuthors = character(),
   excludeSources = character(),
@@ -101,14 +63,7 @@ between any two network matrices. The following choices are available:
     distance between two network matrices. Any negative values (e.g., from
     the subtract method) are replaced by zero before computing the
     distance.
-  \item \code{"modularity"}: The difference in maximal modularity as
-    obtained through an approximation via community detection. Note that
-    this method has not been implemented.
 }}
-
-\item{normalizeNetwork}{Divide all cells by their sum before computing
-the dissimilarity between two network matrices? This normalization scales
-all edge weights to a sum of \code{1.0}.}
 
 \item{clusterMethods}{The clustering techniques that are applied to the
 distance matrix in the end. Hierarchical methods are repeatedly cut off at
@@ -167,25 +122,15 @@ methods.}
 states should be identified? Only the best solution between \code{k.min}
 and \code{k.max} clusters is retained and compared to other methods.}
 
-\item{splitNodes}{Split the nodes of a one-mode network (e.g., concepts in a
-concept x concept congruence network) into multiple separate nodes, one for
-each qualifier level? For example, if the qualifier variable is the boolean
-\code{"agreement"} variable with values \code{0} or \code{1}, then each
-concept is included twice, one time with suffix \code{"- 0"} and one time
-with suffix \code{"- 1"}. This is useful when the nodes do not possess
-agency and positive and negative levels of the variable should not be
-connected through congruence ties. It helps preserve the signed nature of
-the data in this case. Do not use with actor networks!}
-
 \item{cores}{The number of computing cores for parallel processing. If
 \code{1} (the default), no parallel processing is used. If a larger number,
-the \pkg{pbmcapply} package is used to parallelize the computation of the
-distance matrix and the clustering. Note that this method is based on
-forking and is only available on Unix operating systems, including MacOS
-and Linux. In the \code{dna_phaseTransitions2} function, only the
-clustering is done using this parallelization in R while the remaining
-computations are done in parallel using threads in Java, which is more
-efficient.}
+the \pkg{pbmcapply} package is used to parallelize the clustering. Note
+that this method is based on forking and is only available on Unix
+operating systems, including MacOS and Linux. Note also that the remaining
+computations, including the computation of the distance matrix and the
+time window network generation with kernel smoothing, are done in parallel
+using threads in Java, irrespective of this setting, using as many parallel
+threads as cores are available on the system.}
 
 \item{networkType}{The kind of network to be computed. Can be
 \code{"twomode"}, \code{"onemode"}, or \code{"eventlist"}.}
@@ -325,6 +270,47 @@ event time.}
 comprised. This can be the number of statement events, the number of days
 etc., as defined in the \code{"timeWindow"} argument.}
 
+\item{kernel}{Use kernel smoothing for computing network time slices? Several
+kernel smoothing functions are available, similar to kernel density
+estimation. They down-weight statements the farther they are temporally
+away from the temporal mid-point of the respective time slice. Valid
+settings are:
+\itemize{
+  \item \code{"uniform"}: Weight all statements within a time window
+    equally with a value of \code{0.5}.
+  \item \code{"triangular"}: Use a triangular kernel function.
+  \item \code{"epanechnikov"}: Use an Epanechnikov kernel smoother.
+  \item \code{"gaussian"}: Use a standard normal distribution as a kernel
+    smoother.
+  \item \code{"no"}: Circumvent kernel smoothing and weight all statements
+    with a value of \code{1.0}. This is a legacy setting and is slow and
+    may not return the same results as \code{"uniform"} due to the way it
+    was written up.
+}}
+
+\item{normalizeToOne}{Divide all cells by the sum of all cells before
+computing the dissimilarity between two network matrices? This
+normalization scales all edge weights to a sum of \code{1.0}. Doing so can
+make networks more comparable by boosting the edge weights of networks that
+are relatively sparsely populated by concepts, for example at the beginning
+or end of the debate. Note that this normalization should not make any
+difference with Euclidean spectral distances of the graph Laplacian because
+the eigenvalues are normalized to sum to one in this distance method.}
+
+\item{indentTime}{If \code{TRUE}, the sequence of time slices under the time
+window algorithm starts with the first network and ends with the last
+network that are entirely covered within the timeline defined by the start
+and stop dates and times. For example, if the start date is 1 February, the
+stop date is 31 December, and the time window duration is 21 days, the
+mid-point of the first time window will be 11 February (to ensure the first
+network entirely fits into the timeline), and the last network will be
+centered around 20 December (to ensure the last network entirely fits into
+the timeline). If \code{FALSE}, the start and stop dates and times are used
+as the first and last mid-points. In that case, the first and last few
+networks may contain fewer statements than other time slices and may,
+therefore, be more similar to each other. This can potentially be
+counter-acted by setting the \code{normalizeToOne} argument.}
+
 \item{excludeValues}{A list of named character vectors that contains entries
 which should be excluded during network construction. For example,
 \code{list(concept = c("A", "B"), organization = c("org A", "org B"))}
@@ -381,18 +367,6 @@ construction (\code{invertTypes = FALSE}) or if they should be the
 only values that should be included during network construction
 (\code{invertTypes = TRUE}).}
 
-\item{kernel}{Use kernel smoothing for computing network time slices? The
-default value \code{kernel = "no"} switches off kernel smoothing, which
-means all statements within a time window are weighted equally. Other
-values down-weight statements the farther they are temporally away from the
-temporal mid-point of the respective time slice. Several kernel smoothing
-functions are available, similar to kernel density estimation:
-\code{"uniform"} is similar to \code{"no"} and weights all statements with
-a value of \code{0.5}. \code{"gaussian"} uses a standard normal
-distribution as a kernel smoother. \code{"epanechnikov"} uses an
-Epanechnikov kernel smoother. \code{"triangular"} uses a triangular kernel
-function.}
-
 \item{x}{A \code{dna_phaseTransitions} object.}
 
 \item{...}{Additional arguments. Currently not in use.}
@@ -417,62 +391,44 @@ Euclidean spectral distance are available. Several clustering techniques can
 be applied to identify the different stages and phases from the resulting
 distance matrix.
 
-In contrast to the \code{\link{dna_phaseTransitions}} function, the
-\code{\link{dna_phaseTransitions2}} function does not offer split nodes.
-However, it offers two advantages. The first one is faster computation and
-better parallelization in Java. The second one is kernel smoothing, which
-means the farther away from a time point a statement is, the less important
-it becomes for the network that is created around the time point. Several
-kernel smoothing functions are available; see the \code{kernel} argument.
+The function offers kernel smoothing, which means the farther away from a
+time point a statement is, the less important it becomes for the network that
+is created around the time point. Several kernel smoothing functions are
+available; see the \code{kernel} argument.
 
 Print a summary of a \code{dna_phaseTransitions} object, which can be created
 using the \link{dna_phaseTransitions} function.
 }
 \examples{
 \dontrun{
+library("ggplot2")
 dna_init()
 dna_sample()
 dna_openDatabase("sample.dna", coderId = 1, coderPassword = "sample")
 
 # compute states and phases for sample dataset
-results <- dna_phaseTransitions(distanceMethod = "absdiff",
-                                clusterMethods = c("ward",
-                                                   "pam",
-                                                   "concor",
-                                                   "walktrap"),
-                                cores = 1,
-                                k.min = 2,
-                                k.max = 6,
-                                networkType = "onemode",
-                                variable1 = "organization",
-                                variable2 = "concept",
-                                timeWindow = "events",
-                                windowSize = 15)
-results
-
-# kernel smoothing and spectral distances using dna_phaseTransitions2
-results2 <- dna_phaseTransitions2(distanceMethod = "spectral",
-                                  clusterMethods = c("ward",
-                                                     "pam",
-                                                     "concor",
-                                                     "walktrap"),
-                                  k.min = 2,
-                                  k.max = 6,
-                                  networkType = "onemode",
-                                  variable1 = "organization",
-                                  variable2 = "concept",
-                                  timeWindow = "days",
-                                  windowSize = 15,
-                                  kernel = "gaussian")
+results2 <- dna_phaseTransitions(distanceMethod = "spectral",
+                                 clusterMethods = c("ward",
+                                                    "pam",
+                                                    "concor",
+                                                    "walktrap"),
+                                 k.min = 2,
+                                 k.max = 6,
+                                 networkType = "onemode",
+                                 variable1 = "organization",
+                                 variable2 = "concept",
+                                 timeWindow = "days",
+                                 windowSize = 15,
+                                 kernel = "gaussian",
+                                 indentTime = FALSE,
+                                 normalizeToOne = FALSE)
 results2
-
-library("ggplot2")
 autoplot(results2)
 }
 
 }
 \author{
-Philip Leifeld, Kristijan Garic
-
 Philip Leifeld
+
+Philip Leifeld, Kristijan Garic
 }

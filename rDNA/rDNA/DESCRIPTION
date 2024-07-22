@@ -1,6 +1,6 @@
 Package: rDNA
 Version: 3.0.11
-Date: 2024-07-16
+Date: 2024-07-22
 Title: Discourse Network Analysis in R
 Authors@R: 
   c(person(given = "Philip",
@@ -41,7 +41,6 @@ Suggests:
     heatmaply (>= 1.4.2)
 SystemRequirements: Java (>= 11)
 License: GPL-2
-LazyData: true
 URL: https://github.com/leifeld/dna
 BugReports: https://github.com/leifeld/dna/issues
 Encoding: UTF-8
