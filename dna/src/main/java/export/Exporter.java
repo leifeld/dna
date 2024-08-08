@@ -1770,8 +1770,11 @@ public class Exporter {
 		// save the labels of the variables and qualifier and put indices in hash maps for fast retrieval
 		String[] var1Values = extractLabels(Exporter.this.filteredStatements, Exporter.this.variable1, Exporter.this.variable1Document);
 		String[] var2Values = extractLabels(Exporter.this.filteredStatements, Exporter.this.variable2, Exporter.this.variable2Document);
-		String[] qualValues = extractLabels(Exporter.this.filteredStatements, Exporter.this.qualifier, Exporter.this.qualifierDocument);
-		if (dataTypes.get(Exporter.this.qualifier).equals("integer")) {
+		String[] qualValues = new String[] { "" };
+		if (Exporter.this.qualifier != null) {
+			 qualValues = extractLabels(Exporter.this.filteredStatements, Exporter.this.qualifier, Exporter.this.qualifierDocument);
+		}
+		if (Exporter.this.qualifier != null && dataTypes.get(Exporter.this.qualifier).equals("integer")) {
 			int[] qual = Exporter.this.originalStatements.stream().mapToInt(s -> (int) s.get(Exporter.this.qualifier)).distinct().sorted().toArray();
 			if (qual.length < qualValues.length) {
 				qualValues = IntStream.rangeClosed(qual[0], qual[qual.length - 1])
@@ -1788,8 +1791,10 @@ public class Exporter {
 			var2Map.put(var2Values[i], i);
 		}
 		HashMap<String, Integer> qualMap = new HashMap<>();
-		for (int i = 0; i < qualValues.length; i++) {
-			qualMap.put(qualValues[i], i);
+		if (Exporter.this.qualifier != null) {
+			for (int i = 0; i < qualValues.length; i++) {
+				qualMap.put(qualValues[i], i);
+			}
 		}
 
 		// create an array list of empty Matrix results, store all date-time stamps in them, and save indices in a hash map
@@ -1865,8 +1870,12 @@ public class Exporter {
 		ArrayList<ExportStatement>[][][] X = (ArrayList<ExportStatement>[][][]) new ArrayList<?>[var1Values.length][var2Values.length][qualValues.length];
 		for (int i = 0; i < var1Values.length; i++) {
 			for (int j = 0; j < var2Values.length; j++) {
-				for (int k = 0; k < qualValues.length; k++) {
-					X[i][j][k] = new ArrayList<ExportStatement>();
+				if (Exporter.this.qualifier == null) {
+					X[i][j][0] = new ArrayList<ExportStatement>();
+				} else {
+					for (int k = 0; k < qualValues.length; k++) {
+						X[i][j][k] = new ArrayList<ExportStatement>();
+					}
 				}
 			}
 		}
@@ -1909,7 +1918,7 @@ public class Exporter {
 				var2Index = var2Map.get(((Entity) s.get(Exporter.this.variable2)).getValue());
 			}
 			int qualIndex = -1;
-			if (Exporter.this.qualifierDocument) {
+			if (Exporter.this.qualifierDocument && Exporter.this.qualifier != null) {
 				if (Exporter.this.qualifier.equals("author")) {
 					qualIndex = qualMap.get(s.getAuthor());
 				} else if (Exporter.this.qualifier.equals("source")) {
@@ -1924,7 +1933,9 @@ public class Exporter {
 					qualIndex = qualMap.get(s.getTitle());
 				}
 			} else {
-				if (dataTypes.get(Exporter.this.qualifier).equals("integer") || dataTypes.get(Exporter.this.qualifier).equals("boolean")) {
+				if (Exporter.this.qualifier == null) {
+					qualIndex = 0;
+				} else if (dataTypes.get(Exporter.this.qualifier).equals("integer") || dataTypes.get(Exporter.this.qualifier).equals("boolean")) {
 					qualIndex = qualMap.get(String.valueOf((int) s.get(Exporter.this.qualifier)));
 				} else {
 					qualIndex = qualMap.get(((Entity) s.get(Exporter.this.qualifier)).getValue());
@@ -1988,7 +1999,7 @@ public class Exporter {
 							}
 							for (int k2 = 0; k2 < X[0][0].length; k2++) {
 								double qsim = 1.0;
-								if (!dataTypes.get(Exporter.this.qualifier).equals("short text") && !Exporter.this.qualifierDocument) {
+								if (Exporter.this.qualifier != null && !dataTypes.get(Exporter.this.qualifier).equals("short text") && !Exporter.this.qualifierDocument) {
 									qsim = Math.abs(1.0 - ((double) Math.abs(k - k2) / (double) Math.abs(X[0][0].length - 1)));
 								}
 								double qdiff = 1.0 - qsim;

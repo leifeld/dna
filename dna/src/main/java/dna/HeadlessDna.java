@@ -594,7 +594,6 @@ public class HeadlessDna implements Logger.LogListener {
 				Dna.logger.log(le);
 			}
 		}
-
 	}
 
 	/**

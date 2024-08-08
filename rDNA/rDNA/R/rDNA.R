@@ -1722,7 +1722,7 @@ autoplot.dna_network_onemode <- function(object,
 
   # Remove tie weights below threshold
   if (!is.null(threshold)) {
-    graph <- igraph::delete.edges(graph, which(!igraph::E(graph)$weight >= threshold))
+    graph <- igraph::delete_edges(graph, which(!igraph::E(graph)$weight >= threshold))
   }
 
   # Add node colors
@@ -1796,7 +1796,7 @@ autoplot.dna_network_onemode <- function(object,
 
   # Remove isolates
   if (exclude_isolates) {
-    graph <- igraph::delete.vertices(graph, igraph::degree(graph) == 0)
+    graph <- igraph::delete_vertices(graph, igraph::degree(graph) == 0)
   }
 
   # Only plot giant component of network. Useful for some plotting algorithms.
@@ -3535,7 +3535,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
     }
     y[y < 0] <- 0
     class(y) <- "matrix"
-    g <- igraph::graph.adjacency(y, mode = "undirected", weighted = TRUE)
+    g <- igraph::graph_from_adjacency_matrix(y, mode = "undirected", weighted = TRUE)
 
     if (nrow(combined) > 1) {
       counter_current <- 1
@@ -4472,23 +4472,37 @@ print.dna_multiclust <- function(x, ...) {
 #' dna_openDatabase("sample.dna", coderId = 1, coderPassword = "sample")
 #'
 #' # compute states and phases for sample dataset
-#' results2 <- dna_phaseTransitions(distanceMethod = "spectral",
-#'                                  clusterMethods = c("ward",
-#'                                                     "pam",
-#'                                                     "concor",
-#'                                                     "walktrap"),
-#'                                  k.min = 2,
-#'                                  k.max = 6,
-#'                                  networkType = "onemode",
-#'                                  variable1 = "organization",
-#'                                  variable2 = "concept",
-#'                                  timeWindow = "days",
-#'                                  windowSize = 15,
-#'                                  kernel = "gaussian",
-#'                                  indentTime = FALSE,
-#'                                  normalizeToOne = FALSE)
-#' results2
-#' autoplot(results2)
+#' results <- dna_phaseTransitions(distanceMethod = "spectral",
+#'                                 clusterMethods = c("ward",
+#'                                                    "pam",
+#'                                                    "concor",
+#'                                                    "walktrap"),
+#'                                 k.min = 2,
+#'                                 k.max = 6,
+#'                                 networkType = "onemode",
+#'                                 variable1 = "organization",
+#'                                 variable2 = "concept",
+#'                                 timeWindow = "days",
+#'                                 windowSize = 15,
+#'                                 kernel = "gaussian",
+#'                                 indentTime = FALSE,
+#'                                 normalizeToOne = FALSE)
+#' results
+#' autoplot(results)
+#'
+#' # access individual plots
+#' plots <- autoplot(results)
+#' plots[[1]] # show heatmap
+#' plots[[2]] # show cluster silhouettes
+#' plots[[3]] # show temporal embedding
+#' plots[[4]] # show state dynamics
+#'
+#' # save plots to combined PDF
+#' library("ggplotify") # needed to convert heatmap to ggplot diagram
+#' library("patchwork") # needed to merge plots into 4 x 4 diagram
+#' p1 <- ggplotify::as.ggplot(plots[[1]])
+#' p <- p1 + plots[[2]] + plots[[3]] + plots[[4]] + plot_layout(ncol = 2)
+#' ggsave(filename = "phase_transitions.pdf", p, width = 14, height = 12)
 #' }
 #'
 #' @rdname dna_phaseTransitions
@@ -4666,7 +4680,7 @@ dna_phaseTransitions <- function(distanceMethod = "absdiff",
   cl <- function(method, distmat) {
     tryCatch({
       similarity_mat <- 1 - distmat
-      g <- igraph::graph.adjacency(similarity_mat, mode = "undirected", weighted = TRUE, diag = FALSE) # graph needs to be based on similarity, not distance
+      g <- igraph::graph_from_adjacency_matrix(similarity_mat, mode = "undirected", weighted = TRUE, diag = FALSE) # graph needs to be based on similarity, not distance
       if (method %in% hclustMethods) {
         if (method == "single") {
           suppressWarnings(cl <- stats::hclust(as.dist(distmat), method = "single"))

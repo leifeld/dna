@@ -407,23 +407,37 @@ dna_sample()
 dna_openDatabase("sample.dna", coderId = 1, coderPassword = "sample")
 
 # compute states and phases for sample dataset
-results2 <- dna_phaseTransitions(distanceMethod = "spectral",
-                                 clusterMethods = c("ward",
-                                                    "pam",
-                                                    "concor",
-                                                    "walktrap"),
-                                 k.min = 2,
-                                 k.max = 6,
-                                 networkType = "onemode",
-                                 variable1 = "organization",
-                                 variable2 = "concept",
-                                 timeWindow = "days",
-                                 windowSize = 15,
-                                 kernel = "gaussian",
-                                 indentTime = FALSE,
-                                 normalizeToOne = FALSE)
-results2
-autoplot(results2)
+results <- dna_phaseTransitions(distanceMethod = "spectral",
+                                clusterMethods = c("ward",
+                                                   "pam",
+                                                   "concor",
+                                                   "walktrap"),
+                                k.min = 2,
+                                k.max = 6,
+                                networkType = "onemode",
+                                variable1 = "organization",
+                                variable2 = "concept",
+                                timeWindow = "days",
+                                windowSize = 15,
+                                kernel = "gaussian",
+                                indentTime = FALSE,
+                                normalizeToOne = FALSE)
+results
+autoplot(results)
+
+# access individual plots
+plots <- autoplot(results)
+plots[[1]] # show heatmap
+plots[[2]] # show cluster silhouettes
+plots[[3]] # show temporal embedding
+plots[[4]] # show state dynamics
+
+# save plots to combined PDF
+library("ggplotify") # needed to convert heatmap to ggplot diagram
+library("patchwork") # needed to merge plots into 4 x 4 diagram
+p1 <- ggplotify::as.ggplot(plots[[1]])
+p <- p1 + plots[[2]] + plots[[3]] + plots[[4]] + plot_layout(ncol = 2)
+ggsave(filename = "phase_transitions.pdf", p, width = 14, height = 12)
 }
 
 }
