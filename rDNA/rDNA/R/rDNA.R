@@ -1820,7 +1820,7 @@ autoplot.dna_network_onemode <- function(object,
   igraph::E(graph)$weight <- abs(igraph::E(graph)$weight)
 
   # Start network plot
-  g <- ggraph::ggraph(graph, layout = layout) +
+  g <- ggraph::ggraph(graph, layout = layout, ...) +
     suppressWarnings(ggraph::geom_edge_link(ggplot2::aes(edge_width = igraph::E(graph)$weight, edge_colour = igraph::E(graph)$color),
                            alpha = edge_alpha,
                            show.legend = FALSE)) + # add edges
@@ -1850,6 +1850,201 @@ autoplot.dna_network_onemode <- function(object,
 #' @rdname autoplot.dna_network
 #' @export
 autoplot.dna_network_twomode <- autoplot.dna_network_onemode
+
+#' Convert a DNA network into a \code{tbl_graph} or \code{graph} object
+#'
+#' Convert a DNA network into a \code{tbl_graph} or \code{graph} object.
+#'
+#' Convert a \code{dna_network_onemode} or \code{dna_network_twomode} object
+#' into a \code{tbl_graph} object as defined in the tidygraph package. These
+#' objects can then be plotted using the ggraph package, which contains many
+#' network layouts.
+#'
+#' \code{tbl_graph} objects are an extension of \code{graph}
+#' objects defined in the igraph package. Functions for manipulating or plotting
+#' the resulting objects from either the tidygraph or igraph package or both
+#' can be used.
+#'
+#' The resulting objects can also be converted to \code{network} objects as
+#' defined in the network package (part of the statnet suite of packages) using
+#' the \code{asNetwork} function in the intergraph package.
+#'
+#' @param network A \code{dna_network_onemode} or \code{dna_network_twomode}
+#'   object to be converted into a \code{tbl_graph} object. Can also be a matrix
+#'   with edge weights and row and column names for the node labels.
+#' @param attributes A \code{dna_attributes} object created using the
+#'   \link{dna_getAttributes} function with attributes for the nodes in the
+#'   network. Can also be a data frame with a \code{values} column that contains
+#'   the node labels and further columns containing the attributes. The
+#'   attributes are saved as node attributes in the \code{tbl_graph} object. If
+#'   \code{NULL}, no attributes are included.
+#' @param ... Further arguments. Currently not in use.
+#'
+#' @examples
+#' \dontrun{
+#' # prepare toy data
+#' dna_sample()
+#' dna_openDatabase("sample.dna", coderPassword = "sample")
+#' nw <- dna_network(networkType = "onemode",
+#'                   qualifierAggregation = "congruence",
+#'                   excludeValues = list(concept =
+#'                     "There should be legislation to regulate emissions."))
+#' at <- dna_getAttributes(variableId = 2)
+#'
+#' # convert to tbl_graph object
+#' g <- dna_tidygraph(nw, at)
+#'
+#' # basic visualization
+#' ggraph::ggraph(g, layout = "fr") +
+#'   ggraph::geom_edge_link() +
+#'   ggraph::geom_node_point()
+#'
+#' # visualization with more bells and whistles
+#' ggraph::ggraph(g, layout = "graphopt") +
+#'   ggraph::geom_edge_link(ggplot2::aes(color = weight, width = weight)) +
+#'   ggraph::geom_node_point(ggplot2::aes(color = color), size = 5) +
+#'   ggplot2::scale_color_identity() +
+#'   ggraph::scale_edge_color_gradient(low = "azure2", high = "azure4") +
+#'   ggraph::theme_graph(background = "white") +
+#'   ggraph::geom_node_text(ggplot2::aes(label = name),
+#'                          repel = TRUE,
+#'                          max.overlaps = 10,
+#'                          show.legend = FALSE)
+#' # for more layouts, see vignette("Layouts", package = "ggraph")
+#'
+#' # hive plot example
+#' g <- g |>
+#'   tidygraph::activate(nodes) |>
+#'   tidygraph::mutate(centrality = tidygraph::centrality_betweenness())
+#' ggraph::ggraph(g, layout = "hive", axis = Type, sort.by = centrality) +
+#'   ggraph::geom_edge_hive(ggplot2::aes(colour = "gray", width = weight)) +
+#'   ggraph::geom_axis_hive(ggplot2::aes(colour = color),
+#'                                       size = 5,
+#'                                       label = TRUE) +
+#'   ggraph::scale_edge_color_identity() +
+#'   theme(legend.position = "none")
+#'
+#' # example with negative edge weights
+#' nw <- dna_network(networkType = "onemode",
+#'                   qualifierAggregation = "subtract",
+#'                   excludeValues = list(concept =
+#'                     "There should be legislation to regulate emissions."))
+#' g <- dna_tidygraph(nw, at)
+#' ggraph::ggraph(g, layout = "linear", circular = TRUE) +
+#'   ggraph::geom_edge_arc(aes(color = color, width = abs)) +
+#'   ggraph::scale_edge_color_identity() +
+#'   ggraph::geom_node_point(ggplot2::aes(color = color), size = 5) +
+#'   ggplot2::scale_color_identity() +
+#'   ggraph::theme_graph(background = "white") +
+#'   theme(legend.position = "none") +
+#'   ggraph::geom_node_text(ggplot2::aes(label = name),
+#'                          repel = TRUE,
+#'                          max.overlaps = 10,
+#'                          show.legend = FALSE)
+#'
+#' # example with a two-mode network
+#' nw <- dna_network(networkType = "twomode",
+#'                   qualifierAggregation = "combine")
+#' at1 <- dna_getAttributes(statementTypeId = 1, variable = "organization")
+#' at2 <- dna_getAttributes(statementTypeId = 1, variable = "concept")
+#' at1$Notes <- "organization"
+#' at2$Notes <- "concept"
+#' at <- rbind(at1, at2)
+#' g <- dna_tidygraph(nw, at)
+#' ggraph::ggraph(g, layout = "graphopt") +
+#'   ggraph::geom_edge_link(ggplot2::aes(color = color), width = 1) +
+#'   ggraph::scale_edge_color_identity() +
+#'   ggraph::geom_node_point(ggplot2::aes(color = color, shape = Notes),
+#'                           size = 5) +
+#'   ggplot2::scale_color_identity() +
+#'   ggraph::geom_node_text(ggplot2::aes(label = name),
+#'                          repel = TRUE,
+#'                          max.overlaps = 10,
+#'                          show.legend = FALSE) +
+#'   ggraph::theme_graph(background = "white") +
+#'   theme(legend.position = "none")
+#' }
+#'
+#' # manipulate and plot using the igraph package
+#' library("igraph")
+#' class(g) # resulting objects are both tbl_graph and igraph objects
+#' igraph::V(g) # get the nodes using igraph functions
+#' igraph::E(g) # get the edges using igraph functions
+#' igraph::plot(g) # plot network using igraph package
+#'
+#' # convert to network object (network package, statnet suite of packages)
+#' library("intergraph")
+#' intergraph::asNetwork(g)
+#'
+#' @author Philip Leifeld
+#' @family {rDNA networks}
+#' @export
+dna_tidygraph <- function(network, attributes = NULL, ...) {
+  if (length(intersect(c("dna_network_onemode", "dna_network_twomode", "matrix"), class(network))) < 1) {
+    stop("The 'network' argument must provide an object created by the 'dna_network' function or a matrix.")
+  }
+  if (!is.null(attributes) && (length(intersect(c("dna_attributes", "data.frame"), class(attributes))) < 1) || !"value" %in% colnames(attributes)) {
+    stop("The 'attributes' argument must be NULL or created by the 'dna_getAttributes' function or a data frame with a 'values' column.")
+  }
+  if (!requireNamespace("tidygraph", quietly = TRUE) || packageVersion("tidygraph") < "1.3.1") {
+    stop("The 'dna_tidygraph' function requires the 'tidygraph' package (>= 1.3.1) to be installed.\n",
+         "To do this, enter 'install.packages(\"tidygraph\")'.")
+  }
+
+  if ("dna_network_twomode" %in% class(network)) {
+    nodes <- data.frame(name = c(rownames(network), colnames(network)), type = c(rep(TRUE, nrow(network)), rep(FALSE, ncol(network))), stringsAsFactors = FALSE)
+    edges <- data.frame(from = rep(rownames(network), times = ncol(network)), to = rep(colnames(network), each = nrow(network)), weight = as.vector(network))
+    edges <- edges[edges$weight != 0, ]
+    edges$from <- match(edges$from, nodes$name)
+    edges$to <- match(edges$to, nodes$name)
+    g <- tidygraph::tbl_graph(nodes = nodes, edges = edges, directed = FALSE) # create tbl_graph object for ggraph
+  } else if ("dna_network_onemode" %in% class(network)) {
+    g <- tidygraph::as_tbl_graph(network, directed = FALSE) # create tbl_graph object for ggraph
+  } else {
+    stop("Argument supplied by argument 'network' not recognized.")
+  }
+
+  if (!is.null(attributes)) {
+    nodes <- tidygraph::as_tibble(g, active = "nodes")$name # extract nodes from graph for matching
+    at <- attributes[attributes$value %in% nodes, ] # retain only those attributes present in the network
+    at <- at[match(nodes, at$value), ] # sort attributes in the same order as the nodes in the graph
+    g <- tidygraph::mutate(g, at[, colnames(at) != "value"]) # embed node attributes in graph
+  }
+
+  edges <- tidygraph::as_tibble(g, active = "edges") # extract edges from graph
+  u <- unique(edges$weight) # unique edge weights
+  combined <- length(u) < 5 && any(grepl("combine", attributes(network)$call)) # combined qualifier aggregation?
+  edgecol <- sapply(edges$weight, function(weight) { # create edge colors
+    if (length(u) == 2 & all(sort(u) %in% 0:1) & weight > 0) { # binary: 1 = gray
+      "gray"
+    } else if (combined) { # "combined" qualifier aggregation
+      if (weight == 1) {
+        "green"
+      } else if (weight == 2) {
+        "red"
+      } else if (weight == 3) {
+        "blue"
+      } else {
+        "gray"
+      }
+    } else if (any(u < 0)) { # "subtract" (or something else that generates negative ties)
+      if (weight < 0) {
+        "red"
+      } else {
+        "green"
+      }
+    } else { # any other scale, for example "congruence" qualifier aggregation
+      "gray"
+    }
+  })
+  g <- g |> # assign absolute values, edge colors, and sign as edge attributes
+    tidygraph::activate(edges) |>
+    tidygraph::mutate(abs = abs(weight),
+                      color = edgecol,
+                      sign = ifelse(weight < 0, "negative", "positive"))
+
+  return(g)
+}
 
 
 # Barplots ---------------------------------------------------------------------

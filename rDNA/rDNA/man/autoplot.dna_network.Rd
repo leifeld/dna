@@ -308,6 +308,7 @@ Other {rDNA networks}:
 \code{\link{as.matrix.dna_network_onemode}()},
 \code{\link{as.matrix.dna_network_twomode}()},
 \code{\link{dna_network}()},
+\code{\link{dna_tidygraph}()},
 \code{\link{print.dna_network_onemode}()},
 \code{\link{print.dna_network_twomode}()}
 }
