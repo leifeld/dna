@@ -121,7 +121,6 @@ ggraph::ggraph(g, layout = "graphopt") +
                          show.legend = FALSE) +
   ggraph::theme_graph(background = "white") +
   theme(legend.position = "none")
-}
 
 # manipulate and plot using the igraph package
 library("igraph")
@@ -133,6 +132,7 @@ igraph::plot(g) # plot network using igraph package
 # convert to network object (network package, statnet suite of packages)
 library("intergraph")
 intergraph::asNetwork(g)
+}
 
 }
 \seealso{

@@ -319,21 +319,40 @@ A vector with two numeric values: the backbone and redundant loss.
 }
 \description{
 Compute and retrieve the backbone and redundant set of a discourse network.
-
-Compute the backbone loss for any set of entities, for example concepts.
 }
 \details{
-This function applies a simulated annealing algorithm to the discourse
-network to partition the set of second-mode entities (e.g., concepts) into a
-backbone set and a complementary redundant set.
+The dna_backbone function applies a simulated annealing algorithm to the
+discourse network to partition the set of second-mode entities (e.g.,
+concepts) into a backbone set and a complementary redundant set. Three
+methods are available:
+\itemize{
+  \item A simulated annealing algorithm with a penalty. You can play with
+    different penalties and see how they affect the size of your backbone
+    set.
+  \item A modified simulated annealing algorithm for a fixed number of
+    backbone entities to retain. This is computationally simpler, but you
+    have to know how large the set should be.
+  \item A fast and greedy nested algorithm, which evaluates all possible
+    fixed backbone solutions, i.e., for all sizes, and provides a nested
+    hierarchy of entities on the second mode. This algorithm may stay below
+    the optimum and is only an approximation but provides insights into the
+    hierarchy of concepts and their relative importance.
+}
 
-This function computes the spectral loss for an arbitrary backbone and its
-complement, the redundant set, specified by the user. For example, the user
-can evaluate how much structure would be lost if the second mode was composed
-only of the concepts provided to this function. This can be used to compare
-how useful different codebook models are. The penalty parameter \code{p}
-applies a penalty factor to the spectral loss. The default value of \code{0}
-switches off the penalty.
+The \code{autoplot} function requires the ggplot2 package and can plot
+algorithm diagnostics and the hierarchy of entities as a dendrogram,
+depending on the method that was chosen. The \code{plot} function can do the
+same thing, just using base plots, not ggplot2.
+
+The \code{dna_evaluateBackboneSolution} function computes the spectral loss
+for an arbitrary backbone and its complement, the redundant set, specified by
+the user. For example, the user can evaluate how much structure would be lost
+if the second mode was composed only of the concepts provided to this
+function. This can be used to compare how useful different codebook models
+are. The penalty parameter \code{p} applies a penalty factor to the spectral
+loss. The default value of \code{0} switches off the penalty as it is usually
+not needed to evaluate a specific solution. The backbone set can be supplied
+as a vector of character objects, for example concepts.
 }
 \examples{
 \dontrun{
@@ -423,6 +442,4 @@ dna_evaluateBackboneSolution(
 }
 \author{
 Philip Leifeld, Tim Henrichsen
-
-Philip Leifeld
 }

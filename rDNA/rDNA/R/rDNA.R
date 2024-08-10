@@ -1963,7 +1963,6 @@ autoplot.dna_network_twomode <- autoplot.dna_network_onemode
 #'                          show.legend = FALSE) +
 #'   ggraph::theme_graph(background = "white") +
 #'   theme(legend.position = "none")
-#' }
 #'
 #' # manipulate and plot using the igraph package
 #' library("igraph")
@@ -1975,9 +1974,11 @@ autoplot.dna_network_twomode <- autoplot.dna_network_onemode
 #' # convert to network object (network package, statnet suite of packages)
 #' library("intergraph")
 #' intergraph::asNetwork(g)
+#' }
 #'
 #' @author Philip Leifeld
 #' @family {rDNA networks}
+#' @importFrom rlang .data
 #' @export
 dna_tidygraph <- function(network, attributes = NULL, ...) {
   if (length(intersect(c("dna_network_onemode", "dna_network_twomode", "matrix"), class(network))) < 1) {
@@ -2039,9 +2040,9 @@ dna_tidygraph <- function(network, attributes = NULL, ...) {
   })
   g <- g |> # assign absolute values, edge colors, and sign as edge attributes
     tidygraph::activate(edges) |>
-    tidygraph::mutate(abs = abs(weight),
-                      color = edgecol,
-                      sign = ifelse(weight < 0, "negative", "positive"))
+    tidygraph::mutate(abs = abs(.data$weight),
+                      color = .data$edgecol,
+                      sign = ifelse(.data$weight < 0, "negative", "positive"))
 
   return(g)
 }
@@ -2587,9 +2588,38 @@ autoplot.dna_barplot <- function(object,
 #'
 #' Compute and retrieve the backbone and redundant set of a discourse network.
 #'
-#' This function applies a simulated annealing algorithm to the discourse
-#' network to partition the set of second-mode entities (e.g., concepts) into a
-#' backbone set and a complementary redundant set.
+#' The dna_backbone function applies a simulated annealing algorithm to the
+#' discourse network to partition the set of second-mode entities (e.g.,
+#' concepts) into a backbone set and a complementary redundant set. Three
+#' methods are available:
+#' \itemize{
+#'   \item A simulated annealing algorithm with a penalty. You can play with
+#'     different penalties and see how they affect the size of your backbone
+#'     set.
+#'   \item A modified simulated annealing algorithm for a fixed number of
+#'     backbone entities to retain. This is computationally simpler, but you
+#'     have to know how large the set should be.
+#'   \item A fast and greedy nested algorithm, which evaluates all possible
+#'     fixed backbone solutions, i.e., for all sizes, and provides a nested
+#'     hierarchy of entities on the second mode. This algorithm may stay below
+#'     the optimum and is only an approximation but provides insights into the
+#'     hierarchy of concepts and their relative importance.
+#' }
+#'
+#' The \code{autoplot} function requires the ggplot2 package and can plot
+#' algorithm diagnostics and the hierarchy of entities as a dendrogram,
+#' depending on the method that was chosen. The \code{plot} function can do the
+#' same thing, just using base plots, not ggplot2.
+#'
+#' The \code{dna_evaluateBackboneSolution} function computes the spectral loss
+#' for an arbitrary backbone and its complement, the redundant set, specified by
+#' the user. For example, the user can evaluate how much structure would be lost
+#' if the second mode was composed only of the concepts provided to this
+#' function. This can be used to compare how useful different codebook models
+#' are. The penalty parameter \code{p} applies a penalty factor to the spectral
+#' loss. The default value of \code{0} switches off the penalty as it is usually
+#' not needed to evaluate a specific solution. The backbone set can be supplied
+#' as a vector of character objects, for example concepts.
 #'
 #' @param method The backbone algorithm used to compute the results. Several
 #'  methods are available:
@@ -3192,18 +3222,6 @@ autoplot.dna_backbone <- function(object, ..., ma = 500) {
   }
 }
 
-#' Evaluate the spectral loss for an arbitrary set of entities
-#'
-#' Compute the backbone loss for any set of entities, for example concepts.
-#'
-#' This function computes the spectral loss for an arbitrary backbone and its
-#' complement, the redundant set, specified by the user. For example, the user
-#' can evaluate how much structure would be lost if the second mode was composed
-#' only of the concepts provided to this function. This can be used to compare
-#' how useful different codebook models are. The penalty parameter \code{p}
-#' applies a penalty factor to the spectral loss. The default value of \code{0}
-#' switches off the penalty.
-#'
 #' @param backboneEntities A vector of character values to be included in the
 #'   backbone. The function will compute the spectral loss between the full
 #'   network and the network composed only of those entities on the second mode
@@ -3224,8 +3242,6 @@ autoplot.dna_backbone <- function(object, ..., ma = 500) {
 #'     "Emissions legislation should regulate CO2.")
 #' )
 #' }
-#'
-#' @author Philip Leifeld
 #'
 #' @rdname dna_backbone
 #' @importFrom rJava .jarray
