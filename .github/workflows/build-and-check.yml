@@ -23,7 +23,7 @@ jobs:
         if: steps.system-deps-cache.outputs.cache-hit != 'true'
         run: |
           sudo apt-get update
-          sudo apt-get install -y texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended texlive-bibtex-extra pandoc pandoc-citeproc
+          sudo apt-get install -y texlive-latex-base texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended texlive-bibtex-extra
 
   install-r-dependencies:
     runs-on: ${{ matrix.config.os }}
@@ -94,9 +94,27 @@ jobs:
           /usr/local/texlive/texmf-var
           /usr/local/texlive/tlpkg/texlive.tlpdb
         key: ${{ runner.os }}-system-deps-v1
-    - name: Check Pandoc Installation
+
+    - name: Restore pandoc
+      uses: actions/cache@v3
+      id: pandoc
+      with:
+        path: pandoc-2.19.2-1
+        key: pandoc-2.19.2-1
+    - name: Download pandoc-2.19.2-1-amd64.deb
+      if: steps.pandoc.outputs.cache-hit != 'true'
       run: |
-        pandoc --version
+        mkdir pandoc-2.19.2-1
+        cd pandoc-2.19.2-1
+        wget https://github.com/jgm/pandoc/releases/download/2.19.2/pandoc-2.19.2-1-amd64.deb
+    - name: Install pandoc
+      run: |
+        cd pandoc-2.19.2-1
+        sudo dpkg -i pandoc-2.19.2-1-amd64.deb
+
+    - name: Check pandoc version
+      run: pandoc --version
+
     - name: Setup Gradle
       uses: gradle/gradle-build-action@v2.4.2
     - name: Execute Gradle build for bibliography
