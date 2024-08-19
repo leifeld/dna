@@ -112,13 +112,7 @@ task rDNATest(dependsOn: [rDNADocument, copyRPackageSourcesToBuildDir, copyJarIn
             commandLine 'R', '-e', 'devtools::test()'
         }
 
-        // Run code coverage using covr::codecov() on the package source directory
-        exec {
-            workingDir tempDir.absolutePath
-            commandLine 'R', '-e', 'covr::codecov()'
-        }
-
-        println "R package testing and code coverage completed."
+        println "R package testing completed."
         println "Deleting temporary directory..."
         delete tempDir
         println "Temporary directory deleted."
