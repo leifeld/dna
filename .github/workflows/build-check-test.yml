@@ -199,4 +199,6 @@ jobs:
       - name: Execute Gradle build for rDNA
         run: ./gradlew :rDNA:build
       - name: Execute Gradle rDNATest Task
-        run: ./gradlew :rDNA:rDNATest
+        run: |
+          export CI=false
+          ./gradlew :rDNA:rDNATest
