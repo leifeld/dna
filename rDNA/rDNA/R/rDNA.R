@@ -158,7 +158,7 @@ dna_jar <- function() {
     }
   }, error = function(e) {success <- FALSE})
 
-  stop("DNA jar file could not be found in the library path or working "
+  stop("DNA jar file could not be found in the library path or working ",
        "directory. Your current rDNA version is ", v, ".")
 }
 
