@@ -101,26 +101,20 @@ dna_getHeadlessDna <- function() {
   dnaEnvironment[["dna"]]$headlessDna
 }
 
-#' Identify and/or download and install the correct DNA jar file
+#' Find the DNA jar file
 #'
-#' Identify and/or download and install the correct DNA jar file.
+#' Find the DNA jar file in the library path or working directory.
 #'
-#' rDNA requires the installation of a DNA jar file to run properly. While it is
-#' possible to store the jar file in the respective working directory, it is
-#' preferable to install it in the rDNA library installation directory under
-#' \code{java/}. The \code{dna_jar} function attempts to find the version of the
-#' jar file that matches the installed \pkg{rDNA} version in the \code{java/}
-#' sub-directory of the package library path and return the jar file name
-#' including its full path. If this fails, it will try to find the jar file in
-#' the current working directory and return its file name. If this fails as
-#' well, it will attempt to download the matching jar file from GitHub and store
-#' it in the library path and return its file name. If this fails, it will
-#' attempt to store the downloaded jar file in the working directory and return
-#' its file name. If this fails as well, it will clone the current DNA master
-#' code from GitHub to a local temporary directory, build the jar file from
-#' source, and attempt to store the built jar file in the library path or, if
-#' this fails, in the working directory and return the file name of the jar
-#' file. If all of this fails, an error message is thrown.
+#' rDNA requires the installation of a DNA jar file to run properly. The jar
+#' file is shipped with the rDNA package and is installed in the \code{java/}
+#' directory of the package installation directory in the R library tree. The
+#' version number of the jar file and the rDNA package must match for DNA and
+#' rDNA to be able to work together. The \code{dna_jar} function looks for
+#' the jar file in the package installation directory sub-directory and
+#' returns its file name with its absolute path. If it cannot be found in the
+#' installation directory, the function looks in the current working
+#' directory. The function is also called by \code{\link{dna_init}} if the
+#' location of the jar file is not provided explicitly.
 #'
 #' @return The file name of the jar file that matches the installed \pkg{rDNA}
 #'   version, including full path.
@@ -164,91 +158,8 @@ dna_jar <- function() {
     }
   }, error = function(e) {success <- FALSE})
 
-  # try to download from GitHub release directory to library path
-  tryCatch({
-    rdna_dir <- dirname(system.file(".", package = "rDNA"))
-    f <- paste0("https://github.com/leifeld/dna/releases/download/v", v, "/dna-", v, ".jar")
-    dest <- paste0(rdna_dir, "/java/dna-", v, ".jar")
-    targetdir <- paste0(rdna_dir, "/java/")
-    dir.create(targetdir, recursive = TRUE, showWarnings = FALSE)
-    suppressWarnings(download.file(url = f,
-                                   destfile = dest,
-                                   mode = "wb",
-                                   cacheOK = FALSE,
-                                   quiet = TRUE))
-    if (file.exists(dest)) {
-      message("Jar file downloaded from GitHub to library path.")
-      return(dest)
-    }
-  }, error = function(e) {success <- FALSE})
-
-  # try to download from GitHub release directory to working directory
-  tryCatch({
-    rdna_dir <- dirname(system.file(".", package = "rDNA"))
-    f <- paste0("https://github.com/leifeld/dna/releases/download/v", v, "/dna-", v, ".jar")
-    dest <- paste0(getwd(), "/dna-", v, ".jar")
-    suppressWarnings(download.file(url = f,
-                                   destfile = dest,
-                                   mode = "wb",
-                                   cacheOK = FALSE,
-                                   quiet = TRUE))
-    if (file.exists(dest)) {
-      message("Jar file downloaded from GitHub to working directory.")
-      return(dest)
-    }
-  }, error = function(e) {success <- FALSE})
-
-  # try to download and build from source
-  tryCatch({
-    td <- tempdir()
-    dest <- paste0(td, "/master.zip")
-    suppressWarnings(download.file(url = "https://github.com/leifeld/dna/archive/master.zip",
-                                   destfile = dest,
-                                   mode = "wb",
-                                   cacheOK = FALSE,
-                                   quiet = TRUE))
-    unzip(zipfile = dest, overwrite = TRUE, exdir = td)
-    output <- file.remove(dest)
-    gradle <- paste0(td, "/dna-master/gradlew")
-    Sys.chmod(gradle, mode = "0777", use_umask = TRUE)
-    oldwd <- getwd()
-    setwd(paste0(td, "/dna-master/"))
-    system(paste0(gradle, " build"), ignore.stdout = TRUE, ignore.stderr = TRUE)
-    setwd(oldwd)
-    builtjar <- paste0(td, "/dna-master/dna/build/libs/dna-", v, ".jar")
-    if (file.exists(builtjar)) {
-      message("DNA source code downloaded and jar file built successfully.")
-    }
-  }, error = function(e) {success <- FALSE})
-
-  # try to copy built jar to library path
-  tryCatch({
-    targetdir <- paste0(find.package("rDNA"), "/java/")
-    dir.create(targetdir, recursive = TRUE, showWarnings = FALSE)
-    dest <- paste0(targetdir, "dna-", v, ".jar")
-    file.copy(from = builtjar, to = targetdir)
-    if (file.exists(dest)) {
-      unlink(paste0(td, "/dna-master"), recursive = TRUE)
-      message("Jar file copied to library path.")
-      return(dest)
-    }
-  }, error = function(e) {success <- FALSE})
-
-  # try to copy built jar to working directory
-  tryCatch({
-    dest <- paste0(getwd(), "/dna-", v, ".jar")
-    file.copy(from = builtjar, to = dest)
-    if (file.exists(dest)) {
-      unlink(paste0(td, "/dna-master"), recursive = TRUE)
-      message("Jar file copied to working directory.")
-      return(dest)
-    }
-  }, error = function(e) {success <- FALSE})
-
-  stop("DNA jar file could not be identified or downloaded. Please download ",
-       "the DNA jar file matching the version number of rDNA and store it in ",
-       "the java/ sub-directory of your rDNA library installation path or in ",
-       "your working directory. Your current rDNA version is ", v, ".")
+  stop("DNA jar file could not be found in the library path or working "
+       "directory. Your current rDNA version is ", v, ".")
 }
 
 #' Provides a small sample database
