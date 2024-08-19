@@ -79,19 +79,25 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/.cache/R
-        key: ${{ runner.os }}-r-${{ hashFiles('**/DESCRIPTION') }}-v1
+        key: ${{ runner.os }}-r-rDNA-${{ hashFiles('**/DESCRIPTION') }}-v1
 
     - uses: r-lib/actions/setup-r-dependencies@v2
       with:
         cache-version: 2
         working-directory: rDNA/rDNA
         extra-packages: |
-        any::roxygen2
+          any::roxygen2
 
     - uses: gradle/wrapper-validation-action@v1
 
     - name: Setup Gradle
       uses: gradle/gradle-build-action@v2.4.2
+
+    - name: Restore Gradle Cache
+      uses: actions/cache@v3
+      with:
+        path: ~/.gradle/caches
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/build.gradle') }}-v1
 
     - name: Execute Gradle build for rDNA
       run: ./gradlew :rDNA:build
@@ -134,7 +140,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/R
-          key: ${{ runner.os }}-r-${{ hashFiles('**/DESCRIPTION') }}-v1
+          key: ${{ runner.os }}-r-rDNA-check-${{ hashFiles('**/DESCRIPTION') }}-v1
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
@@ -158,7 +164,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/R
-          key: ${{ runner.os }}-r-${{ hashFiles('**/DESCRIPTION') }}-v1
+          key: ${{ runner.os }}-r-rDNA-test-${{ hashFiles('**/DESCRIPTION') }}-v1
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
@@ -182,6 +188,13 @@ jobs:
             any::pbmcapply
 
       - uses: gradle/wrapper-validation-action@v1
+
+      - name: Restore Gradle Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/build.gradle') }}-v1
+
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2.4.2
       - name: Execute Gradle build for rDNA
