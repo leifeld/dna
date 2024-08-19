@@ -154,32 +154,49 @@ jobs:
           working-directory: rDNA/rDNA
           upload-snapshots: true
 
-  rDNA-coverage:
-    needs: rDNA
+  rDNA-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
-      - uses: actions/download-artifact@v3
-        with:
-          name: rDNA
-
       - uses: r-lib/actions/setup-r@v2
-        with:
-          r-version: release
 
       - name: Restore R Packages
         uses: actions/cache@v3
         with:
           path: ~/.cache/R
-          key: ${{ runner.os }}-r-rDNA-coverage-${{ hashFiles('**/DESCRIPTION') }}-v1
+          key: ${{ runner.os }}-r-rDNA-test-${{ hashFiles('**/DESCRIPTION') }}-v1
 
-      - name: Install Dependencies
-        run: |
-          install.packages('remotes')
-          remotes::install_deps(dependencies = TRUE)
-          install.packages('covr')
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          cache-version: 2
+          working-directory: rDNA/rDNA
+          extra-packages: |
+            any::covr
+            any::ggplot2
+            any::igraph
+            any::ggraph
+            any::askpass
+            any::cluster
+            any::sna
+            any::ggrepel
+            any::coda
+            any::MCMCpack
+            any::tidygraph
+            any::heatmaply
+            any::factoextra
+            any::MASS
+            any::pbmcapply
+      - uses: gradle/wrapper-validation-action@v1
 
-      - name: Run Coverage
-        run: |
-          Rscript -e 'pkg_tarball <- list.files(pattern = "*.tar.gz", full.names = TRUE); covr::codecov(path = pkg_tarball)'
+      - name: Restore Gradle Cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/build.gradle') }}-v1
+
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2.4.2
+      - name: Execute Gradle build for rDNA
+        run: ./gradlew :rDNA:build
+      - name: Execute Gradle rDNATest Task
+        run: ./gradlew :rDNA:rDNATest
