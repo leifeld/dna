@@ -44,6 +44,7 @@ jobs:
           extra-packages: |
             any::devtools
             any::testthat
+            any::roxygen2
             any::ggplot2
             any::roxygen2
             any::igraph
@@ -67,10 +68,13 @@ jobs:
     - uses: actions/checkout@v3
     - uses: r-lib/actions/setup-tinytex@v2
     - uses: gradle/wrapper-validation-action@v1
+    - name: Check Pandoc Installation
+      run: |
+        pandoc --version
     - name: Setup Gradle
       uses: gradle/gradle-build-action@v2.4.2
     - name: Execute Gradle build for bibliography
-      run: ./gradlew :bibliography:build
+      run: ./gradlew :bibliography:build --info --stacktrace
     - name: Store artifacts
       uses: actions/upload-artifact@v3
       with:
