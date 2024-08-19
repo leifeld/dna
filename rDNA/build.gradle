@@ -1,3 +1,11 @@
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+
+plugins {
+    id 'base'
+}
+
+// Task to generate R documentation
 task rDNADocument {
     inputs.dir 'rDNA'
     doLast {
@@ -8,55 +16,131 @@ task rDNADocument {
     }
 }
 
-task rDNABuild {
-    dependsOn rDNADocument
-    inputs.dir 'rDNA'
-    def outputDir = file("$rootDir/build/")
-    doFirst {
-        delete fileTree(dir: outputDir, includes: ['*.tar.gz'])
+// Task to find the most recent JAR file in the build directory
+def findLatestJarFile() {
+    def jarDir = file("$rootDir/build")
+    def jarFiles = jarDir.listFiles({ file -> file.name.endsWith('.jar') } as FileFilter)
+
+    if (jarFiles && jarFiles.size() > 0) {
+        return jarFiles.sort { -it.lastModified() }[0]
+    } else {
+        throw new GradleException("No jar files found in the build directory.")
     }
-    doLast {
-        mkdir "$rootDir/build"
-        exec {
-            workingDir "$rootDir/build/"
-            commandLine 'R', "CMD", "build", "../rDNA/rDNA"
-        }
-    }
-    outputs.dir outputDir
 }
 
+// Task to ensure the inst/java directory exists in the temporary build directory
+task createJavaDirInTempBuildDir {
+    doLast {
+        def javaDir = file("$rootDir/build/temp-rDNA/inst/java")
+        if (!javaDir.exists()) {
+            println "Creating directory: ${javaDir.absolutePath}"
+            javaDir.mkdirs()
+        } else {
+            println "Directory already exists: ${javaDir.absolutePath}"
+        }
+    }
+}
+
+// Task to copy the JAR file into the inst/java directory
+task copyJarIntoTempBuildDir {
+    dependsOn ':dna:build', createJavaDirInTempBuildDir
+    doLast {
+        def latestJar = findLatestJarFile()
+        def destinationDir = file("$rootDir/build/temp-rDNA/inst/java")
+
+        println "Copying JAR file: ${latestJar.name} to ${destinationDir.absolutePath}"
+
+        // Copy the JAR file using Java NIO Files class
+        Files.copy(latestJar.toPath(), new File(destinationDir, latestJar.name).toPath(), StandardCopyOption.REPLACE_EXISTING)
+
+        println "JAR file copied successfully."
+    }
+}
+
+// Task to copy R package sources to a temporary build directory
+task copyRPackageSourcesToBuildDir(type: Copy) {
+    from "$rootDir/rDNA/rDNA"
+    into "$rootDir/build/temp-rDNA"
+    exclude 'inst/java/**'
+}
+
+// Task to build the R package (create a .tar.gz file) and clean up after
+task rDNABuild(dependsOn: [rDNADocument, copyRPackageSourcesToBuildDir, copyJarIntoTempBuildDir]) {
+    doLast {
+        // Delete old .tar.gz files in the build directory
+        def buildDir = file("$rootDir/build")
+        buildDir.listFiles({ file -> file.name.endsWith('.tar.gz') } as FileFilter)?.each { it.delete() }
+
+        // Build the R package in the temporary directory
+        exec {
+            workingDir "$rootDir/build"
+            commandLine 'R', 'CMD', 'build', 'temp-rDNA'
+        }
+
+        println "R package built successfully."
+
+        // Cleanup the temporary build directory
+        delete file("$rootDir/build/temp-rDNA")
+        println "Temporary directory temp-rDNA deleted."
+    }
+}
+
+// Task to check the R package using the .tar.gz file
 task rDNACheck {
-    inputs.dir 'rDNA'
     doLast {
-        mkdir "$rootDir/build"
+        def tarGzFile = file("$rootDir/build").listFiles({ file -> file.name.endsWith('.tar.gz') } as FileFilter)[0]
         exec {
-            workingDir "rDNA"
-            commandLine 'R', "-e", "devtools::check(manual = TRUE, check_dir = '../../build/')"
+            workingDir "$rootDir/build"
+            commandLine 'R', 'CMD', 'check', '--as-cran', tarGzFile.absolutePath
         }
-    }
-    def outputDir = file("$rootDir/build/")
-    outputs.dir outputDir
-}
-
-task rDNATest {
-    inputs.dir 'rDNA'
-    doLast {
-        mkdir "$rootDir/build"
-        exec {
-            workingDir "rDNA"
-            commandLine 'R', "-e", "devtools::test()"
-        }
-        exec {
-            workingDir "rDNA"
-            commandLine 'R', "-e", "withr::with_envvar(c('NOT_CRAN' = 'true'), covr::codecov(quiet = FALSE))"
-        }
+        println "R package check completed."
     }
 }
 
-task build {
+// Task to test the R package and generate code coverage report
+task rDNATest(dependsOn: [rDNADocument, copyRPackageSourcesToBuildDir, copyJarIntoTempBuildDir]) {
+    doLast {
+        def packageName = "rDNA"  // Ensure this matches the Package field in DESCRIPTION
+        def tempDir = file("$rootDir/build/${packageName}")
+
+        // Rename the directory to match the package name
+        file("$rootDir/build/temp-rDNA").renameTo(tempDir)
+
+        // Run tests using devtools::test() directly on the package source directory
+        exec {
+            workingDir tempDir.absolutePath
+            commandLine 'R', '-e', 'devtools::test()'
+        }
+
+        // Run code coverage using covr::codecov() on the package source directory
+        exec {
+            workingDir tempDir.absolutePath
+            commandLine 'R', '-e', 'covr::codecov()'
+        }
+
+        println "R package testing and code coverage completed."
+        println "Deleting temporary directory..."
+        delete tempDir
+        println "Temporary directory deleted."
+    }
+}
+
+// Extend the default clean task to include custom directories and files
+clean {
+    doFirst {
+        println "Attempting to delete temporary directory and .tar.gz file..."
+    }
+
+    delete "$rootDir/build/temp-rDNA"
+    delete "$rootDir/build/rDNA.Rcheck"
+    delete fileTree(dir: "$rootDir/build", include: '**/*.tar.gz')
+
+    doLast {
+        println "Temporary build directories and .tar.gz files have been removed."
+    }
+}
+
+// Main build task
+build {
     dependsOn rDNABuild
-    inputs.dir 'rDNA'
-    def outputDir = file("$rootDir/build/")
-    outputs.dir outputDir
-    doLast {}
 }

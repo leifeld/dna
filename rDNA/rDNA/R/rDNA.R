@@ -44,7 +44,7 @@ dnaEnvironment <- new.env(hash = TRUE, parent = emptyenv())
 #' dna_init()
 #' }
 #'
-#' @family {rDNA package startup}
+#' @family startup
 #'
 #' @export
 #' @importFrom rJava .jinit .jnew .jarray
@@ -94,7 +94,7 @@ dna_init <- function(jarfile = dna_jar(), memory = 1024, returnString = FALSE) {
 #'
 #' @author Philip Leifeld
 #'
-#' @family {rDNA package startup}
+#' @family startup
 #'
 #' @export
 dna_getHeadlessDna <- function() {
@@ -108,18 +108,18 @@ dna_getHeadlessDna <- function() {
 #' rDNA requires the installation of a DNA jar file to run properly. While it is
 #' possible to store the jar file in the respective working directory, it is
 #' preferable to install it in the rDNA library installation directory under
-#' \code{inst/java/}. The \code{dna_jar} function attempts to find the version
-#' of the jar file that matches the installed \pkg{rDNA} version in the
-#' \code{inst/java/} sub-directory of the package library path and return the
-#' jar file name including its full path. If this fails, it will try to find the
-#' jar file in the current working directory and return its file name. If this
-#' fails as well, it will attempt to download the matching jar file from GitHub
-#' and store it in the library path and return its file name. If this fails, it
-#' will attempt to store the downloaded jar file in the working directory and
-#' return its file name. If this fails as well, it will clone the current DNA
-#' master code from GitHub to a local temporary directory, build the jar file
-#' from source, and attempt to store the built jar file in the library path or,
-#' if this fails, in the working directory and return the file name of the jar
+#' \code{java/}. The \code{dna_jar} function attempts to find the version of the
+#' jar file that matches the installed \pkg{rDNA} version in the \code{java/}
+#' sub-directory of the package library path and return the jar file name
+#' including its full path. If this fails, it will try to find the jar file in
+#' the current working directory and return its file name. If this fails as
+#' well, it will attempt to download the matching jar file from GitHub and store
+#' it in the library path and return its file name. If this fails, it will
+#' attempt to store the downloaded jar file in the working directory and return
+#' its file name. If this fails as well, it will clone the current DNA master
+#' code from GitHub to a local temporary directory, build the jar file from
+#' source, and attempt to store the built jar file in the library path or, if
+#' this fails, in the working directory and return the file name of the jar
 #' file. If all of this fails, an error message is thrown.
 #'
 #' @return The file name of the jar file that matches the installed \pkg{rDNA}
@@ -127,7 +127,7 @@ dna_getHeadlessDna <- function() {
 #'
 #' @author Philip Leifeld
 #'
-#' @family {rDNA package startup}
+#' @family startup
 #'
 #' @importFrom utils download.file unzip packageVersion
 #' @export
@@ -135,7 +135,17 @@ dna_jar <- function() {
   # detect package version
   v <- as.character(packageVersion("rDNA"))
 
-  # try to locate jar file in library path and return jar file path
+  # try to locate jar file in library path under java/ and return jar file path
+  tryCatch({
+    rdna_dir <- dirname(system.file(".", package = "rDNA"))
+    jar <- paste0(rdna_dir, "/java/dna-", v, ".jar")
+    if (file.exists(jar)) {
+      message("Jar file found in library path.")
+      return(jar)
+    }
+  }, error = function(e) {success <- FALSE})
+
+  # try to locate jar file in library path under inst/java/ and return jar file path
   tryCatch({
     rdna_dir <- dirname(system.file(".", package = "rDNA"))
     jar <- paste0(rdna_dir, "/inst/java/dna-", v, ".jar")
@@ -147,7 +157,7 @@ dna_jar <- function() {
 
   # try to locate jar file in working directory and return jar file path
   tryCatch({
-    jar <- paste0(getwd(), "/inst/java/dna-", v, ".jar")
+    jar <- paste0(getwd(), "/dna-", v, ".jar")
     if (file.exists(jar)) {
       message("Jar file found in working directory.")
       return(jar)
@@ -158,8 +168,8 @@ dna_jar <- function() {
   tryCatch({
     rdna_dir <- dirname(system.file(".", package = "rDNA"))
     f <- paste0("https://github.com/leifeld/dna/releases/download/v", v, "/dna-", v, ".jar")
-    dest <- paste0(rdna_dir, "/inst/java/dna-", v, ".jar")
-    targetdir <- paste0(rdna_dir, "/", "inst/java/")
+    dest <- paste0(rdna_dir, "/java/dna-", v, ".jar")
+    targetdir <- paste0(rdna_dir, "/java/")
     dir.create(targetdir, recursive = TRUE, showWarnings = FALSE)
     suppressWarnings(download.file(url = f,
                                    destfile = dest,
@@ -213,7 +223,7 @@ dna_jar <- function() {
 
   # try to copy built jar to library path
   tryCatch({
-    targetdir <- paste0(find.package("rDNA"), "/", "inst/java/")
+    targetdir <- paste0(find.package("rDNA"), "/java/")
     dir.create(targetdir, recursive = TRUE, showWarnings = FALSE)
     dest <- paste0(targetdir, "dna-", v, ".jar")
     file.copy(from = builtjar, to = targetdir)
@@ -237,7 +247,7 @@ dna_jar <- function() {
 
   stop("DNA jar file could not be identified or downloaded. Please download ",
        "the DNA jar file matching the version number of rDNA and store it in ",
-       "the inst/java/ directory of your rDNA library installation path or in ",
+       "the java/ sub-directory of your rDNA library installation path or in ",
        "your working directory. Your current rDNA version is ", v, ".")
 }
 
@@ -260,7 +270,7 @@ dna_jar <- function() {
 #'
 #' @author Johannes B. Gruber, Philip Leifeld
 #'
-#' @family {rDNA package startup}
+#' @family startup
 #'
 #' @export
 dna_sample <- function(overwrite = FALSE) {
@@ -313,7 +323,7 @@ dna_sample <- function(overwrite = FALSE) {
 #'
 #' @author Philip Leifeld
 #'
-#' @family {rDNA database connections}
+#' @family database
 #' @seealso \code{\link{dna_queryCoders}}
 #'
 #' @examples
@@ -405,7 +415,7 @@ dna_openDatabase <- function(db_url,
 #' dna_closeDatabase()
 #' }
 #'
-#' @family {rDNA database connections}
+#' @family database
 #'
 #' @export
 #' @importFrom rJava .jcall
@@ -450,7 +460,7 @@ dna_closeDatabase <- function() {
 #' dna_openConnectionProfile(file = "my profile.dnc", coderPassword = "sample")
 #' }
 #'
-#' @family {rDNA database connections}
+#' @family database
 #'
 #' @export
 #' @importFrom rJava .jcall
@@ -505,7 +515,7 @@ dna_openConnectionProfile <- function(file, coderPassword = "") {
 #'
 #' @author Philip Leifeld
 #'
-#' @family {rDNA database connections}
+#' @family database
 #'
 #' @examples
 #' \dontrun{
@@ -560,7 +570,7 @@ dna_saveConnectionProfile <- function(file, coderPassword = "") {
 #' dna_printDetails()
 #' }
 #'
-#' @family {rDNA database connections}
+#' @family database
 #'
 #' @export
 #' @importFrom rJava .jcall
@@ -603,7 +613,7 @@ dna_printDetails <- function() {
 #' }
 #' }
 #'
-#' @family {rDNA database connections}
+#' @family database
 #'
 #' @export
 dna_api <- function() {
@@ -779,7 +789,7 @@ dna_getVariables <- function(statementType) {
 #'
 #' @author Philip Leifeld
 #'
-#' @family {rDNA attributes}
+#' @family attributes
 #'
 #' @importFrom rJava .jcall
 #' @importFrom rJava J
@@ -1098,7 +1108,7 @@ dna_getAttributes <- function(statementType = NULL,
 #'
 #' @author Philip Leifeld
 #'
-#' @family {rDNA networks}
+#' @family networks
 #'
 #' @importFrom rJava .jarray
 #' @importFrom rJava .jcall
@@ -1291,7 +1301,7 @@ dna_network <- function(networkType = "twomode",
 #'
 #' @author Philip Leifeld
 #'
-#' @family {rDNA networks}
+#' @family networks
 #'
 #' @export
 as.matrix.dna_network_onemode <- function(x, ...) {
@@ -1316,7 +1326,7 @@ as.matrix.dna_network_onemode <- function(x, ...) {
 #'
 #' @author Philip Leifeld
 #'
-#' @family {rDNA networks}
+#' @family networks
 #'
 #' @export
 as.matrix.dna_network_twomode <- as.matrix.dna_network_onemode
@@ -1340,7 +1350,7 @@ as.matrix.dna_network_twomode <- as.matrix.dna_network_onemode
 #'
 #' @author Philip Leifeld
 #'
-#' @family {rDNA networks}
+#' @family networks
 #'
 #' @export
 print.dna_network_onemode <- function(x, trim = 5, attr = TRUE, ...) {
@@ -1393,7 +1403,7 @@ print.dna_network_onemode <- function(x, trim = 5, attr = TRUE, ...) {
 #'
 #' @author Philip Leifeld
 #'
-#' @family {rDNA networks}
+#' @family networks
 #'
 #' @export
 print.dna_network_twomode <- print.dna_network_onemode
@@ -1639,7 +1649,7 @@ print.dna_network_twomode <- print.dna_network_onemode
 #'
 #' @author Tim Henrichsen
 #'
-#' @family {rDNA networks}
+#' @family networks
 #'
 #' @importFrom ggplot2 autoplot
 #' @importFrom ggplot2 aes
@@ -1977,7 +1987,7 @@ autoplot.dna_network_twomode <- autoplot.dna_network_onemode
 #' }
 #'
 #' @author Philip Leifeld
-#' @family {rDNA networks}
+#' @family networks
 #' @importFrom rlang .data
 #' @export
 dna_tidygraph <- function(network, attributes = NULL, ...) {
@@ -4753,8 +4763,8 @@ dna_phaseTransitions <- function(distanceMethod = "absdiff",
                                  timeWindow = "days",
                                  windowSize = 200,
                                  kernel = "uniform",
-                                 normalizeToOne = FALSE,
-                                 indentTime = TRUE,
+                                 normalizeToOne = TRUE,
+                                 indentTime = FALSE,
                                  excludeValues = list(),
                                  excludeAuthors = character(),
                                  excludeSources = character(),

@@ -26,7 +26,7 @@ dna_openDatabase(s)
 
 }
 \seealso{
-Other {rDNA package startup}: 
+Other startup: 
 \code{\link{dna_getHeadlessDna}()},
 \code{\link{dna_init}()},
 \code{\link{dna_jar}()}
@@ -34,4 +34,4 @@ Other {rDNA package startup}:
 \author{
 Johannes B. Gruber, Philip Leifeld
 }
-\concept{{rDNA package startup}}
+\concept{startup}

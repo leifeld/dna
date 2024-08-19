@@ -304,7 +304,7 @@ autoplot(nw, atts = atts, node_colors = "color") +
 
 }
 \seealso{
-Other {rDNA networks}: 
+Other networks: 
 \code{\link{as.matrix.dna_network_onemode}()},
 \code{\link{as.matrix.dna_network_twomode}()},
 \code{\link{dna_network}()},
@@ -315,4 +315,4 @@ Other {rDNA networks}:
 \author{
 Tim Henrichsen
 }
-\concept{{rDNA networks}}
+\concept{networks}

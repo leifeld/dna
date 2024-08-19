@@ -1,6 +1,6 @@
 Package: rDNA
 Version: 3.0.11
-Date: 2024-08-17
+Date: 2024-08-19
 Title: Discourse Network Analysis in R
 Authors@R: 
   c(person(given = "Philip",
@@ -21,7 +21,9 @@ Authors@R:
            role = "ctb"))
 Maintainer: Philip Leifeld <philip.leifeld@manchester.ac.uk>
 Description: Qualitative content analysis and discourse network analysis 
-    using the Java software Discourse Network Analyzer (DNA).
+    using the Java software Discourse Network Analyzer (DNA). This
+    package includes a proprietary Java `.jar` file that is provided for
+    internal use only.
 Depends:
     R (>= 4.1.0)
 Imports:
@@ -44,9 +46,9 @@ Suggests:
     MCMCpack (>= 1.7-0),
     coda (>= 0.19-4.1)
 SystemRequirements: Java (>= 11)
-License: GPL-2
 URL: https://github.com/leifeld/dna
 BugReports: https://github.com/leifeld/dna/issues
+License: GPL-3 | file LICENSE
 Encoding: UTF-8
 Language: en-US
 RoxygenNote: 7.3.1

@@ -3,6 +3,10 @@ plugins {
     id 'java'
 }
 
+tasks.withType(JavaCompile) {
+    options.release = 11
+}
+
 // create jar file, not just .class files
 jar {
     inputs.dir '.'
@@ -28,9 +32,6 @@ jar {
         }
     }
     
-    sourceCompatibility = '11'
-    targetCompatibility = '11'
-
     destinationDirectory.set(file("$rootDir/build/"))
 }
 
@@ -81,4 +82,17 @@ dependencies {
     implementation group: 'org.ojalgo', name: 'ojalgo', version: '51.4.1'
     // https://mvnrepository.com/artifact/org.apache.commons/commons-math3
     implementation group: 'org.apache.commons', name: 'commons-math3', version: '3.6.1'
+}
+
+// Extend the default clean task to include custom directories and files
+clean {
+    doFirst {
+        println "Attempting to delete jar file..."
+    }
+
+    delete fileTree(dir: "$rootDir/build", include: '**/*.jar')
+
+    doLast {
+        println "Jar file has been removed."
+    }
 }

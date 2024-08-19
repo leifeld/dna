@@ -3,7 +3,7 @@ context("Testing phase transitions")
 # Create a function to set up the database for tests
 setup_dna_database <- function() {
   dna_init()
-  samp <- dna_sample()
+  samp <- dna_sample(overwrite = TRUE)
   dna_openDatabase(samp, coderId = 1, coderPassword = "sample")
   return(samp)
 }
@@ -14,31 +14,38 @@ cleanup_dna_database <- function(samp) {
   unlink(samp)
 }
 
-test_that("dna_phaseTransitions produces expected output with default settings", {
+test_that("dna_phaseTransitions produces expected output with help file example", {
   testthat::skip_on_cran()
   testthat::skip_on_ci()
   samp <- setup_dna_database()
-  result <- dna_phaseTransitions()
+  results <- dna_phaseTransitions(distanceMethod = "spectral",
+                                  clusterMethods = c("ward",
+                                                     "pam",
+                                                     "concor",
+                                                     "walktrap"),
+                                  k.min = 2,
+                                  k.max = 6,
+                                  networkType = "onemode",
+                                  variable1 = "organization",
+                                  variable2 = "concept",
+                                  timeWindow = "days",
+                                  windowSize = 15,
+                                  kernel = "gaussian",
+                                  indentTime = FALSE,
+                                  normalizeToOne = FALSE)
+  expect_true("dna_phaseTransitions" %in% class(results))
+  expect_true(!is.null(results$states))
+  expect_true(!is.null(results$modularity))
+  expect_true(!is.null(results$clusterMethod))
+  expect_true(!is.null(results$distmat))
 
-  expect_type(result, "dna_phaseTransitions")
-  expect_true(!is.null(result$states))
-  expect_true(!is.null(result$modularity))
-  expect_true(!is.null(result$clusterMethod))
-  expect_true(!is.null(result$distmat))
-
-  cleanup_dna_database(samp)
-})
-
-test_that("autoplot.dna_phaseTransitions produces expected plots", {
-  testthat::skip_on_cran()
-  testthat::skip_on_ci()
-  samp <- setup_dna_database()
-  phase_trans_obj <- dna_phaseTransitions()
-
-  plots <- autoplot.dna_phaseTransitions(phase_trans_obj)
+  plots <- autoplot(results)
   expect_type(plots, "list")
   expect_length(plots, 4)
-  expect_type(plots[[1]], "ggplot")
+  expect_true("egg" %in% class(plots[[1]]))
+  expect_true("ggplot" %in% class(plots[[2]]))
+  expect_true("ggplot" %in% class(plots[[3]]))
+  expect_true("ggplot" %in% class(plots[[4]]))
 
   cleanup_dna_database(samp)
 })

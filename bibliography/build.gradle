@@ -1,3 +1,7 @@
+plugins {
+    id 'base'
+}
+
 task bibliographyMarkdown {
     inputs.dir '.'
     doLast {
@@ -47,7 +51,7 @@ task bibliographyPdflatex {
     }
 }
 
-task build {
+build {
     dependsOn bibliographyMarkdown
     dependsOn bibliographyPdflatex
     inputs.dir '.'
@@ -55,4 +59,26 @@ task build {
     outputs.dir outputDir
 
     doLast {}
+}
+
+clean {
+    doFirst {
+        println "Attempting to delete bibliography files..."
+
+        def filesToDelete = fileTree(dir: "$rootDir/build", include: '**/bibliography.*').files
+        if (filesToDelete.isEmpty()) {
+            println "No bibliography files found to delete."
+        } else {
+            println "Found bibliography files to delete: "
+            filesToDelete.each { file ->
+                println file.absolutePath
+            }
+        }
+    }
+
+    delete fileTree(dir: "$rootDir/build", include: '**/bibliography.*')
+
+    doLast {
+        println "Bibliography files have been removed."
+    }
 }

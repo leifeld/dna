@@ -136,7 +136,7 @@ intergraph::asNetwork(g)
 
 }
 \seealso{
-Other {rDNA networks}: 
+Other networks: 
 \code{\link{as.matrix.dna_network_onemode}()},
 \code{\link{as.matrix.dna_network_twomode}()},
 \code{\link{autoplot.dna_network}},
@@ -147,4 +147,4 @@ Other {rDNA networks}:
 \author{
 Philip Leifeld
 }
-\concept{{rDNA networks}}
+\concept{networks}

@@ -27,7 +27,7 @@ auto-complete function access after typing the "$" if the headless reference
 has been saved to an object in the workspace.
 }
 \seealso{
-Other {rDNA package startup}: 
+Other startup: 
 \code{\link{dna_init}()},
 \code{\link{dna_jar}()},
 \code{\link{dna_sample}()}
@@ -35,4 +35,4 @@ Other {rDNA package startup}:
 \author{
 Philip Leifeld
 }
-\concept{{rDNA package startup}}
+\concept{startup}
