@@ -16,6 +16,26 @@ task rDNADocument {
     }
 }
 
+// Task to copy R package sources to a temporary build directory
+task copyRPackageSourcesToBuildDir(type: Copy, dependsOn: rDNADocument) {
+    from "$rootDir/rDNA/rDNA"
+    into "$rootDir/build/temp-rDNA"
+    exclude 'inst/java/**'
+}
+
+// Task to ensure the inst/java directory exists in the temporary build directory
+task createJavaDirInTempBuildDir (dependsOn: copyRPackageSourcesToBuildDir) {
+    doLast {
+        def javaDir = file("$rootDir/build/temp-rDNA/inst/java")
+        if (!javaDir.exists()) {
+            println "Creating directory: ${javaDir.absolutePath}"
+            javaDir.mkdirs()
+        } else {
+            println "Directory already exists: ${javaDir.absolutePath}"
+        }
+    }
+}
+
 // Task to find the most recent JAR file in the build directory
 def findLatestJarFile() {
     def jarDir = file("$rootDir/build")
@@ -28,21 +48,8 @@ def findLatestJarFile() {
     }
 }
 
-// Task to ensure the inst/java directory exists in the temporary build directory
-task createJavaDirInTempBuildDir {
-    doLast {
-        def javaDir = file("$rootDir/build/temp-rDNA/inst/java")
-        if (!javaDir.exists()) {
-            println "Creating directory: ${javaDir.absolutePath}"
-            javaDir.mkdirs()
-        } else {
-            println "Directory already exists: ${javaDir.absolutePath}"
-        }
-    }
-}
-
 // Task to copy the JAR file into the inst/java directory
-task copyJarIntoTempBuildDir {
+task copyJarIntoTempBuildDir (dependsOn: createJavaDirInTempBuildDir) {
     dependsOn ':dna:build', createJavaDirInTempBuildDir
     doLast {
         def latestJar = findLatestJarFile()
@@ -57,15 +64,8 @@ task copyJarIntoTempBuildDir {
     }
 }
 
-// Task to copy R package sources to a temporary build directory
-task copyRPackageSourcesToBuildDir(type: Copy) {
-    from "$rootDir/rDNA/rDNA"
-    into "$rootDir/build/temp-rDNA"
-    exclude 'inst/java/**'
-}
-
 // Task to build the R package (create a .tar.gz file) and clean up after
-task rDNABuild(dependsOn: [rDNADocument, copyRPackageSourcesToBuildDir, copyJarIntoTempBuildDir]) {
+task rDNABuild(dependsOn: copyJarIntoTempBuildDir) {
     doLast {
         // Delete old .tar.gz files in the build directory
         def buildDir = file("$rootDir/build")
