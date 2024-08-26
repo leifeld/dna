@@ -99,17 +99,32 @@ public class DocumentBatchImporter extends JDialog {
 		JButton browseButton = new JButton("Select text files", folderIcon);
         browseButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				FileChooser fc = new FileChooser(DocumentBatchImporter.this, "Select directory", false, "", "Import directory", true);
-				if (fc.getFiles() != null) {
-					files = fc.getFiles();
-					listModel.clear();
-					Arrays.stream(fc.getFiles())
-							.filter(f -> f.isFile())
-							.map(f -> f.getName())
-							.forEachOrdered(f -> listModel.addElement(f));
-					fileList.updateUI();
-					if (files.length > 0) {
-						fileList.setSelectedIndex(0);
+				FileChooser fc = null;
+				try {
+					fc = new FileChooser(DocumentBatchImporter.this, "Select text files", false, "", "Import files", true);
+				} catch (NullPointerException npe) {
+					LogEvent l = new LogEvent(Logger.MESSAGE,
+							"[GUI] Cancelled file selection in batch import window.",
+							"Cancelled file selection in batch import window. No files were selected.");
+					Dna.logger.log(l);
+				} finally {
+					if (fc != null && fc.getFiles() != null) {
+						files = fc.getFiles();
+						listModel.clear();
+						Arrays.stream(fc.getFiles())
+								.filter(f -> f.isFile())
+								.map(f -> f.getName())
+								.forEachOrdered(f -> listModel.addElement(f));
+						fileList.updateUI();
+						if (files.length > 0) {
+							fileList.setSelectedIndex(0);
+						}
+					} else {
+						// no files were selected or FileChooser was cancelled
+						LogEvent l = new LogEvent(Logger.MESSAGE,
+								"[GUI] No files were selected in the batch import window.",
+								"File selection was cancelled or no files were selected.");
+						Dna.logger.log(l);
 					}
 				}
 			}

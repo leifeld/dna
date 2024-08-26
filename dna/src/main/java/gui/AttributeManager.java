@@ -635,8 +635,8 @@ public class AttributeManager extends JDialog {
 				}
 			} else if (col == 2) { // color
 				try {
-					Dna.sql.setEntityColor(this.rows.get(row).getId(), (model.Color) aValue);
-					this.rows.get(row).setColor((model.Color) aValue);
+					Dna.sql.setEntityColor(this.rows.get(row).getId(), new model.Color(((Color) aValue).getRed(), ((Color) aValue).getGreen(), ((Color) aValue).getBlue()));
+					this.rows.get(row).setColor(new model.Color(((Color) aValue).getRed(), ((Color) aValue).getGreen(), ((Color) aValue).getBlue()));
 				} catch (SQLException ex) {
 		        	LogEvent l = new LogEvent(Logger.ERROR,
 		        			"[SQL] Entity color could not be updated in the database.",
@@ -921,7 +921,7 @@ public class AttributeManager extends JDialog {
 		 * @param column      The column index of the cell.
 		 */
 		public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
-			changeColor((Color) value);
+			changeColor(((model.Color) value).toAWTColor());
 			panel.setBackground(UIManager.getColor("Table.selectionBackground"));
 			return panel;
 		}
