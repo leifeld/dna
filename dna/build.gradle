@@ -27,8 +27,8 @@ jar {
     // parse DNA version number and add to jar file name
     new File(project(':dna').projectDir.toString() + '/src/main/java/dna/Dna.java').eachLine { line ->
         if (line ==~ /.*String version.*/) {
-            def matches = (line =~ /\d+\.\d+\.\d+/)
-            archiveVersion = matches[0]
+            def matches = (line =~ /\d+\.\d+\.\d+(?:\.\d+)?/)
+            archiveVersion = matches[0].toString()
         }
     }
     
