@@ -97,20 +97,6 @@ download.file(url = u, destfile = dest, mode = "wb")
 
 - Join the the DNA community on [Matrix](https://matrix.to/#/#dna:yatrix.org). Matrix is a chat protocol. It's similar to Slack, Discord, or WhatsApp, but without the corporate shackles. It's free, open-source, decentralised, and secure. We have set up a public space called [#dna:yatrix.org](https://matrix.to/#/#dna:yatrix.org) with separate chat rooms for installation, research, and development. It's really easy to join: You first create an account on one of the many Matrix [servers](https://joinmatrix.org/servers/) (we use and recommend [yatrix.org](https://element.yatrix.org/)), then download one of the many Matrix [clients](https://matrix.org/ecosystem/clients/) on your phone, computer, or the web (e.g., Element) to use the account with, and finally join [#dna:yatrix.org](https://matrix.to/#/#dna:yatrix.org). To simplify the process, you can just click on [this invitation link](https://matrix.to/#/#dna:yatrix.org) for some sensible default choices. Make sure you join all four public rooms (you can mute their notifications as needed) and look at the rules in the #dna-welcome room upon arrival.
 
-## Documentation
-
-- This **tutorial on YouTube** describes installation of DNA, basic data coding, network export, and network analysis using visone. The video clip is 18 minutes long.
-  
-  [![DNA tutorial](https://img.youtube.com/vi/u3hc86Tcs9A/0.jpg)](https://www.youtube.com/watch?v=u3hc86Tcs9A)
-
-- See the [bibliography](./build/bibliography.md) for several hundred publications and theses using discourse network analysis or the DNA software.
-
-- The **introductory chapter** (Leifeld 2017) in the *Oxford Handbook of Political Networks* is recommended as a primer ([chapter](https://doi.org/10.1093/oxfordhb/9780190228217.013.25); [preprint](http://eprints.gla.ac.uk/121525/)).
-
-- The previous version of DNA and rDNA came with a detailed [manual](https://github.com/leifeld/dna/releases/download/v2.0-beta.25/dna-manual.pdf) of more than 100 pages. It is outdated, but perhaps still useful.
-
-- If you have questions or want to report bugs, please create an issue in the [issue tracker](https://github.com/leifeld/dna/issues).
-
 ## Support the project
 
 Please consider contributing to the project by:
