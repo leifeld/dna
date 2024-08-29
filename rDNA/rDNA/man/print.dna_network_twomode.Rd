@@ -28,14 +28,15 @@ Show details of a \code{dna_network_twomode} object.
 Print a two-mode network matrix and its attributes.
 }
 \seealso{
-Other {rDNA networks}: 
+Other networks: 
 \code{\link{as.matrix.dna_network_onemode}()},
 \code{\link{as.matrix.dna_network_twomode}()},
 \code{\link{autoplot.dna_network}},
 \code{\link{dna_network}()},
+\code{\link{dna_tidygraph}()},
 \code{\link{print.dna_network_onemode}()}
 }
 \author{
 Philip Leifeld
 }
-\concept{{rDNA networks}}
+\concept{networks}

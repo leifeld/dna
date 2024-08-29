@@ -1565,20 +1565,20 @@ public class MainWindow extends JFrame {
 				statementPanel.adjustToChangedConnection();
 				menuBar.adjustToChangedCoder();
 				coderSelectionPanel.changeCoderBadge();
-				MainWindow.this.regexPanel.refresh();
-			}
-			
-			if (cp == null) {
-				LogEvent l = new LogEvent(Logger.MESSAGE,
-						"[GUI] Action executed: could not open database.",
-						"Started opening a database connection from the GUI, but the connection was not established.");
-				Dna.logger.log(l);
-			} else {
-				Dna.sql.setConnectionProfile(cp, false, true); // not a connection test, so false
-				LogEvent l = new LogEvent(Logger.MESSAGE,
-						"[GUI] Action executed: opened database.",
-						"Opened a database connection from the GUI.");
-				Dna.logger.log(l);
+				// MainWindow.this.regexPanel.refresh(); // TODO: not sure if this is supposed to be here
+
+				if (cp == null) {
+					LogEvent l = new LogEvent(Logger.MESSAGE,
+							"[GUI] Action executed: could not open database.",
+							"Started opening a database connection from the GUI, but the connection was not established.");
+					Dna.logger.log(l);
+				} else {
+					Dna.sql.setConnectionProfile(cp, false); // not a connection test, so false
+					LogEvent l = new LogEvent(Logger.MESSAGE,
+							"[GUI] Action executed: opened database.",
+							"Opened a database connection from the GUI.");
+					Dna.logger.log(l);
+				}
 			}
 		}
 	}

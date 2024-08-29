@@ -8,7 +8,7 @@ test_that("Example 1 produces expected output", {
   skip_if_not_installed("sna", minimum_version = "2.4")
   skip_if_not_installed("cluster", minimum_version = "1.12.0")
   samp <- dna_sample()
-  dna_init(samp)
+  dna_init()
   dna_openDatabase(samp, coderId = 1, coderPassword = "sample")
   mc1 <- dna_multiclust(variable1 = "organization",
                         variable2 = "concept",
@@ -17,7 +17,7 @@ test_that("Example 1 produces expected output", {
                         k = 0,
                         saveObjects = TRUE)
   expect_s3_class(mc1, "dna_multiclust")
-  expect_named(mc1, c("modularity", "max_mod", "memberships", "cl"))
+  expect_equal(names(mc1), c("cl", "k", "max_mod", "memberships", "modularity"))
   expect_true(length(mc1$modularity) > 0)
   expect_true(length(mc1$max_mod) > 0)
   expect_true(length(mc1$memberships) > 0)
@@ -32,7 +32,7 @@ test_that("Example 2 produces expected output", {
   testthat::skip_on_ci()
   skip_if_not_installed("igraph", minimum_version = "0.8.1")
   samp <- dna_sample()
-  dna_init(samp)
+  dna_init()
   dna_openDatabase(samp, coderId = 1, coderPassword = "sample")
   set.seed(12345)
   mc2 <- dna_multiclust(k = 2,
@@ -54,7 +54,7 @@ test_that("Example 2 produces expected output", {
                         label_prop = FALSE,
                         spinglass = FALSE)
   expect_s3_class(mc2, "dna_multiclust")
-  expect_named(mc2, c("modularity", "memberships"))
+  expect_equal(names(mc2), c("k", "max_mod", "memberships", "modularity"))
   expect_true(length(mc2$modularity) > 0)
   expect_true(length(mc2$memberships) > 0)
   dna_closeDatabase()
@@ -69,13 +69,13 @@ test_that("Example 3 produces expected output", {
   skip_if_not_installed("sna", minimum_version = "2.4")
   skip_if_not_installed("cluster", minimum_version = "1.12.0")
   samp <- dna_sample()
-  dna_init(samp)
+  dna_init()
   dna_openDatabase(samp, coderId = 1, coderPassword = "sample")
   mc3 <- dna_multiclust(k = 2,
                         timeWindow = "events",
                         windowSize = 28)
   expect_s3_class(mc3, "dna_multiclust")
-  expect_named(mc3, c("max_mod"))
+  expect_equal(names(mc3), c("k", "max_mod", "memberships", "modularity"))
   expect_true(length(mc3$max_mod) > 0)
   dna_closeDatabase()
   unlink(samp)

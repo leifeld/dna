@@ -1,9 +1,11 @@
+plugins {
+    id 'base'
+}
+
 task bibliographyMarkdown {
+    inputs.dir '.'
     doLast {
-        exec {
-            workingDir '.'
-            commandLine 'mkdir', "-p", "$rootDir/build"
-        }
+        mkdir "$rootDir/build"
         exec {
             workingDir '.'
             commandLine 'pandoc', "-t", "gfm", "-s", "--csl", "apa-numeric-superscript-brackets.csl", "--citeproc", "-o", "$rootDir/build/bibliography.md", "bibliography.tex"
@@ -12,61 +14,71 @@ task bibliographyMarkdown {
 }
 
 task bibliographyPdflatex {
+    inputs.dir '.'
     doLast{
-        exec {
-            workingDir '.'
-            commandLine 'mkdir', "-p", "temp"
+        mkdir "./temp"
+        mkdir "$rootDir/build"
+        copy {
+            from 'bibliography.tex', 'bibliography.bib'
+            into 'temp'
         }
-        exec {
-            workingDir '.'
-            commandLine 'mkdir', "-p", "$rootDir/build"
-        }
-        exec {
-            workingDir '.'
-            commandLine 'cp', "bibliography.tex", "temp/"
-        }
-        exec {
-            workingDir '.'
-            commandLine 'cp', "bibliography.bib", "temp/"
-        }
-    }
 
-    doLast {
         exec {
             workingDir 'temp'
             commandLine 'pdflatex', "bibliography.tex"
         }
+
         exec {
             workingDir 'temp'
             commandLine 'bibtex', "bibliography"
         }
-        exec {
-            workingDir 'temp'
-            commandLine 'pdflatex', "bibliography.tex"
-        }
-        exec {
-            workingDir 'temp'
-            commandLine 'pdflatex', "bibliography.tex"
-        }
-    }
 
-    doLast {
         exec {
-            workingDir '.'
-            commandLine 'mv', "temp/bibliography.pdf", "$rootDir/build/"
+            workingDir 'temp'
+            commandLine 'pdflatex', "bibliography.tex"
         }
+
         exec {
-            workingDir '.'
-            commandLine 'rm', "-r", "temp"
+            workingDir 'temp'
+            commandLine 'pdflatex', "bibliography.tex"
         }
+
+        copy {
+            from 'temp/bibliography.pdf'
+            into "$rootDir/build/"
+        }
+        delete 'temp'
     }
 }
 
-task build {
+build {
     dependsOn bibliographyMarkdown
     dependsOn bibliographyPdflatex
+    inputs.dir '.'
     def outputDir = file("$rootDir/build/")
     outputs.dir outputDir
 
     doLast {}
+}
+
+clean {
+    doFirst {
+        println "Attempting to delete bibliography files..."
+
+        def filesToDelete = fileTree(dir: "$rootDir/build", include: '**/bibliography.*').files
+        if (filesToDelete.isEmpty()) {
+            println "No bibliography files found to delete."
+        } else {
+            println "Found bibliography files to delete: "
+            filesToDelete.each { file ->
+                println file.absolutePath
+            }
+        }
+    }
+
+    delete fileTree(dir: "$rootDir/build", include: '**/bibliography.*')
+
+    doLast {
+        println "Bibliography files have been removed."
+    }
 }

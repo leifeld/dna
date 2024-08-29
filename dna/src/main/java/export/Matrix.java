@@ -29,6 +29,21 @@ public class Matrix implements Cloneable {
 	}
 
 	/**
+	 * Constructor for empty object with only the dates inserted (useful for time slice creation).
+	 * @param start The start date.
+	 * @param dateTime The mid-point.
+	 * @param stop The end date.
+	 */
+	public Matrix(String[] rowNames, String[] columnNames, boolean integer,  LocalDateTime start, LocalDateTime dateTime, LocalDateTime stop) {
+		this.rowNames = rowNames;
+		this.columnNames = columnNames;
+		this.integer = integer;
+		this.start = start;
+		this.dateTime = dateTime;
+		this.stop = stop;
+	}
+
+	/**
 	 * Copy constructor.
 	 */
 	public Matrix(Matrix matrix) {

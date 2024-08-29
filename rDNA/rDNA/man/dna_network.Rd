@@ -23,6 +23,7 @@ dna_network(
   stop.time = "23:59:59",
   timeWindow = "no",
   windowSize = 100,
+  kernel = "no",
   excludeValues = list(),
   excludeAuthors = character(),
   excludeSources = character(),
@@ -181,6 +182,19 @@ event time.}
 comprised. This can be the number of statement events, the number of days
 etc., as defined in the \code{"timeWindow"} argument.}
 
+\item{kernel}{Use kernel smoothing for computing time windows? This option
+only matters if the \code{timeWindow} argument has a value other than
+\code{"no"} or \code{"event"}. The default value \code{kernel = "no"}
+switches off kernel smoothing, which means all statements within a time
+window are weighted equally. Other values down-weight statements the
+farther they are temporally away from the mid-point of the time window.
+Several kernel smoothing functions are available, similar to kernel density
+estimation: \code{"uniform"} is similar to \code{"no"} and weights all
+statements with a value of \code{0.5}. \code{"gaussian"} uses a standard
+normal distribution as a kernel smoother. \code{"epanechnikov"} uses an
+Epanechnikov kernel smoother. \code{"triangular"} uses a triangular kernel
+function. If in doubt, do not use kernel smoothing.}
+
 \item{excludeValues}{A list of named character vectors that contains entries
 which should be excluded during network construction. For example,
 \code{list(concept = c("A", "B"), organization = c("org A", "org B"))}
@@ -273,14 +287,15 @@ nw <- dna_network(networkType = "onemode",
 
 }
 \seealso{
-Other {rDNA networks}: 
+Other networks: 
 \code{\link{as.matrix.dna_network_onemode}()},
 \code{\link{as.matrix.dna_network_twomode}()},
 \code{\link{autoplot.dna_network}},
+\code{\link{dna_tidygraph}()},
 \code{\link{print.dna_network_onemode}()},
 \code{\link{print.dna_network_twomode}()}
 }
 \author{
 Philip Leifeld
 }
-\concept{{rDNA networks}}
+\concept{networks}

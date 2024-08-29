@@ -26,7 +26,7 @@ dna_printDetails()
 
 }
 \seealso{
-Other {rDNA database connections}: 
+Other database: 
 \code{\link{dna_api}()},
 \code{\link{dna_closeDatabase}()},
 \code{\link{dna_openConnectionProfile}()},
@@ -36,4 +36,4 @@ Other {rDNA database connections}:
 \author{
 Philip Leifeld
 }
-\concept{{rDNA database connections}}
+\concept{database}

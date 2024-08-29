@@ -17,26 +17,27 @@ Identify and/or download and install the correct DNA jar file.
 rDNA requires the installation of a DNA jar file to run properly. While it is
 possible to store the jar file in the respective working directory, it is
 preferable to install it in the rDNA library installation directory under
-\code{inst/java/}. The \code{dna_jar} function attempts to find the version
-of the jar file that matches the installed \pkg{rDNA} version in the
-\code{inst/java/} sub-directory of the package library path and return the
-jar file name including its full path. If this fails, it will try to find the
-jar file in the current working directory and return its file name. If this
-fails as well, it will attempt to download the matching jar file from GitHub
-and store it in the library path and return its file name. If this fails, it
-will attempt to store the downloaded jar file in the working directory and
-return its file name. If this fails as well, it will clone the current DNA
-master code from GitHub to a local temporary directory, build the jar file
-from source, and attempt to store the built jar file in the library path or,
-if this fails, in the working directory and return the file name of the jar
+\code{java/}. The \code{dna_jar} function attempts to find the version of the
+jar file that matches the installed \pkg{rDNA} version in the \code{java/}
+sub-directory of the package library path and return the jar file name
+including its full path. If this fails, it will try to find the jar file in
+the current working directory and return its file name. If this fails as
+well, it will attempt to download the matching jar file from GitHub and store
+it in the library path and return its file name. If this fails, it will
+attempt to store the downloaded jar file in the working directory and return
+its file name. If this fails as well, it will clone the current DNA master
+code from GitHub to a local temporary directory, build the jar file from
+source, and attempt to store the built jar file in the library path or, if
+this fails, in the working directory and return the file name of the jar
 file. If all of this fails, an error message is thrown.
 }
 \seealso{
-Other {rDNA package startup}: 
+Other startup: 
+\code{\link{dna_getHeadlessDna}()},
 \code{\link{dna_init}()},
 \code{\link{dna_sample}()}
 }
 \author{
 Philip Leifeld
 }
-\concept{{rDNA package startup}}
+\concept{startup}

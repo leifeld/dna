@@ -106,15 +106,12 @@ public class Sql {
 		} else if (cp.getType().equals("sqlite")) { // no user name and password needed for file-based database
 			SQLiteDataSource sqds = new SQLiteDataSource();
 			sqds.setUrl("jdbc:sqlite:" + cp.getUrl());
-			sqds.setEnforceForeignKeys(true); // if this is not set, ON DELETE CASCADE won't work
-			if (!existingDatabase || checkDatabaseVersion(sqds)) {
-				ds = sqds;
-				success = true;
-				LogEvent l = new LogEvent(Logger.MESSAGE,
-						"[SQL] An SQLite DNA database has been opened as a data source.",
-						"An SQLite DNA database has been opened as a data source.");
-				Dna.logger.log(l);
-			}
+			ds = sqds;
+			success = true;
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"[SQL] An SQLite DNA database has been opened as a data source.",
+					"An SQLite DNA database has been opened as a data source.");
+			Dna.logger.log(l);
 		} else if (cp.getType().equals("mysql") || cp.getType().equals("postgresql")) {
 			HikariConfig config = new HikariConfig();
 			config.setMaximumPoolSize(30);
@@ -129,18 +126,16 @@ public class Sql {
 			}
 			try {
 				HikariDataSource dsTest = new HikariDataSource(config);
-				if (!existingDatabase || checkDatabaseVersion(dsTest)) {
-					ds = dsTest;
-					success = true;
-					LogEvent l = new LogEvent(Logger.MESSAGE,
-							"[SQL] A " + cp.getType() + " DNA database has been opened as a data source.",
-							"A " + cp.getType() + " DNA database has been opened as a data source.");
-					Dna.logger.log(l);
-				}
+				ds = dsTest;
+				success = true;
+				LogEvent l = new LogEvent(Logger.MESSAGE,
+						"[SQL] A " + cp.getType() + " DNA database has been opened as a data source.",
+						"A " + cp.getType() + " DNA database has been opened as a data source.");
+				Dna.logger.log(l);
 			} catch (PoolInitializationException e) {
 				LogEvent l = new LogEvent(Logger.ERROR,
-		        		"[SQL] Database access denied. Failed to initialize connection pool.",
-		        		"Database access denied. Failed to initialize connection pool.",
+						"[SQL] Database access denied. Failed to initialize connection pool.",
+						"Database access denied. Failed to initialize connection pool.",
 		        		e);
 		        Dna.logger.log(l);
 			}
@@ -165,52 +160,6 @@ public class Sql {
 	 */
 	public boolean hasDataSource() {
 		return this.ds != null;
-	}
-
-	/**
-	 * Check if a data source is compatible with the current DNA version by inspecting the version number saved in the
-	 * SETTINGS table.
-	 *
-	 * @param dataSource The data source to be used and checked for compatibility.
-	 * @return True if the database version is compatible with the current DNA version. False if it needs to be updated.
-	 */
-	private boolean checkDatabaseVersion(DataSource dataSource) {
-		boolean compatible = true;
-		try (Connection conn = dataSource.getConnection();
-			 PreparedStatement s1 = conn.prepareStatement("SELECT * FROM SETTINGS WHERE Property IN ('version', 'date');")) {
-			ResultSet rs = s1.executeQuery();
-			String property, version = "", date = "";
-			while (rs.next()) {
-				property = rs.getString("Property");
-				if (property.equals("version")) {
-					version = rs.getString("Value");
-				} else if (property.equals("date")) {
-					date = rs.getString("Value");
-				}
-			}
-			if (version.startsWith("1") || version.startsWith("2") || version.startsWith("3.0")) {
-				compatible = false;
-				String msg = "";
-				if (version.startsWith("1")) {
-					msg = "Contents from databases that were created with DNA 1 can only be imported into the old DNA 2. See the release page online for old DNA 2 versions.";
-				} else if (version.startsWith("2")) {
-					msg = "Contents from databases that were created with DNA 2 can be imported into the current DNA version. To do so, create a new database, create coders that correspond to the coders in the old database (if required), and use the \"Import from DNA database\" dialog in the \"Documents\" menu.";
-				} else if (version.startsWith("3.0")) {
-					msg = "Contents from databases that were created with DNA 3.0 can be imported into the current DNA version. To do so, create a new database, create coders that correspond to the coders in the old database (if required), and use the \"Import from DNA database\" dialog in the \"Documents\" menu.";
-				}
-				LogEvent l = new LogEvent(Logger.ERROR,
-						"[SQL] Wrong database version.",
-						"You tried to open a database that was created with version " + version + " of DNA (release date: " + date + "). You are currently using DNA " + Dna.version + " (release date: " + Dna.date + "). The database version is incompatible with the DNA version. " + msg);
-				Dna.logger.log(l);
-			}
-		} catch (SQLException e) {
-			LogEvent l = new LogEvent(Logger.WARNING,
-					"[SQL] Failed to determine database version.",
-					"Attempted to check if the database version is compatible with the DNA version, but failed to do so. If you do not see any other warnings or errors, you can probably ignore this message. If it happens often, consider filing an issue on GitHub.",
-					e);
-			Dna.logger.log(l);
-		}
-		return compatible;
 	}
 
 	/**

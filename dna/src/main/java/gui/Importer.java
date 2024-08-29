@@ -1171,6 +1171,19 @@ class Importer extends JDialog {
 			}
 			documentSelectSql = documentSelectSql + ");";
 
+			String d17sql = "";
+			String d20sql = "";
+			if (Dna.sql.getConnectionProfile().getType().equals("sqlite")) {
+				d17sql = "INSERT OR IGNORE INTO ATTRIBUTEVALUES (EntityId, AttributeVariableId, AttributeValue) VALUES (?, ?, ?);";
+				d20sql = "INSERT OR IGNORE INTO ENTITIES (VariableId, Value, Red, Green, Blue) VALUES (?, ?, ?, ?, ?);";
+			} else if (Dna.sql.getConnectionProfile().getType().equals("mysql")) {
+				d17sql = "INSERT IGNORE INTO ATTRIBUTEVALUES (EntityId, AttributeVariableId, AttributeValue) VALUES (?, ?, ?);";
+				d20sql = "INSERT IGNORE INTO ENTITIES (VariableId, Value, Red, Green, Blue) VALUES (?, ?, ?, ?, ?);";
+			} else if (Dna.sql.getConnectionProfile().getType().equals("postgresql")) {
+				d17sql = "INSERT INTO ATTRIBUTEVALUES (EntityId, AttributeVariableId, AttributeValue) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE EntityId = VALUES(EntityId), AttributeVariableId = VALUES(AttributeVariableId);";
+				d20sql = "INSERT INTO ENTITIES (VariableId, Value, Red, Green, Blue) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE VariableId = VALUES(VariableId), Value = VALUES(Value);";
+			}
+
 			try (Connection connForeign = Importer.this.sql.getDataSource().getConnection();
 					Connection connDomestic = Dna.sql.getDataSource().getConnection();
 					PreparedStatement d1 = connDomestic.prepareStatement("INSERT INTO DOCUMENTS (Title, Text, Coder, Author, Source, Section, Notes, Type, Date, Complete) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
@@ -1203,10 +1216,10 @@ class Importer extends JDialog {
 				 	// PreparedStatement d15 = connDomestic.prepareStatement("INSERT INTO DATASHORTTEXT (StatementId, RoleVariableLinkId, Entity) VALUES (?, ?, ?);");
 					PreparedStatement f15 = connForeign.prepareStatement("SELECT COUNT(ID) FROM STATEMENTS WHERE DocumentId = ?;");
 					PreparedStatement d16 = connDomestic.prepareStatement("INSERT INTO ATTRIBUTEVARIABLES (VariableId, AttributeVariable) VALUES (?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
-					PreparedStatement d17 = connDomestic.prepareStatement("INSERT INTO ATTRIBUTEVALUES (EntityId, AttributeVariableId, AttributeValue) VALUES (?, ?, ?);");
+					PreparedStatement d17 = connDomestic.prepareStatement(d17sql);
 					PreparedStatement d18 = connDomestic.prepareStatement("SELECT * FROM ATTRIBUTEVARIABLES WHERE VariableId = ?;");
 					PreparedStatement d19 = connDomestic.prepareStatement("SELECT ID FROM ATTRIBUTEVARIABLES WHERE VariableId = ? AND AttributeVariable = ?;");
-					PreparedStatement d20 = connDomestic.prepareStatement("INSERT INTO ENTITIES (VariableId, Value, Red, Green, Blue) VALUES (?, ?, ?, ?, ?);", PreparedStatement.RETURN_GENERATED_KEYS);
+					PreparedStatement d20 = connDomestic.prepareStatement(d20sql, PreparedStatement.RETURN_GENERATED_KEYS);
 					PreparedStatement d21 = connDomestic.prepareStatement("SELECT ID FROM ENTITIES WHERE VariableId = ? AND Value = ?;");
 					PreparedStatement d22 = connDomestic.prepareStatement("UPDATE ATTRIBUTEVALUES SET AttributeValue = ? WHERE EntityId = ? AND AttributeVariableId = ?;");
 					PreparedStatement d23 = connDomestic.prepareStatement("SELECT AttributeValue FROM ATTRIBUTEVALUES WHERE EntityId = ? AND AttributeVariableId = ?;");
@@ -1534,10 +1547,10 @@ class Importer extends JDialog {
 														int entityId = -1;
 														while (keySetEntity.next()) {
 															entityId = keySetEntity.getInt(1);
+															entityMap.put(r2.getInt("ID"), entityId); // may not be valid with DNA 2.0 because there is no entity ID; works only with version 3
+															entityCount++;
 														}
 														keySetEntity.close();
-														entityMap.put(r2.getInt("ID"), entityId); // may not be valid with DNA 2.0 because there is no entity ID; works only with version 3
-														entityCount++;
 													}
 													
 													// import attributes for DNA 2.0 here already because they are part of ResultSet r2 anyway
@@ -1698,9 +1711,9 @@ class Importer extends JDialog {
 										int entityId = -1;
 										while (keySetEntity.next()) {
 											entityId = keySetEntity.getInt(1);
+											entityMap.put(r2.getInt("ID"), entityId); // may not be valid with DNA 2.0 because there is no entity ID
+											entityCount++;
 										}
-										entityMap.put(r2.getInt("ID"), entityId); // may not be valid with DNA 2.0 because there is no entity ID
-										entityCount++;
 									}
 									
 									// import attributes for DNA 2.0 here already because they are part of ResultSet r2 anyway

@@ -11,14 +11,14 @@ import sql.Sql;
 /**
  * Main class of the Discourse Network Analyzer (DNA).
  * 
- * @author Philip Leifeld {@literal <philip.leifeld@essex.ac.uk>}
+ * @author Philip Leifeld {@literal <philip.leifeld@manchester.ac.uk>}
  */
 public class Dna {
 	public static Dna dna;
 	public static Logger logger;
 	public static Sql sql;
-	public static final String date = "2023-05-27";
-	public static final String version = "3.1.0.6";
+	public static final String date = "2024-08-26";
+	public static final String version = "3.0.12.1";
 	public static final String operatingSystem = System.getProperty("os.name");
 	public static File workingDirectory = null;
 	public static Gui gui;
