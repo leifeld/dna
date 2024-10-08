@@ -18,6 +18,18 @@ The Java software Discourse Network Analyzer (DNA) is a qualitative content anal
 
 ## Installation of DNA
 
+### Starting DNA
+To use DNA, simply download the latest `.jar` file under "[Releases](https://github.com/leifeld/dna/releases)" on the right along with the `sample.dna` file, a toy database you can load in DNA (password: `sample`) to play with the software. You can double-click on the `.jar` file to open DNA. No installation is required.
+
+If your system does not want to start DNA with a double-click on the `.jar` file, you can also open it from the terminal. To do so, navigate to the directory where the `.jar` file is stored on your computer using the `cd` command, for example `cd ~/Documents/`. Once there, type in something like this, with the `.jar` file corresponding to the file version you downloaded:
+
+``` shell
+java -jar dna-3.0.11.jar
+```
+
+Along with DNA, it is recommended to download [visone](https://visone.ethz.ch/), which can be opened in the same way as DNA. You can open `.graphml` files from DNA's network export in visone.
+
+### Java installation and version check
 DNA was written in Java and requires Java 11 or higher on your system. You can check if you have Java >= 11 on your system by opening the terminal of your operating system (e.g., typing `cmd` in your Windows start menu or using the terminal app on MacOS) and typing:
 
 ``` shell
@@ -26,19 +38,17 @@ java --version
 
 If this indicates a version below 11 (or 1.11), installing the latest version of [Adoptium Temurin OpenJDK](https://adoptium.net) or any other Java >= 11 is recommended before you proceed. Once installed, restart your system and check the version again.
 
-To use DNA, simply download the latest `.jar` file under "[Releases](https://github.com/leifeld/dna/releases)" on the right along with the `sample.dna` file, a toy database you can load in DNA (password: `sample`) to play with the software. You can double-click on the `.jar` file to open DNA. No installation is required.
+### MacOS
+MacOS users may need to give the program authorization to be executed by opening the system settings and activating "Anywhere" rather than "App store and identified developers" under "Privacy & Security" -> "Security" -> "Allow applications downloaded from" (see [here](https://macpaw.com/how-to/fix-macos-cannot-verify-that-app-is-free-from-malware) for instructions).
 
-MacOS users may need to give the program authorization to be executed. Some MacOS users reported issues with opening files. These issues should have been fixed in version 3.0.11. You can also browse the [issue tracker](https://github.com/leifeld/issues) (including closed issues) and the [commit messages](https://github.com/leifeld/dna/commits/master/) for more information on MacOS issues. Get in touch via the issue tracker or Matrix (infos below) if you are unable to solve these issues.
+Some MacOS users reported issues with opening files. These issues should have been fixed in version 3.0.11.
 
-If your system does not want to start DNA with a double-click on the `.jar` file, you can also open it from the terminal. To do so, navigate to the directory where the `.jar` file is stored on your computer using the `cd` command, for example `cd ~/Documents/`. Once there, type in something like this, with the `.jar` file corresponding to the file version you downloaded:
+You can also browse the [issue tracker](https://github.com/leifeld/issues) (including closed issues) and the [commit messages](https://github.com/leifeld/dna/commits/master/) for more information on MacOS issues. Get in touch via the issue tracker or Matrix (infos below) if you are unable to solve these issues.
 
-``` shell
-java -jar dna-3.0.11.jar
-```
+### Compiling from source using Gradle
+If you require the latest (non-release) version of the DNA jar file from GitHub, you can clone the git repository to your computer and execute `./gradlew build` on your terminal or command line. This will build the jar file, the rDNA R package, and the bibliography, and store them in the `build/` directory of the cloned repository. If you only want to build the jar file, you can also execute `./gradlew :dna:build` (omit `./` on Windows).
 
-If you require the latest (non-release) version of the DNA jar file from GitHub, you can clone the git repository to your computer and execute `./gradlew build` on your terminal or command line. This will build the jar file, the rDNA R package, and the bibliography, and store them in the `build/` directory of the cloned repository. If you only want to build the jar file, you can also execute `./gradlew :dna:build` (omit `./` on Windows). Alternatively, you can try to download the latest artifact from the build process under [GitHub Actions](https://github.com/leifeld/dna/actions) by clicking on the latest build and scrolling down to "Artifacts". However, it is usually recommended to use the most recent [release](https://github.com/leifeld/dna/releases/) version.
-
-Along with DNA, it is recommended to download [visone](https://visone.ethz.ch/), which can be opened in the same way as DNA. You can open `.graphml` files from DNA's network export in visone.
+Alternatively, if you need the latest non-release version, you can try to download the latest artifact from the build process under [GitHub Actions](https://github.com/leifeld/dna/actions) by clicking on the latest build and scrolling down to "Artifacts". However, it is usually recommended to use the most recent [release](https://github.com/leifeld/dna/releases/) version.
 
 ## rDNA 3.0: Connecting DNA to R
 
