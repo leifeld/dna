@@ -17,6 +17,7 @@ import java.awt.event.ItemListener;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
@@ -425,17 +426,22 @@ class StatementPanel extends JPanel {
 				}
 				// check variables for a non-match 
 				for (int i = 0; i < variables.size(); i++) {
-					pattern = Pattern.compile((String) variables.get(i).getValue());
-					if (s.getValues().get(i).getValue().getClass().toString().endsWith("Entity")) {
-						m = pattern.matcher(((Entity) s.getValues().get(i).getValue()).getValue());
-					} else if (s.getValues().get(i).getValue().getClass().toString().endsWith("Integer")) {
-						m = pattern.matcher(String.valueOf((int) s.getValues().get(i).getValue()));
-					} else {
-						m = pattern.matcher((String) s.getValues().get(i).getValue());
+					try {
+						pattern = Pattern.compile((String) variables.get(i).getValue());
+						if (s.getValues().get(i).getValue().getClass().toString().endsWith("Entity")) {
+							m = pattern.matcher(((Entity) s.getValues().get(i).getValue()).getValue());
+						} else if (s.getValues().get(i).getValue().getClass().toString().endsWith("Integer")) {
+							m = pattern.matcher(String.valueOf((int) s.getValues().get(i).getValue()));
+						} else {
+							m = pattern.matcher((String) s.getValues().get(i).getValue());
+						}
+						if (!m.find()) {
+							return false;
+						}
+					} catch (PatternSyntaxException pse) {
+						return true; // pattern could not be compiled, perhaps open parentheses or similar while typing in the regex, so do not filter out the entry
 					}
-					if (!m.find()) {
-						return false;
-					}
+
 				}
 			}
 		}
