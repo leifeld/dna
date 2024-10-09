@@ -254,13 +254,13 @@ dna_network <- function(networkType = "twomode",
                         invertTypes = FALSE,
                         fileFormat = NULL,
                         outfile = NULL) {
-  
+
   # wrap the vectors of exclude values for document variables into Java arrays
   excludeAuthors <- .jarray(excludeAuthors)
   excludeSources <- .jarray(excludeSources)
   excludeSections <- .jarray(excludeSections)
   excludeTypes <- .jarray(excludeTypes)
-  
+
   # compile exclude variables and values vectors
   dat <- matrix("", nrow = length(unlist(excludeValues)), ncol = 2)
   count <- 0
@@ -282,7 +282,7 @@ dna_network <- function(networkType = "twomode",
   }
   var <- .jarray(var) # array of variable names of each excluded value
   val <- .jarray(val) # array of values to be excluded
-  
+
   # encode R NULL as Java null value if necessary
   if (is.null(qualifier) || is.na(qualifier)) {
     qualifier <- .jnull(class = "java/lang/String")
@@ -293,7 +293,7 @@ dna_network <- function(networkType = "twomode",
   if (is.null(outfile)) {
     outfile <- .jnull(class = "java/lang/String")
   }
-  
+
   # call rNetwork function to compute results
   .jcall(dna_getHeadlessDna(),
          "V",
@@ -331,9 +331,9 @@ dna_network <- function(networkType = "twomode",
          outfile,
          fileFormat
   )
-  
+
   exporter <- .jcall(dna_getHeadlessDna(), "Lexport/Exporter;", "getExporter") # get a reference to the Exporter object, in which results are stored
-  
+
   if (networkType == "eventlist") { # assemble an event list in the form of a data frame of filtered statements
     f <- J(exporter, "getFilteredStatements", simplify = TRUE) # array list of filtered export statements; use J because array list return type not recognized using .jcall
     l <- list() # create a list for filtered statements, later to be converted to data frame, with one row per statement
@@ -786,34 +786,34 @@ autoplot.dna_network_onemode <- function(object,
                                          max_overlaps = 10,
                                          seed = 12345) {
   set.seed(seed)
-  
+
   if (!grepl("dna_network", class(object)[1])) {
     stop("Invalid data object. Please compute a dna_network object with the ",
          "dna_network() function before plotting.")
   }
-  
+
   if (!requireNamespace("igraph", quietly = TRUE)) {
     stop("The autoplot function requires the 'igraph' package to be installed.\n",
          "To do this, enter 'install.packages(\"igraph\")'.")
   }
-  
+
   if (!requireNamespace("ggraph", quietly = TRUE)) {
     stop("The autoplot function requires the 'ggraph' package to be installed.\n",
          "To do this, enter 'install.packages(\"ggraph\")'.")
   }
-  
+
   if (!is.null(atts) & !"dna_attributes" %in% class(atts)) {
     stop("Object provided in 'atts' is not a dna_attributes object. Please ",
          "provide a dna_attributes object using dna_getAttributes() or set atts ",
          "to NULL if you do not want to use DNA attributes.")
   }
-  
+
   if (!is.numeric(truncate)) {
     truncate <- Inf
     warning("No numeric value provided for trimming of entities. Truncation ",
             "will be ignored.")
   }
-  
+
   # Convert network matrix to igraph network
   if ("dna_network_onemode" %in% class(object)) {
     graph <- igraph::graph_from_adjacency_matrix(object,
@@ -830,19 +830,19 @@ autoplot.dna_network_onemode <- function(object,
                                                  add.names = NULL)
     igraph::V(graph)$shape <- ifelse(igraph::V(graph)$type, "square", "circle")
   }
-  
+
   # Check if all entities are included in attributes object (if provided)
   if (!is.null(atts) & !(all(igraph::V(graph)$name %in% atts$value))) {
     miss <- which(!igraph::V(graph)$name %in% atts$value)
     stop("Some network entities are missing in the attributes object:\n",
          paste(igraph::V(graph)$name[miss], collapse = "\n"))
   }
-  
+
   # Remove tie weights below threshold
   if (!is.null(threshold)) {
     graph <- igraph::delete_edges(graph, which(!igraph::E(graph)$weight >= threshold))
   }
-  
+
   # Add node colors
   if (is.character(node_colors)) {
     if (!is.null(atts) & length(node_colors) == 1 && node_colors %in% colnames(atts)) {
@@ -856,7 +856,7 @@ autoplot.dna_network_onemode <- function(object,
   } else {
     igraph::V(graph)$color <- "black"
   }
-  
+
   # Add edge colors
   if (is.null(edge_color)) {
     if ("combine" %in% as.character(attributes(object)$call)) {
@@ -886,7 +886,7 @@ autoplot.dna_network_onemode <- function(object,
   } else {
     igraph::E(graph)$color <- "gray"
   }
-  
+
   # Add node size(s)
   if (length(node_size) > 1 & length(node_size) != igraph::vcount(graph)) {
     igraph::V(graph)$size <- 7
@@ -898,7 +898,7 @@ autoplot.dna_network_onemode <- function(object,
   } else if (is.numeric(node_size)) {
     igraph::V(graph)$size <- node_size
   }
-  
+
   # Add labels
   if (!is.logical(node_label)) {
     if (is.character(node_label) & length(node_label) == 1 & !is.null(atts) && node_label %in% colnames(atts)) {
@@ -911,32 +911,32 @@ autoplot.dna_network_onemode <- function(object,
       igraph::V(graph)$name <- node_label
     }
   }
-  
+
   # Remove isolates
   if (exclude_isolates) {
     graph <- igraph::delete_vertices(graph, igraph::degree(graph) == 0)
   }
-  
+
   # Only plot giant component of network. Useful for some plotting algorithms.
   if (giant_component) {
     # Get giant component
     components <- igraph::clusters(graph)
     biggest_cluster_id <- which.max(components$csize)
-    
+
     # Get members of giant component
     vert_ids <- igraph::V(graph)[components$membership == biggest_cluster_id]
-    
+
     # Create subgraph
     graph <- igraph::induced_subgraph(graph, vert_ids)
   }
-  
-  
+
+
   # Truncate labels of entities
   igraph::V(graph)$name <- sapply(igraph::V(graph)$name, function(e) if (nchar(e) > truncate) paste0(substr(e, 1, truncate - 1), "*") else e)
-  
+
   # Use absolute edge weight values for plotting
   igraph::E(graph)$weight <- abs(igraph::E(graph)$weight)
-  
+
   # Start network plot
   g <- ggraph::ggraph(graph, layout = layout, ...) +
     suppressWarnings(ggraph::geom_edge_link(ggplot2::aes(edge_width = igraph::E(graph)$weight, edge_colour = igraph::E(graph)$color),
@@ -955,13 +955,13 @@ autoplot.dna_network_onemode <- function(object,
                              max.overlaps = max_overlaps,
                              show.legend = FALSE)
   }
-  
+
   # Add theme and set node colors and edges to identity
   g <- g +
     ggraph::theme_graph(base_family = "", base_size = font_size) +
     ggplot2::scale_color_identity() +
     ggraph::scale_edge_color_identity()
-  
+
   return(g)
 }
 
@@ -1096,7 +1096,6 @@ autoplot.dna_network_twomode <- autoplot.dna_network_onemode
 #'
 #' @author Philip Leifeld
 #' @family networks
-#' @importFrom rlang .data
 #' @export
 dna_tidygraph <- function(network, attributes = NULL, ...) {
   if (length(intersect(c("dna_network_onemode", "dna_network_twomode", "matrix"), class(network))) < 1) {
@@ -1109,7 +1108,7 @@ dna_tidygraph <- function(network, attributes = NULL, ...) {
     stop("The 'dna_tidygraph' function requires the 'tidygraph' package (>= 1.3.1) to be installed.\n",
          "To do this, enter 'install.packages(\"tidygraph\")'.")
   }
-  
+
   if ("dna_network_twomode" %in% class(network)) {
     nodes <- data.frame(name = c(rownames(network), colnames(network)), type = c(rep(TRUE, nrow(network)), rep(FALSE, ncol(network))), stringsAsFactors = FALSE)
     edges <- data.frame(from = rep(rownames(network), times = ncol(network)), to = rep(colnames(network), each = nrow(network)), weight = as.vector(network))
@@ -1122,18 +1121,18 @@ dna_tidygraph <- function(network, attributes = NULL, ...) {
   } else {
     stop("Argument supplied by argument 'network' not recognized.")
   }
-  
+
   if (!is.null(attributes)) {
     nodes <- tidygraph::as_tibble(g, active = "nodes")$name # extract nodes from graph for matching
     at <- attributes[attributes$value %in% nodes, ] # retain only those attributes present in the network
     at <- at[match(nodes, at$value), ] # sort attributes in the same order as the nodes in the graph
     g <- tidygraph::mutate(g, at[, colnames(at) != "value"]) # embed node attributes in graph
   }
-  
+
   edges <- tidygraph::as_tibble(g, active = "edges") # extract edges from graph
   u <- unique(edges$weight) # unique edge weights
   combined <- length(u) < 5 && any(grepl("combine", attributes(network)$call)) # combined qualifier aggregation?
-  edgecol <- sapply(edges$weight, function(weight) { # create edge colors
+  edges$edgecol <- sapply(edges$weight, function(weight) { # create edge colors
     if (length(u) == 2 & all(sort(u) %in% 0:1) & weight > 0) { # binary: 1 = gray
       "gray"
     } else if (combined) { # "combined" qualifier aggregation
@@ -1158,9 +1157,9 @@ dna_tidygraph <- function(network, attributes = NULL, ...) {
   })
   g <- g |> # assign absolute values, edge colors, and sign as edge attributes
     tidygraph::activate(edges) |>
-    tidygraph::mutate(abs = abs(.data$weight),
-                      color = .data$edgecol,
-                      sign = ifelse(.data$weight < 0, "negative", "positive"))
-  
+    tidygraph::mutate(abs = abs(edges$weight),
+                      color = edges$edgecol,
+                      sign = ifelse(edges$weight < 0, "negative", "positive"))
+
   return(g)
 }
