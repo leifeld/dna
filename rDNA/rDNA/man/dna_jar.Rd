@@ -2,7 +2,7 @@
 % Please edit documentation in R/rDNA.R
 \name{dna_jar}
 \alias{dna_jar}
-\title{Identify and/or download and install the correct DNA jar file}
+\title{Find the DNA jar file}
 \usage{
 dna_jar()
 }
@@ -11,25 +11,19 @@ The file name of the jar file that matches the installed \pkg{rDNA}
   version, including full path.
 }
 \description{
-Identify and/or download and install the correct DNA jar file.
+Find the DNA jar file in the library path or working directory.
 }
 \details{
-rDNA requires the installation of a DNA jar file to run properly. While it is
-possible to store the jar file in the respective working directory, it is
-preferable to install it in the rDNA library installation directory under
-\code{java/}. The \code{dna_jar} function attempts to find the version of the
-jar file that matches the installed \pkg{rDNA} version in the \code{java/}
-sub-directory of the package library path and return the jar file name
-including its full path. If this fails, it will try to find the jar file in
-the current working directory and return its file name. If this fails as
-well, it will attempt to download the matching jar file from GitHub and store
-it in the library path and return its file name. If this fails, it will
-attempt to store the downloaded jar file in the working directory and return
-its file name. If this fails as well, it will clone the current DNA master
-code from GitHub to a local temporary directory, build the jar file from
-source, and attempt to store the built jar file in the library path or, if
-this fails, in the working directory and return the file name of the jar
-file. If all of this fails, an error message is thrown.
+rDNA requires the installation of a DNA jar file to run properly. The jar
+file is shipped with the rDNA package and is installed in the \code{java/}
+directory of the package installation directory in the R library tree. The
+version number of the jar file and the rDNA package must match for DNA and
+rDNA to be able to work together. The \code{dna_jar} function looks for
+the jar file in the package installation directory sub-directory and
+returns its file name with its absolute path. If it cannot be found in the
+installation directory, the function looks in the current working
+directory. The function is also called by \code{\link{dna_init}} if the
+location of the jar file is not provided explicitly.
 }
 \seealso{
 Other startup: 
