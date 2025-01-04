@@ -24,3 +24,6 @@ build/*.pdf
 bibliography/build/bibliography.pdf
 bibliography/bibliography.bbl
 bibliography/bibliography.pdf
+
+# ignore IDE settings
+.vscode
