@@ -1,4 +1,4 @@
-package export;
+package dna.export;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -4260,7 +4260,7 @@ public class Exporter {
 	 *
 	 * @param clusterSolutions    The list of parent generation cluster solutions.
 	 * @param subtractNetwork     The network matrix to subtract from the original network.
-	 * @param qualityFunction     The quality function to evaluate cluster solutions.
+	 * @param qualityFunction     The quality function to evaluate cluster solutions. Supported values are "modularity" and "eiIndex".
 	 * @param n                   The number of nodes in the network.
 	 * @param elitePercentage     The percentage of elite solutions to retain.
 	 * @param mutationPercentage  The percentage of solutions to mutate.
@@ -4269,8 +4269,6 @@ public class Exporter {
 	 * @return A list of children cluster solutions.
 	 */
 	private ArrayList<ClusterSolution> geneticIteration(ArrayList<ClusterSolution> clusterSolutions, double[][] subtractNetwork, String qualityFunction, int n, double elitePercentage,	double mutationPercentage, int k, Random rng) {
-		int numClusterSolutions = clusterSolutions.size();
-		
 		// Validate elitePercentage is within the valid range [0, 1]
 		if (elitePercentage < 0.0 || elitePercentage > 1.0) {
 			throw new IllegalArgumentException("Elite percentage must be between 0 and 1 (inclusive).");
@@ -4282,6 +4280,7 @@ public class Exporter {
 		}
 
 		// Calculate the number of elites based on the percentage
+		int numClusterSolutions = clusterSolutions.size();
 		int numElites = Math.max(1, (int) Math.round(elitePercentage * numClusterSolutions)); // At least one elite
 		LogEvent log = new LogEvent(Logger.MESSAGE, "Number of elites: " + numElites, "Number of elite solutions based on the elite percentage.");
 		Dna.logger.log(log);
@@ -4487,5 +4486,4 @@ public class Exporter {
 		}
 		return children;
 	}
-
 }

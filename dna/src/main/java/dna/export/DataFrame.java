@@ -1,4 +1,4 @@
-package export;
+package dna.export;
 
 import java.util.ArrayList;
 

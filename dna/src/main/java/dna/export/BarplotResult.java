@@ -1,4 +1,4 @@
-package export;
+package dna.export;
 
 /**
  * Data for representing a barplot, including the variable name, the distinct values for the variable in alphabetical
