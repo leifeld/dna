@@ -4124,13 +4124,13 @@ public class Exporter {
 		}
 
 		/**
-		 * Cross-over breeding. Combines the membership vectors of the current solution
-		 * and a foreign solution  to produce an offspring with balanced cluster distribution.
+		 * Crossover breeding. Combines the membership vectors of the current solution and
+		 * a foreign solution  to produce an offspring with balanced cluster distribution.
 		 *
 		 * @param foreignMemberships A membership vector of a foreign cluster solution.
 		 * @throws IllegalArgumentException If the input vector is invalid or incompatible.
 		 */
-		public int[] crossOver(int[] foreignMemberships) {
+		public int[] crossover(int[] foreignMemberships) {
 			// Validate input
 			if (foreignMemberships == null || foreignMemberships.length != this.memberships.length) {
 				throw new IllegalArgumentException("Incompatible membership vector lengths.");
@@ -4253,4 +4253,239 @@ public class Exporter {
 			return memberships;
 		}
 	}
+
+	/**
+	 * Performs a single iteration of the genetic algorithm, including quality evaluation,
+	 * elite retention, crossover, and mutation.
+	 *
+	 * @param clusterSolutions    The list of parent generation cluster solutions.
+	 * @param subtractNetwork     The network matrix to subtract from the original network.
+	 * @param qualityFunction     The quality function to evaluate cluster solutions.
+	 * @param n                   The number of nodes in the network.
+	 * @param elitePercentage     The percentage of elite solutions to retain.
+	 * @param mutationPercentage  The percentage of solutions to mutate.
+	 * @param k                   The number of clusters.
+	 * @param randomSeed          Optional seed for reproducibility. Pass null for random behaviour.
+	 * @return A list of children cluster solutions.
+	 */
+	private ArrayList<ClusterSolution> geneticIteration(ArrayList<ClusterSolution> clusterSolutions, double[][] subtractNetwork, String qualityFunction, int n, double elitePercentage,	double mutationPercentage, int k, Random rng) {
+		int numClusterSolutions = clusterSolutions.size();
+		
+		// Validate elitePercentage is within the valid range [0, 1]
+		if (elitePercentage < 0.0 || elitePercentage > 1.0) {
+			throw new IllegalArgumentException("Elite percentage must be between 0 and 1 (inclusive).");
+		}
+
+		// Validate elitePercentage is within the valid range [0, 1]
+		if (mutationPercentage < 0.0 || mutationPercentage > 1.0) {
+			throw new IllegalArgumentException("Mutation percentage must be between 0 and 1 (inclusive).");
+		}
+
+		// Calculate the number of elites based on the percentage
+		int numElites = Math.max(1, (int) Math.round(elitePercentage * numClusterSolutions)); // At least one elite
+		LogEvent log = new LogEvent(Logger.MESSAGE, "Number of elites: " + numElites, "Number of elite solutions based on the elite percentage.");
+		Dna.logger.log(log);
+
+		// Calculate the number of mutations based on the percentage
+		int numMutations = (int) Math.round((mutationPercentage * n) / 2.0); // Half the number of nodes because we swap pairs
+		log = new LogEvent(Logger.MESSAGE, "Number of mutations: " + numMutations, "Number of mutations based on the mutation percentage.");
+		Dna.logger.log(log);
+
+		double[] q = evaluateQuality(clusterSolutions, subtractNetwork, qualityFunction, n, k);
+		ArrayList<ClusterSolution> children = eliteRetentionStep(clusterSolutions, q, numElites);
+		children = crossoverStep(clusterSolutions, q, children, rng);
+		children = mutationStep(children, numElites, numClusterSolutions, numMutations, n, rng);
+		return children;
+	}
+
+	/**
+	 * Evaluates the quality of cluster solutions using the specified quality function.
+	 * The quality scores are transformed to the range [0, 1] where 1 is high fitness.
+	 *
+	 * @param clusterSolutions The list of cluster solutions to evaluate.
+	 * @param subtractNetwork  The network matrix to subtract from the original network.
+	 * @param qualityFunction  The quality function to evaluate cluster solutions. Supported values are "modularity" and "eiIndex".
+	 * @param n                The number of nodes in the network.
+	 * @param k                The number of clusters.
+	 * @return An array of quality scores for each cluster solution.
+	 */
+	private double[] evaluateQuality(ArrayList<ClusterSolution> clusterSolutions, double[][] subtractNetwork, String qualityFunction, int n, int k) {
+		if (!qualityFunction.equals("modularity") && !qualityFunction.equals("eiIndex")) {
+			qualityFunction = "modularity"; // Default to modularity if invalid
+			LogEvent log = new LogEvent(Logger.WARNING, "Invalid quality function specified.", "Defaulting to modularity.");
+			Dna.logger.log(log);
+		}
+		double[] q = new double[clusterSolutions.size()];
+		for (int i = 0; i < clusterSolutions.size(); i++) {
+			int[] mem = clusterSolutions.get(i).getMemberships();
+			q[i] = (qualityFunction.equals("modularity")) ? modularity(mem, subtractNetwork, k) : -1.0 * eiIndex(mem, subtractNetwork); // Negate EI index because it's inversely related to modularity
+		}
+		return q;
+	}
+
+	/**
+	 * Creates an initially empty children generation and adds elites from the parent generation of cluster solutions.
+	 *
+	 * @param clusterSolutions The list of parent generation cluster solutions.
+	 * @param q                The array of quality values for the parent generation (their modularity or EI scores transformed to [0, 1] where 1 is high fitness).
+	 * @param numElites        The number of elite solutions to retain for the children generation.
+	 * @return A list of children containing the cloned elite solutions from the parent generation.
+	 * @throws IllegalArgumentException If the elite percentage is outside the valid range [0, 1].
+	 */
+	private ArrayList<ClusterSolution> eliteRetentionStep (ArrayList<ClusterSolution> clusterSolutions, double[] q, int numElites) {
+		int[] qRanks = calculateRanks(q); // Rank the quality values in descending order
+
+		ArrayList<ClusterSolution> children = new ArrayList<>();
+		for (int i = 0; i < qRanks.length; i++) {
+			if (qRanks[i] < numElites) {
+				try {
+					children.add((ClusterSolution) clusterSolutions.get(i).clone());
+				} catch (CloneNotSupportedException e) {
+
+					LogEvent log = new LogEvent(Logger.ERROR, "Elite solution at index " + i + " could not be cloned.", "Elite solutions are not copied to the children generation.");
+					Dna.logger.log(log);
+				}
+			}
+		}
+		return children;
+	}
+
+	/**
+	 * Performs the crossover step by generating additional children using roulette wheel sampling,
+	 * based on the quality scores of cluster solutions, and appends them to an existing children list.
+	 *
+	 * @param clusterSolutions The list of parent cluster solutions.
+	 * @param q                An array of quality scores corresponding to the cluster solutions.
+	 * @param children         The existing children list produced by the elite retention step.
+	 * @param rng              The random number generator to use for sampling. Used for reproducibility.
+	 * @return The updated children list with additional solutions generated through roulette sampling and crossover.
+	 */
+	private ArrayList<ClusterSolution> crossoverStep(ArrayList<ClusterSolution> clusterSolutions, double[] q, ArrayList<ClusterSolution> children, Random rng) {
+
+		// Replace negative quality values with zero to ensure roulette sampling works
+		for (int i = 0; i < q.length; i++) {
+			if (q[i] < 0) {
+				q[i] = 0;
+			}
+		}
+
+		// Compute the total quality
+		double qTotal = 0.0;
+		for (double quality : q) {
+			qTotal += quality;
+		}
+
+		// Handle case where total quality is zero
+		if (qTotal == 0) {
+			// Replace all q values with equal probabilities
+			for (int i = 0; i < q.length; i++) {
+				q[i] = 1.0; // Assign uniform score
+			}
+			qTotal = q.length; // New total becomes the number of items
+			LogEvent log = new LogEvent(Logger.MESSAGE, "Total quality is zero. Using uniform probabilities.", "Roulette wheel sampling fallback.");
+			Dna.logger.log(log);
+		}
+
+		// Generate additional children until the desired total size is reached
+		int numClusterSolutions = clusterSolutions.size();
+		while (children.size() < numClusterSolutions) {
+			// Perform weighted sampling for the first parent
+			double r1 = rng.nextDouble() * qTotal;
+			int index1 = selectIndexByRoulette(q, r1);
+			ClusterSolution parent1 = clusterSolutions.get(index1);
+
+			// Perform weighted sampling for the second parent, ensuring it's different from the first
+			int index2;
+			do {
+				double r2 = rng.nextDouble() * qTotal;
+				index2 = selectIndexByRoulette(q, r2);
+			} while (index2 == index1);
+			ClusterSolution parent2 = clusterSolutions.get(index2);
+
+			// Clone and perform crossover
+			try {
+				ClusterSolution child = (ClusterSolution) parent1.clone();
+				child.crossover(parent2.getMemberships());
+				children.add(child);
+			} catch (CloneNotSupportedException e) {
+				LogEvent log = new LogEvent(Logger.ERROR,
+				 "Cluster solution could not be cloned.",
+				 "A child was not added to the generation.");
+				Dna.logger.log(log);
+			}
+		}
+
+		return children;
+	}
+
+	/**
+	 * Selects the index of a cluster solution using roulette wheel sampling based on a random value.
+	 *
+	 * @param q The quality scores of the cluster solutions.
+	 * @param r The random value for selection.
+	 * @return  The index of the selected cluster solution.
+	 */
+	private int selectIndexByRoulette(double[] q, double r) {
+		double cumulative = 0.0;
+		for (int i = 0; i < q.length; i++) {
+			cumulative += q[i];
+			if (r <= cumulative) {
+				return i;
+			}
+		}
+		LogEvent log = new LogEvent(Logger.WARNING, "Roulette wheel selection failed.", "Returning the last index.");
+		Dna.logger.log(log);
+		return q.length - 1; // Fallback in case of rounding issues
+	}
+
+	/**
+	 * Mutation step: Randomly select some pairs of cluster memberships ("chromosomes") in non-elite solutions and swap around their cluster membership.
+	 * 
+	 * @param children            The children generation of cluster solutions as an array list.
+	 * @param elites              The number of elite cluster solutions to copy into the children generation without modification.
+	 * @param numClusterSolutions The total number of cluster solutions in the generation.
+	 * @param numMutations        The number of mutations to perform.
+	 * @param n                   The number of nodes in the network.
+	 * @param rng                 The random number generator to use for sampling. Used for reproducibility.
+	 * @return An array list with the mutated children generation of cluster solutions.
+	 */
+	private ArrayList<ClusterSolution> mutationStep(ArrayList<ClusterSolution> children,
+			int elites, int numClusterSolutions, int numMutations, int n, Random rng) {
+		if (numMutations <= 0) {
+			return children; // No mutations to perform
+		}
+		if (numMutations < 0) {
+			throw new IllegalArgumentException("Number of mutations must be non-negative.");
+		}
+		
+		for (int i = elites; i < numClusterSolutions; i++) {
+			int[] memberships = children.get(i).getMemberships();
+			Set<MembershipPair> mutationPairs = new HashSet<>();
+
+			// Generate unique mutation pairs
+			while (mutationPairs.size() < numMutations) {
+				int firstIndex = rng.nextInt(n);
+				int secondIndex = rng.nextInt(n);
+
+				// Ensure valid and unique pairs
+				if (firstIndex != secondIndex && memberships[firstIndex] != memberships[secondIndex]) {
+					MembershipPair pair = new MembershipPair(
+							Math.min(firstIndex, secondIndex),
+							Math.max(firstIndex, secondIndex));
+					mutationPairs.add(pair);
+				}
+			}
+
+			// Apply mutations by swapping memberships
+			for (MembershipPair pair : mutationPairs) {
+				int firstIndex = pair.getFirstIndex();
+				int secondIndex = pair.getSecondIndex();
+				int temp = memberships[firstIndex];
+				memberships[firstIndex] = memberships[secondIndex];
+				memberships[secondIndex] = temp;
+			}
+		}
+		return children;
+	}
+
 }
