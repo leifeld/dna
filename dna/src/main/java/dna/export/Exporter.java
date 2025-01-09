@@ -27,6 +27,7 @@ import org.ojalgo.matrix.Primitive64Matrix;
 import org.ojalgo.matrix.decomposition.Eigenvalue;
 
 import java.io.*;
+import java.lang.reflect.Array;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.Period;
@@ -4577,7 +4578,7 @@ public class Exporter {
 	 * @param randomSeed           The random seed to use for the random number generator. Pass 0 for random behaviour.
 	 * @return An array list of PolarisationResult objects, one for each time step.
 	 */
-	private ArrayList<PolarisationResult> geneticAlgorithm(
+	private ArrayList<PolarisationResult> geneticAlgorithm (
 			int numClusterSolutions,
 			int k,
 			int iterations,
@@ -4794,4 +4795,337 @@ public class Exporter {
 		}
 		return absoluteSum;
 	}
+
+    /**
+     * Compute a series of network matrices using kernel smoothing.
+     * This function creates a series of network matrices (one-mode or two-mode) similar to the time window approach,
+     * but using kernel smoothing around a forward-moving mid-point on the time axis (gamma). The networks are defined
+     * by the mid-point {@code gamma}, the window size {@code w}, and the kernel function. If isolates are included,
+	 * all networks will have the same dimensions and labels. If isolates are excluded, the dimensions and labels will
+	 * change over time. For polarisation, changing dimensions and labels are recommended.
+	 * 
+	 * TODO: check if the other function with the same name is still needed.
+	 *
+	 * @param isolates Whether to include isolates in the network matrices (recommended for pair-wise similarity computations such as in framing trajectories).
+     */
+	public void computeKernelSmoothedTimeSlices(boolean isolates) {
+		// check and fix normalization setting for unimplemented normalization settings
+		if (Exporter.this.normalization.equals("jaccard") || Exporter.this.normalization.equals("cosine") || Exporter.this.normalization.equals("activity") || Exporter.this.normalization.equals("prominence")) {
+			LogEvent l = new LogEvent(Logger.WARNING,
+					Exporter.this.normalization + " normalization not implemented.",
+					Exporter.this.normalization + " normalization has not been implemented (yet?) for kernel-smoothed networks. Using \"average\" normalization instead.");
+			Exporter.this.normalization = "average";
+			Dna.logger.log(l);
+		}
+
+		// check and fix two-mode qualifier aggregation for unimplemented settings
+		if (Exporter.this.qualifierAggregation.equals("combine")) {
+			LogEvent l = new LogEvent(Logger.WARNING,
+					Exporter.this.qualifierAggregation + " qualifier aggregation not implemented.",
+					Exporter.this.qualifierAggregation + " qualifier aggregation has not been implemented for kernel-smoothed networks. Using \"subtract\" qualifier aggregation instead.");
+			Exporter.this.qualifierAggregation = "subtract";
+			Dna.logger.log(l);
+		}
+
+		// initialise variables and constants
+		Collections.sort(this.filteredStatements); // probably not necessary, but can't hurt to have it
+		if (this.windowSize % 2 != 0) { // windowSize is the w constant in the paper; only even numbers are acceptable because adding or subtracting w / 2 to or from gamma would not yield integers
+			this.windowSize = this.windowSize + 1;
+		}
+		LocalDateTime firstDate = Exporter.this.filteredStatements.get(0).getDateTime();
+		LocalDateTime lastDate = Exporter.this.filteredStatements.get(Exporter.this.filteredStatements.size() - 1).getDateTime();
+		final int W_HALF = windowSize / 2;
+		LocalDateTime b = this.startDateTime.isBefore(firstDate) ? firstDate : this.startDateTime;  // start of statement list
+		LocalDateTime e = this.stopDateTime.isAfter(lastDate) ? lastDate : this.stopDateTime;  // end of statement list
+		LocalDateTime gamma = b; // current time while progressing through list of statements
+		LocalDateTime e2 = e; // indented end point (e minus half w)
+		if (Exporter.this.indentTime) {
+			if (timeWindow.equals("minutes")) {
+				gamma = gamma.plusMinutes(W_HALF);
+				e2 = e.minusMinutes(W_HALF);
+			} else if (timeWindow.equals("hours")) {
+				gamma = gamma.plusHours(W_HALF);
+				e2 = e.minusHours(W_HALF);
+			} else if (timeWindow.equals("days")) {
+				gamma = gamma.plusDays(W_HALF);
+				e2 = e.minusDays(W_HALF);
+			} else if (timeWindow.equals("weeks")) {
+				gamma = gamma.plusWeeks(W_HALF);
+				e2 = e.minusWeeks(W_HALF);
+			} else if (timeWindow.equals("months")) {
+				gamma = gamma.plusMonths(W_HALF);
+				e2 = e.minusMonths(W_HALF);
+			} else if (timeWindow.equals("years")) {
+				gamma = gamma.plusYears(W_HALF);
+				e2 = e.minusYears(W_HALF);
+			}
+		}
+
+		// save the labels of the variables and qualifier and put indices in hash maps for fast retrieval
+		String[] var1Values = extractLabels(Exporter.this.filteredStatements, Exporter.this.variable1, Exporter.this.variable1Document);
+		String[] var2Values = extractLabels(Exporter.this.filteredStatements, Exporter.this.variable2, Exporter.this.variable2Document);
+		String[] qualValues = new String[] { "" };
+		if (Exporter.this.qualifier != null) {
+			 qualValues = extractLabels(Exporter.this.filteredStatements, Exporter.this.qualifier, Exporter.this.qualifierDocument);
+		}
+		if (Exporter.this.qualifier != null && dataTypes.get(Exporter.this.qualifier).equals("integer")) {
+			int[] qual = Exporter.this.originalStatements.stream().mapToInt(s -> (int) s.get(Exporter.this.qualifier)).distinct().sorted().toArray();
+			if (qual.length < qualValues.length) {
+				qualValues = IntStream.rangeClosed(qual[0], qual[qual.length - 1])
+						.mapToObj(String::valueOf)
+						.toArray(String[]::new);
+			}
+		}
+		HashMap<String, Integer> var1Map = new HashMap<>();
+		for (int i = 0; i < var1Values.length; i++) {
+			var1Map.put(var1Values[i], i);
+		}
+		HashMap<String, Integer> var2Map = new HashMap<>();
+		for (int i = 0; i < var2Values.length; i++) {
+			var2Map.put(var2Values[i], i);
+		}
+		HashMap<String, Integer> qualMap = new HashMap<>();
+		if (Exporter.this.qualifier != null) {
+			for (int i = 0; i < qualValues.length; i++) {
+				qualMap.put(qualValues[i], i);
+			}
+		}
+
+		// create an array list of empty Matrix results, store all date-time stamps in them, and save indices in a hash map; also create X arrays for the kernel smoothing
+		Exporter.this.matrixResults = new ArrayList<>();
+		ArrayList<ArrayList<ExportStatement>[][][]> xArrayList = new ArrayList<>();
+		if (Exporter.this.kernel.equals("gaussian")) { // for each mid-point gamma, create an empty Matrix and save the start, mid, and end time points in it as defined by the start and end of the whole time range; the actual matrix is injected later
+			if (timeWindow.equals("minutes")) {
+				while (!gamma.isAfter(e2)) {
+					Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, b, gamma, e));
+					xArrayList.add(create3dArray(var1Values, var2Values, qualValues, filteredStatements, var1Map, var2Map, qualMap));
+					gamma = gamma.plusMinutes(1);
+				}
+			} else if (timeWindow.equals("hours")) {
+				while (!gamma.isAfter(e2)) {
+					Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, b, gamma, e));
+					xArrayList.add(create3dArray(var1Values, var2Values, qualValues, filteredStatements, var1Map, var2Map, qualMap));
+					gamma = gamma.plusHours(1);
+				}
+			} else if (timeWindow.equals("days")) {
+				while (!gamma.isAfter(e2)) {
+					Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, b, gamma, e));
+					xArrayList.add(create3dArray(var1Values, var2Values, qualValues, filteredStatements, var1Map, var2Map, qualMap));
+					gamma = gamma.plusDays(1);
+				}
+			} else if (timeWindow.equals("weeks")) {
+				while (!gamma.isAfter(e2)) {
+					Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, b, gamma, e));
+					xArrayList.add(create3dArray(var1Values, var2Values, qualValues, filteredStatements, var1Map, var2Map, qualMap));
+					gamma = gamma.plusWeeks(1);
+				}
+			} else if (timeWindow.equals("months")) {
+				while (!gamma.isAfter(e2)) {
+					Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, b, gamma, e));
+					xArrayList.add(create3dArray(var1Values, var2Values, qualValues, filteredStatements, var1Map, var2Map, qualMap));
+					gamma = gamma.plusMonths(1);
+				}
+			} else if (timeWindow.equals("years")) {
+				while (!gamma.isAfter(e2)) {
+					Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, b, gamma, e));
+					xArrayList.add(create3dArray(var1Values, var2Values, qualValues, filteredStatements, var1Map, var2Map, qualMap));
+					gamma = gamma.plusYears(1);
+				}
+			}
+		} else { // for each mid-point gamma, create an empty Matrix and save the start, mid, and end time points in it as defined by width w; the actual matrix is injected later
+			if (timeWindow.equals("minutes")) {
+				while (!gamma.isAfter(e2)) {
+					if (isolates) {
+						Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, gamma.minusMinutes(W_HALF).isBefore(b) ? b : gamma.minusMinutes(W_HALF), gamma, gamma.plusMinutes(W_HALF).isAfter(e) ? e : gamma.plusMinutes(W_HALF)));
+						xArrayList.add(create3dArray(var1Values, var2Values, qualValues, filteredStatements, var1Map, var2Map, qualMap));
+					} else {
+						final LocalDateTime g = gamma;
+						ArrayList<ExportStatement> currentStatements = Exporter.this.filteredStatements.stream().filter(s -> s.getDateTime().isAfter(g.minusMinutes(W_HALF).isBefore(b) ? b : g.minusMinutes(W_HALF)) && s.getDateTime().isBefore(g.plusMinutes(W_HALF).isAfter(e) ? e : g.plusMinutes(W_HALF))).collect(Collectors.toCollection(ArrayList::new));
+						String[] var1ValuesCurrent = extractLabels(currentStatements, Exporter.this.variable1, Exporter.this.variable1Document);
+						String[] var2ValuesCurrent = extractLabels(currentStatements, Exporter.this.variable2, Exporter.this.variable2Document);
+						Exporter.this.matrixResults.add(new Matrix(var1ValuesCurrent, Exporter.this.networkType.equals("onemode") ? var1ValuesCurrent : var2ValuesCurrent, false, gamma.minusMinutes(W_HALF).isBefore(b) ? b : gamma.minusMinutes(W_HALF), gamma, gamma.plusMinutes(W_HALF).isAfter(e) ? e : gamma.plusMinutes(W_HALF)));
+						xArrayList.add(create3dArray(var1ValuesCurrent, var2ValuesCurrent, qualValues, currentStatements, var1Map, var2Map, qualMap));
+					}
+					gamma = gamma.plusMinutes(1);
+				}
+			} else if (timeWindow.equals("hours")) {
+				while (!gamma.isAfter(e2)) {
+					if (isolates) {
+						Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, gamma.minusHours(W_HALF).isBefore(b) ? b : gamma.minusHours(W_HALF), gamma, gamma.plusHours(W_HALF).isAfter(e) ? e : gamma.plusHours(W_HALF)));
+						xArrayList.add(create3dArray(var1Values, var2Values, qualValues, filteredStatements, var1Map, var2Map, qualMap));
+					} else {
+						final LocalDateTime g = gamma;
+						ArrayList<ExportStatement> currentStatements = Exporter.this.filteredStatements.stream().filter(s -> s.getDateTime().isAfter(g.minusHours(W_HALF).isBefore(b) ? b : g.minusHours(W_HALF)) && s.getDateTime().isBefore(g.plusHours(W_HALF).isAfter(e) ? e : g.plusHours(W_HALF))).collect(Collectors.toCollection(ArrayList::new));
+						String[] var1ValuesCurrent = extractLabels(currentStatements, Exporter.this.variable1, Exporter.this.variable1Document);
+						String[] var2ValuesCurrent = extractLabels(currentStatements, Exporter.this.variable2, Exporter.this.variable2Document);
+						Exporter.this.matrixResults.add(new Matrix(var1ValuesCurrent, Exporter.this.networkType.equals("onemode") ? var1ValuesCurrent : var2ValuesCurrent, false, gamma.minusHours(W_HALF).isBefore(b) ? b : gamma.minusHours(W_HALF), gamma, gamma.plusHours(W_HALF).isAfter(e) ? e : gamma.plusHours(W_HALF)));
+						xArrayList.add(create3dArray(var1ValuesCurrent, var2ValuesCurrent, qualValues, currentStatements, var1Map, var2Map, qualMap));
+					}
+					gamma = gamma.plusHours(1);
+				}
+			} else if (timeWindow.equals("days")) {
+				while (!gamma.isAfter(e2)) {
+					if (isolates) {
+						Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, gamma.minusDays(W_HALF).isBefore(b) ? b : gamma.minusDays(W_HALF), gamma, gamma.plusDays(W_HALF).isAfter(e) ? e : gamma.plusDays(W_HALF)));
+						xArrayList.add(create3dArray(var1Values, var2Values, qualValues, filteredStatements, var1Map, var2Map, qualMap));
+					} else {
+						final LocalDateTime g = gamma;
+						ArrayList<ExportStatement> currentStatements = Exporter.this.filteredStatements.stream().filter(s -> s.getDateTime().isAfter(g.minusDays(W_HALF).isBefore(b) ? b : g.minusDays(W_HALF)) && s.getDateTime().isBefore(g.plusDays(W_HALF).isAfter(e) ? e : g.plusDays(W_HALF))).collect(Collectors.toCollection(ArrayList::new));
+						String[] var1ValuesCurrent = extractLabels(currentStatements, Exporter.this.variable1, Exporter.this.variable1Document);
+						String[] var2ValuesCurrent = extractLabels(currentStatements, Exporter.this.variable2, Exporter.this.variable2Document);
+						Exporter.this.matrixResults.add(new Matrix(var1ValuesCurrent, Exporter.this.networkType.equals("onemode") ? var1ValuesCurrent : var2ValuesCurrent, false, gamma.minusDays(W_HALF).isBefore(b) ? b : gamma.minusDays(W_HALF), gamma, gamma.plusDays(W_HALF).isAfter(e) ? e : gamma.plusDays(W_HALF)));
+						xArrayList.add(create3dArray(var1ValuesCurrent, var2ValuesCurrent, qualValues, currentStatements, var1Map, var2Map, qualMap));
+					}
+					gamma = gamma.plusDays(1);
+				}
+			} else if (timeWindow.equals("weeks")) {
+				while (!gamma.isAfter(e2)) {
+					if (isolates) {
+						Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, gamma.minusWeeks(W_HALF).isBefore(b) ? b : gamma.minusWeeks(W_HALF), gamma, gamma.plusWeeks(W_HALF).isAfter(e) ? e : gamma.plusWeeks(W_HALF)));
+						xArrayList.add(create3dArray(var1Values, var2Values, qualValues, filteredStatements, var1Map, var2Map, qualMap));
+					} else {
+						final LocalDateTime g = gamma;
+						ArrayList<ExportStatement> currentStatements = Exporter.this.filteredStatements.stream().filter(s -> s.getDateTime().isAfter(g.minusWeeks(W_HALF).isBefore(b) ? b : g.minusWeeks(W_HALF)) && s.getDateTime().isBefore(g.plusWeeks(W_HALF).isAfter(e) ? e : g.plusWeeks(W_HALF))).collect(Collectors.toCollection(ArrayList::new));
+						String[] var1ValuesCurrent = extractLabels(currentStatements, Exporter.this.variable1, Exporter.this.variable1Document);
+						String[] var2ValuesCurrent = extractLabels(currentStatements, Exporter.this.variable2, Exporter.this.variable2Document);
+						Exporter.this.matrixResults.add(new Matrix(var1ValuesCurrent, Exporter.this.networkType.equals("onemode") ? var1ValuesCurrent : var2ValuesCurrent, false, gamma.minusWeeks(W_HALF).isBefore(b) ? b : gamma.minusWeeks(W_HALF), gamma, gamma.plusWeeks(W_HALF).isAfter(e) ? e : gamma.plusWeeks(W_HALF)));
+						xArrayList.add(create3dArray(var1ValuesCurrent, var2ValuesCurrent, qualValues, currentStatements, var1Map, var2Map, qualMap));
+					}
+					gamma = gamma.plusWeeks(1);
+				}
+			} else if (timeWindow.equals("months")) {
+				while (!gamma.isAfter(e2)) {
+					if (isolates) {
+						Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, gamma.minusMonths(W_HALF).isBefore(b) ? b : gamma.minusMonths(W_HALF), gamma, gamma.plusMonths(W_HALF).isAfter(e) ? e : gamma.plusMonths(W_HALF)));
+						xArrayList.add(create3dArray(var1Values, var2Values, qualValues, filteredStatements, var1Map, var2Map, qualMap));
+					} else {
+						final LocalDateTime g = gamma;
+						ArrayList<ExportStatement> currentStatements = Exporter.this.filteredStatements.stream().filter(s -> s.getDateTime().isAfter(g.minusMonths(W_HALF).isBefore(b) ? b : g.minusMonths(W_HALF)) && s.getDateTime().isBefore(g.plusMonths(W_HALF).isAfter(e) ? e : g.plusMonths(W_HALF))).collect(Collectors.toCollection(ArrayList::new));
+						String[] var1ValuesCurrent = extractLabels(currentStatements, Exporter.this.variable1, Exporter.this.variable1Document);
+						String[] var2ValuesCurrent = extractLabels(currentStatements, Exporter.this.variable2, Exporter.this.variable2Document);
+						Exporter.this.matrixResults.add(new Matrix(var1ValuesCurrent, Exporter.this.networkType.equals("onemode") ? var1ValuesCurrent : var2ValuesCurrent, false, gamma.minusMonths(W_HALF).isBefore(b) ? b : gamma.minusMonths(W_HALF), gamma, gamma.plusMonths(W_HALF).isAfter(e) ? e : gamma.plusMonths(W_HALF)));
+						xArrayList.add(create3dArray(var1ValuesCurrent, var2ValuesCurrent, qualValues, currentStatements, var1Map, var2Map, qualMap));
+					}
+					gamma = gamma.plusMonths(1);
+				}
+			} else if (timeWindow.equals("years")) {
+				while (!gamma.isAfter(e2)) {
+					if (isolates) {
+						Exporter.this.matrixResults.add(new Matrix(var1Values, Exporter.this.networkType.equals("onemode") ? var1Values : var2Values, false, gamma.minusYears(W_HALF).isBefore(b) ? b : gamma.minusYears(W_HALF), gamma, gamma.plusYears(W_HALF).isAfter(e) ? e : gamma.plusYears(W_HALF)));
+						xArrayList.add(create3dArray(var1Values, var2Values, qualValues, filteredStatements, var1Map, var2Map, qualMap));
+					} else {
+						final LocalDateTime g = gamma;
+						ArrayList<ExportStatement> currentStatements = Exporter.this.filteredStatements.stream().filter(s -> s.getDateTime().isAfter(g.minusYears(W_HALF).isBefore(b) ? b : g.minusYears(W_HALF)) && s.getDateTime().isBefore(g.plusYears(W_HALF).isAfter(e) ? e : g.plusYears(W_HALF))).collect(Collectors.toCollection(ArrayList::new));
+						String[] var1ValuesCurrent = extractLabels(currentStatements, Exporter.this.variable1, Exporter.this.variable1Document);
+						String[] var2ValuesCurrent = extractLabels(currentStatements, Exporter.this.variable2, Exporter.this.variable2Document);
+						Exporter.this.matrixResults.add(new Matrix(var1ValuesCurrent, Exporter.this.networkType.equals("onemode") ? var1ValuesCurrent : var2ValuesCurrent, false, gamma.minusYears(W_HALF).isBefore(b) ? b : gamma.minusYears(W_HALF), gamma, gamma.plusYears(W_HALF).isAfter(e) ? e : gamma.plusYears(W_HALF)));
+						xArrayList.add(create3dArray(var1ValuesCurrent, var2ValuesCurrent, qualValues, currentStatements, var1Map, var2Map, qualMap));
+					}
+					gamma = gamma.plusYears(1);
+				}
+			}
+		}
+
+		// process each matrix result in a parallel stream instead of for-loop and add calculation results
+		ArrayList<Matrix> processedResults = ProgressBar.wrap(
+				Stream.iterate(0, i -> i + 1).limit(Exporter.this.matrixResults.size()).parallel(), "Kernel smoothing")
+				.map(index -> processTimeSlice(Exporter.this.matrixResults.get(index), xArrayList.get(index)))
+				.collect(Collectors.toCollection(ArrayList::new));
+		Exporter.this.matrixResults = processedResults;
+	}
+
+	/** Create a 3D array of ExportStatements for the kernel smoothing approach (variable 1 x variable 2 x qualifier).
+	 *
+	 * @param var1Values The values of the first variable.
+	 * @param var2Values The values of the second variable.
+	 * @param qualValues The values of the qualifier.
+	 * @param statements The list of ExportStatements.
+	 * @param var1Map The map of variable 1 values to indices.
+	 * @param var2Map The map of variable 2 values to indices.
+	 * @param qualMap The map of qualifier values to indices.
+	 * @return A 3D array of array lists of ExportStatements.
+	 */
+	private ArrayList<ExportStatement>[][][] create3dArray(String[] var1Values, String[] var2Values, String[] qualValues, ArrayList<ExportStatement> statements, HashMap<String, Integer> var1Map, HashMap<String, Integer> var2Map, HashMap<String, Integer> qualMap) {
+		@SuppressWarnings("unchecked")
+		ArrayList<ExportStatement>[][][] X = (ArrayList<ExportStatement>[][][]) new ArrayList<?>[var1Values.length][var2Values.length][qualValues.length];
+		for (int i = 0; i < var1Values.length; i++) {
+			for (int j = 0; j < var2Values.length; j++) {
+				if (Exporter.this.qualifier == null) {
+					X[i][j][0] = new ArrayList<ExportStatement>();
+				} else {
+					for (int k = 0; k < qualValues.length; k++) {
+						X[i][j][k] = new ArrayList<ExportStatement>();
+					}
+				}
+			}
+		}
+
+		statements.stream().forEach(s -> {
+			int var1Index = -1;
+			if (Exporter.this.variable1Document) {
+				if (Exporter.this.variable1.equals("author")) {
+					var1Index = var1Map.get(s.getAuthor());
+				} else if (Exporter.this.variable1.equals("source")) {
+					var1Index = var1Map.get(s.getSource());
+				} else if (Exporter.this.variable1.equals("section")) {
+					var1Index = var1Map.get(s.getSection());
+				} else if (Exporter.this.variable1.equals("type")) {
+					var1Index = var1Map.get(s.getType());
+				} else if (Exporter.this.variable1.equals("id")) {
+					var1Index = var1Map.get(s.getDocumentIdAsString());
+				} else if (Exporter.this.variable1.equals("title")) {
+					var1Index = var1Map.get(s.getTitle());
+				}
+			} else {
+				var1Index = var1Map.get(((Entity) s.get(Exporter.this.variable1)).getValue());
+			}
+			int var2Index = -1;
+			if (Exporter.this.variable2Document) {
+				if (Exporter.this.variable2.equals("author")) {
+					var2Index = var2Map.get(s.getAuthor());
+				} else if (Exporter.this.variable2.equals("source")) {
+					var2Index = var2Map.get(s.getSource());
+				} else if (Exporter.this.variable2.equals("section")) {
+					var2Index = var2Map.get(s.getSection());
+				} else if (Exporter.this.variable2.equals("type")) {
+					var2Index = var2Map.get(s.getType());
+				} else if (Exporter.this.variable2.equals("id")) {
+					var2Index = var2Map.get(s.getDocumentIdAsString());
+				} else if (Exporter.this.variable2.equals("title")) {
+					var2Index = var2Map.get(s.getTitle());
+				}
+			} else {
+				var2Index = var2Map.get(((Entity) s.get(Exporter.this.variable2)).getValue());
+			}
+			int qualIndex = -1;
+			if (Exporter.this.qualifierDocument && Exporter.this.qualifier != null) {
+				if (Exporter.this.qualifier.equals("author")) {
+					qualIndex = qualMap.get(s.getAuthor());
+				} else if (Exporter.this.qualifier.equals("source")) {
+					qualIndex = qualMap.get(s.getSource());
+				} else if (Exporter.this.qualifier.equals("section")) {
+					qualIndex = qualMap.get(s.getSection());
+				} else if (Exporter.this.qualifier.equals("type")) {
+					qualIndex = qualMap.get(s.getType());
+				} else if (Exporter.this.qualifier.equals("id")) {
+					qualIndex = qualMap.get(s.getDocumentIdAsString());
+				} else if (Exporter.this.qualifier.equals("title")) {
+					qualIndex = qualMap.get(s.getTitle());
+				}
+			} else {
+				if (Exporter.this.qualifier == null) {
+					qualIndex = 0;
+				} else if (dataTypes.get(Exporter.this.qualifier).equals("integer") || dataTypes.get(Exporter.this.qualifier).equals("boolean")) {
+					qualIndex = qualMap.get(String.valueOf((int) s.get(Exporter.this.qualifier)));
+				} else {
+					qualIndex = qualMap.get(((Entity) s.get(Exporter.this.qualifier)).getValue());
+				}
+			}
+			X[var1Index][var2Index][qualIndex].add(s);
+		});
+
+		return X;
+	}
+
+	// TODO: function that creates subtract networks, initialises the polarisation algorithm, and returns an array list with results
 }
