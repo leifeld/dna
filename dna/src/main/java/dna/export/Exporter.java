@@ -4578,15 +4578,14 @@ public class Exporter {
 	 * @param randomSeed           The random seed to use for the random number generator. Pass 0 for random behaviour.
 	 * @return An array list of PolarisationResult objects, one for each time step.
 	 */
-	private ArrayList<PolarisationResult> geneticAlgorithm (
+	public ArrayList<PolarisationResult> geneticAlgorithm (
 			int numClusterSolutions,
 			int k,
 			int iterations,
 			double elitePercentage,
 			double mutationPercentage,
 			String qualityFunction,
-			ArrayList<Matrix> subtractList,
-			int randomSeed) {
+			long randomSeed) {
 		// Validate input parameters
 		if (numClusterSolutions <= 0) {
 			LogEvent log = new LogEvent(Logger.ERROR, "Invalid number of cluster solutions.",
@@ -4624,19 +4623,18 @@ public class Exporter {
 			Dna.logger.log(log);
 			throw new IllegalArgumentException("Quality function must be either 'modularity' or 'eiIndex'.");
 		}
-		if (subtractList == null || subtractList.isEmpty()) {
-			LogEvent log = new LogEvent(Logger.ERROR, "Invalid subtract list.",
-					"Subtract list must not be null or empty.");
+		if (Exporter.this.matrixResults == null || Exporter.this.matrixResults.isEmpty() || !Exporter.this.networkType.equals("onemode") || !Exporter.this.qualifierAggregation.equals("subtract")) {
+			LogEvent log = new LogEvent(Logger.ERROR, "Invalid list of matrix results.",
+					"Matrix result list must not be null or empty, and the subtract qualifier aggregation method must have been applied to a one-mode network.");
 			Dna.logger.log(log);
-			throw new IllegalArgumentException("Subtract list must not be null or empty.");
+			throw new IllegalArgumentException("Matrix result list must not be null or empty.");
 		}
-		for (Matrix matrix : subtractList) {
-			if (matrix == null || matrix.getMatrix().length == 0
-					|| matrix.getMatrix().length != matrix.getMatrix()[0].length) {
-				LogEvent log = new LogEvent(Logger.ERROR, "Invalid matrix in subtract list.",
-						"Each matrix in the subtract list must be square and non-empty.");
+		for (Matrix matrix : Exporter.this.matrixResults) {
+			if (matrix == null || (matrix.getMatrix().length > 0 && matrix.getMatrix().length != matrix.getMatrix()[0].length)) {
+				LogEvent log = new LogEvent(Logger.ERROR, "Invalid matrix in matrix result list.",
+						"Each matrix in the matrix result list must be square.");
 				Dna.logger.log(log);
-				throw new IllegalArgumentException("Each matrix in the subtract list must be square and non-empty.");
+				throw new IllegalArgumentException("Each matrix in the matrix result list must be square.");
 			}
 		}
 
@@ -4655,13 +4653,13 @@ public class Exporter {
 		double[] sdQArray;
 		boolean earlyConvergence = false;
 		int lastIndex = -1;
-		for (t = 0; t < subtractList.size(); t++) { // go through all time steps of the time window networks
+		for (int t = 0; t < Exporter.this.matrixResults.size(); t++) { // go through all time steps of the time window networks
 			maxQArray = new double[iterations];
 			avgQArray = new double[iterations];
 			sdQArray = new double[iterations];
-			subtract = subtractList.get(t).getMatrix(); // get the subtract matrix for the current time step
+			subtract = Exporter.this.matrixResults.get(t).getMatrix(); // get the subtract matrix for the current time step
 
-			if (subtractList.get(t).getMatrix().length > 0 && calculateMatrixNorm(subtract) != 0) { // if the network has no nodes or activity, skip this step and return 0 directly
+			if (Exporter.this.matrixResults.get(t).getMatrix().length > 0 && calculateMatrixNorm(subtract) != 0) { // if the network has no nodes or activity, skip this step and return 0 directly
 				// Create initially random cluster solutions; supply the number of nodes and clusters
 				ArrayList<ClusterSolution> cs = new ArrayList<ClusterSolution>();
 				for (int i = 0; i < numClusterSolutions; i++) {
@@ -4751,11 +4749,11 @@ public class Exporter {
 						sdQArray.clone(),
 						maxQ,
 						cs.get(maxIndex).getMemberships().clone(),
-						subtractList.get(t).getRowNames(),
+						Exporter.this.matrixResults.get(t).getRowNames(),
 						earlyConvergence,
-						subtractList.get(t).getStart(),
-						subtractList.get(t).getStop(),
-						subtractList.get(t).getDateTime());
+						Exporter.this.matrixResults.get(t).getStart(),
+						Exporter.this.matrixResults.get(t).getStop(),
+						Exporter.this.matrixResults.get(t).getDateTime());
 				polarisationResults.add(pr);
 			} else { // zero result because network is empty
 				PolarisationResult pr = new PolarisationResult(
@@ -4766,9 +4764,9 @@ public class Exporter {
 						new int[0],
 						new String[0],
 						true,
-						subtractList.get(t).getStart(),
-						subtractList.get(t).getStop(),
-						subtractList.get(t).getDateTime());
+						Exporter.this.matrixResults.get(t).getStart(),
+						Exporter.this.matrixResults.get(t).getStop(),
+						Exporter.this.matrixResults.get(t).getDateTime());
 				polarisationResults.add(pr);
 			}
 		}

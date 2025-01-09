@@ -597,6 +597,124 @@ public class HeadlessDna implements Logger.LogListener {
 	}
 
 	/**
+	 * Compute a sequence of one-mode network matrices or a single one-mode network matrix, and compute their polarisation score(s) and diagnostics.
+	 *
+	 * @param statementType      Statement type as a {@link String}.
+	 * @param variable1          First variable for export, provided as a {@link String}.
+	 * @param variable1Document  boolean indicating if the first variable is at the document level.
+	 * @param variable2          Second variable for export, provided as a {@link String}.
+	 * @param variable2Document  boolean indicating if the second variable is at the document level.
+	 * @param qualifier          Qualifier variable as a {@link String}.
+	 * @param normalization      Normalization setting as a {@link String}, as provided by rDNA (can be {@code "no"}, {@code "activity"}, {@code "prominence"}, {@code "average"}, {@code "jaccard"}, or {@code "cosine"}).
+	 * @param duplicates         An input {@link String} from rDNA that can be {@code "include"}, {@code "document"}, {@code "week"}, {@code "month"}, {@code "year"}, or {@code "acrossrange"}.
+	 * @param startDate          Start date for the export, provided as a {@link String} with format {@code "dd.MM.yyyy"}.
+	 * @param stopDate           Stop date for the export, provided as a {@link String} with format {@code "dd.MM.yyyy"}.
+	 * @param timeWindow         A {@link String} indicating the time window setting. Valid options are {@code "no"}, {@code "events"}, {@code "seconds"}, {@code "minutes"}, {@code "hours"}, {@code "days"}, {@code "weeks"}, {@code "months"}, and {@code "years"}.
+	 * @param windowSize         Duration of the time window in the units specified in the {@code timeWindow} argument.
+	 * @param kernel             The kernel function for temporal smoothing: {@code "no"}, {@code "uniform"}, {@code "epanechnikov"}, {@code "triangular"}, or {@code "gaussian"}.
+	 * @param normalizeToOne     boolean indicating if each cell in the network matrix should be divided by the sum of all cells of the same time step (i.e., normalized to one such that the sum of all cells is {@code 1.0}).
+	 * @param indentTime         boolean indicating if the timeline should be indented at the beginning and end such that all networks in the sequence of time windows must fit entirely into the timeline. If false, the first mid-point starts at the beginning, and the last network ends at the stop date and time.
+	 * @param excludeVariables   A {@link String} array with n elements, indicating the variable of the n'th value.
+	 * @param excludeValues      A {@link String} array with n elements, indicating the value pertaining to the n'th variable {@link String}.
+	 * @param excludeAuthors     A {@link String} array of values to exclude in the {@code author} variable at the document level.
+	 * @param excludeSources     A {@link String} array of values to exclude in the {@code source} variable at the document level.
+	 * @param excludeSections    A {@link String} array of values to exclude in the {@code section} variable at the document level.
+	 * @param excludeTypes       A {@link String} array of values to exclude in the {@code "type"} variable at the document level.
+	 * @param invertValues       boolean indicating whether the statement-level exclude values should be included (= {@code true}) rather than excluded.
+	 * @param invertAuthors      boolean indicating whether the document-level author values should be included (= {@code true}) rather than excluded.
+	 * @param invertSources      boolean indicating whether the document-level source values should be included (= {@code true}) rather than excluded.
+	 * @param invertSections     boolean indicating whether the document-level section values should be included (= {@code true}) rather than excluded.
+	 * @param invertTypes        boolean indicating whether the document-level type values should be included (= {@code true}) rather than excluded.
+	 * @param k					 The number of clusters or factions, for example 2 for bi-polarisation.
+	 * @param numParents         The number of cluster solutions (i.e., parents) to generate in each iteration, for example 30 or 50.
+	 * @param iterations         For how many generations should the genetic algorithm run at most? This is the maximal number of generations through which optimisation should be attempted. Will be lower if early convergence is detected. A suggested starting value is 1000.
+	 * @param elitePercentage    The share of cluster solutions in each parent generation that is copied into the children generation without changes, between 0.0 and 1.0, usually around 0.1.
+	 * @param mutationPercentage The probability with which each bit in any cluster solution is selected for mutation after the cross-over step. For example 0.1 to select 10% of the nodes to swap their memberships.
+	 * @param qualityFunction    The quality function to evaluate cluster solutions. Supported values are "modularity" and "eiIndex".
+	 * @param randomSeed         The random seed to use for the random number generator. Pass 0 for random behaviour.
+	 * @return                   An array list of {@link PolarisationResult} objects.
+	 */
+	public ArrayList<PolarisationResult> rPolarisation(String statementType, String variable1, boolean variable1Document, String variable2, boolean variable2Document, String qualifier,
+			boolean qualifierDocument, String normalization, boolean includeIsolates, String duplicates, String startDate, String stopDate, String startTime,
+			String stopTime, String timeWindow, int windowSize, String kernel, boolean normalizeToOne, boolean indentTime, String[] excludeVariables,
+			String[] excludeValues,	String[] excludeAuthors, String[] excludeSources, String[] excludeSections, String[] excludeTypes, boolean invertValues,
+			boolean invertAuthors, boolean invertSources, boolean invertSections, boolean invertTypes, int k, int numParents, int iterations,
+			double elitePercentage, double mutationPercentage, String qualityFunction, long randomSeed) {
+
+		// step 1: preprocess arguments
+		StatementType st = Dna.sql.getStatementType(statementType); // format statement type
+
+		// format dates and times with input formats "dd.MM.yyyy" and "HH:mm:ss"
+		LocalDateTime ldtStart, ldtStop;
+		LocalDateTime[] dateRange = formatDateTime(startDate, "00:00:00", stopDate, "23:59:59");
+		ldtStart = dateRange[0];
+		ldtStop = dateRange[1];
+
+		// process exclude variables: create HashMap with variable:value pairs
+		HashMap<String, ArrayList<String>> map = new HashMap<String, ArrayList<String>>();
+		if (excludeVariables.length > 0) {
+			for (int i = 0; i < excludeVariables.length; i++) {
+				ArrayList<String> values = map.get(excludeVariables[i]);
+				if (values == null) {
+					values = new ArrayList<String>();
+				}
+				if (!values.contains(excludeValues[i])) {
+					values.add(excludeValues[i]);
+				}
+				Collections.sort(values);
+				map.put(excludeVariables[i], values);
+			}
+		}
+
+		// initialize Exporter class
+		this.exporter = new Exporter(
+				"onemode",
+				st,
+				variable1,
+				variable1Document,
+				variable2,
+				variable2Document,
+				qualifier,
+				false,
+				"subtract",
+				normalization,
+				false,
+				duplicates,
+				ldtStart,
+				ldtStop,
+				timeWindow,
+				windowSize,
+				map,
+				Stream.of(excludeAuthors).collect(Collectors.toCollection(ArrayList::new)),
+				Stream.of(excludeSources).collect(Collectors.toCollection(ArrayList::new)),
+				Stream.of(excludeSections).collect(Collectors.toCollection(ArrayList::new)),
+				Stream.of(excludeTypes).collect(Collectors.toCollection(ArrayList::new)),
+				invertValues,
+				invertAuthors,
+				invertSources,
+				invertSections,
+				invertTypes,
+				null,
+				null);
+		this.exporter.setKernelFunction(kernel);
+		this.exporter.setIndentTime(indentTime);
+
+		// step 2: filter
+		this.exporter.loadData();
+		this.exporter.filterStatements();
+
+		// step 3: compute and normalise networks
+		this.exporter.computeKernelSmoothedTimeSlices(includeIsolates);
+		if (normalizeToOne) {
+			this.exporter.normalizeMatrixResultsToOne();
+		}
+
+		// step 4: compute polarisation
+		ArrayList<PolarisationResult> polarisationResults = this.exporter.geneticAlgorithm(k, numParents, iterations, elitePercentage, mutationPercentage, qualityFunction, randomSeed);
+		return polarisationResults;
+	}
+
+	/**
 	 * Generate data to construct a barplot.
 	 *
 	 * @param statementType     Statement type as a {@link String}.
