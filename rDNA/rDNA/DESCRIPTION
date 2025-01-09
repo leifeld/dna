@@ -1,6 +1,6 @@
 Package: rDNA
-Version: 3.0.11.2
-Date: 2024-10-08
+Version: 3.0.11.4
+Date: 2025-01-09
 Title: Discourse Network Analysis in R
 Authors@R: 
   c(person(given = "Philip",

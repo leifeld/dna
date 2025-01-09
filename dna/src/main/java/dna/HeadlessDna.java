@@ -612,7 +612,6 @@ public class HeadlessDna implements Logger.LogListener {
 	 * @param timeWindow         A {@link String} indicating the time window setting. Valid options are {@code "no"}, {@code "events"}, {@code "seconds"}, {@code "minutes"}, {@code "hours"}, {@code "days"}, {@code "weeks"}, {@code "months"}, and {@code "years"}.
 	 * @param windowSize         Duration of the time window in the units specified in the {@code timeWindow} argument.
 	 * @param kernel             The kernel function for temporal smoothing: {@code "no"}, {@code "uniform"}, {@code "epanechnikov"}, {@code "triangular"}, or {@code "gaussian"}.
-	 * @param normalizeToOne     boolean indicating if each cell in the network matrix should be divided by the sum of all cells of the same time step (i.e., normalized to one such that the sum of all cells is {@code 1.0}).
 	 * @param indentTime         boolean indicating if the timeline should be indented at the beginning and end such that all networks in the sequence of time windows must fit entirely into the timeline. If false, the first mid-point starts at the beginning, and the last network ends at the stop date and time.
 	 * @param excludeVariables   A {@link String} array with n elements, indicating the variable of the n'th value.
 	 * @param excludeValues      A {@link String} array with n elements, indicating the value pertaining to the n'th variable {@link String}.
@@ -634,11 +633,12 @@ public class HeadlessDna implements Logger.LogListener {
 	 * @param randomSeed         The random seed to use for the random number generator. Pass 0 for random behaviour.
 	 * @return                   An array list of {@link PolarisationResult} objects.
 	 */
-	public ArrayList<PolarisationResult> rPolarisation(String statementType, String variable1, boolean variable1Document, String variable2, boolean variable2Document, String qualifier,
-			boolean qualifierDocument, String normalization, boolean includeIsolates, String duplicates, String startDate, String stopDate, String startTime,
-			String stopTime, String timeWindow, int windowSize, String kernel, boolean normalizeToOne, boolean indentTime, String[] excludeVariables,
-			String[] excludeValues,	String[] excludeAuthors, String[] excludeSources, String[] excludeSections, String[] excludeTypes, boolean invertValues,
-			boolean invertAuthors, boolean invertSources, boolean invertSections, boolean invertTypes, int k, int numParents, int iterations,
+	public ArrayList<PolarisationResult> rPolarisation(String statementType, String variable1, boolean variable1Document,
+			String variable2, boolean variable2Document, String qualifier, String normalization, String duplicates,
+			String startDate, String stopDate, String timeWindow, int windowSize, String kernel, boolean indentTime,
+			String[] excludeVariables, String[] excludeValues, String[] excludeAuthors, String[] excludeSources,
+			String[] excludeSections, String[] excludeTypes, boolean invertValues, boolean invertAuthors,
+			boolean invertSources, boolean invertSections, boolean invertTypes, int k, int numParents, int iterations,
 			double elitePercentage, double mutationPercentage, String qualityFunction, long randomSeed) {
 
 		// step 1: preprocess arguments
@@ -704,13 +704,11 @@ public class HeadlessDna implements Logger.LogListener {
 		this.exporter.filterStatements();
 
 		// step 3: compute and normalise networks
-		this.exporter.computeKernelSmoothedTimeSlices(includeIsolates);
-		if (normalizeToOne) {
-			this.exporter.normalizeMatrixResultsToOne();
-		}
+		this.exporter.computeKernelSmoothedTimeSlices(false);
+		this.exporter.normalizeMatrixResultsToOne();
 
 		// step 4: compute polarisation
-		ArrayList<PolarisationResult> polarisationResults = this.exporter.geneticAlgorithm(k, numParents, iterations, elitePercentage, mutationPercentage, qualityFunction, randomSeed);
+		ArrayList<PolarisationResult> polarisationResults = this.exporter.geneticAlgorithm(numParents, k, iterations, elitePercentage, mutationPercentage, qualityFunction, randomSeed);
 		return polarisationResults;
 	}
 

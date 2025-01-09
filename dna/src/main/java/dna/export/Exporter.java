@@ -4425,10 +4425,9 @@ public class Exporter {
 
 				// Perform weighted sampling for the second parent, ensuring it's different from the first
 				int index2;
-				do {
-					double r2 = rng.nextDouble() * qTotal;
-					index2 = selectIndexByRoulette(q, r2);
-				} while (index2 == index1);
+				//  next two lines: perhaps worth trying to ensure that the second parent is different from the first, but there are apparently cases where this is not possible, so we don't do it for now
+				double r2 = rng.nextDouble() * qTotal;
+				index2 = selectIndexByRoulette(q, r2);
 				ClusterSolution parent2 = clusterSolutions.get(index2);
 
 				// Clone and perform crossover
@@ -4639,138 +4638,158 @@ public class Exporter {
 		}
 
 		Random rng = (randomSeed == 0) ? new Random() : new Random(randomSeed); // Initialize random number generator
-		ArrayList<PolarisationResult> polarisationResults = new ArrayList<PolarisationResult>(); // Store results for each time step
 
-		// For each time step, run the genetic algorithm over the cluster solutions
-		// for a certain number of iterations; retain max/mean/SD quality and memberships.
-		double[][] subtract; // The subtract matrix for the current time step
-		double[] qualityScores; // Quality scores for each time step
-		double maxQ = -1;
-		double avgQ, sdQ;
-		int maxIndex = -1;
-		double[] maxQArray;
-		double[] avgQArray;
-		double[] sdQArray;
-		boolean earlyConvergence = false;
-		int lastIndex = -1;
-		for (int t = 0; t < Exporter.this.matrixResults.size(); t++) { // go through all time steps of the time window networks
-			maxQArray = new double[iterations];
-			avgQArray = new double[iterations];
-			sdQArray = new double[iterations];
-			subtract = Exporter.this.matrixResults.get(t).getMatrix(); // get the subtract matrix for the current time step
-
-			if (Exporter.this.matrixResults.get(t).getMatrix().length > 0 && calculateMatrixNorm(subtract) != 0) { // if the network has no nodes or activity, skip this step and return 0 directly
-				// Create initially random cluster solutions; supply the number of nodes and clusters
-				ArrayList<ClusterSolution> cs = new ArrayList<ClusterSolution>();
-				for (int i = 0; i < numClusterSolutions; i++) {
-					cs.add(new ClusterSolution(subtract.length, k, rng));
-				}
-
-				// Run through iterations and do the breeding, then collect results and stats
-				lastIndex = iterations - 1; // choose last possible value here as a default if early convergence does not happen
-				for (int i = 0; i < iterations; i++) {
-					GeneticIteration geneticIteration = new GeneticIteration(
-							cs,
-							subtract,
-							qualityFunction,
-							subtract.length,
-							elitePercentage,
-							mutationPercentage,
-							k,
-							rng);
-					cs = geneticIteration.getChildren();
-
-					// compute summary statistics based on iteration step and retain them
-					qualityScores = geneticIteration.getQ();
-					maxQ = -1.0;
-					avgQ = 0.0;
-					sdQ = 0.0;
-					maxIndex = -1;
-					for (int j = 0; j < cs.size(); j++) {
-						avgQ += qualityScores[j];
-						if (qualityScores[j] > maxQ) {
-							maxQ = qualityScores[j];
-							maxIndex = j;
-						}
-					}
-					avgQ = avgQ / numClusterSolutions;
-					for (int j = 0; j < numClusterSolutions; j++) {
-						sdQ = sdQ + Math.sqrt(((qualityScores[j] - avgQ) * (qualityScores[j] - avgQ)) / numClusterSolutions);
-					}
-					maxQArray[i] = maxQ;
-					avgQArray[i] = avgQ;
-					sdQArray[i] = sdQ;
-
-					// check early convergence
-					earlyConvergence = true;
-					if (i >= 10 && (double) Math.round(sdQ * 100) / 100 == 0.00 && (double) Math.round(maxQ * 100) / 100 == (double) Math.round(avgQ * 100) / 100) {
-						for (int j = i - 10; j < i; j++) {
-							if ((double) Math.round(maxQArray[j] * 100) / 100 != (double) Math.round(maxQ * 100) / 100 ||
-									(double) Math.round(avgQArray[j] * 100) / 100 != (double) Math.round(avgQ * 100) / 100 ||
-									(double) Math.round(sdQArray[j] * 100) / 100 != 0.00) {
-								earlyConvergence = false;
-							}
-						}
-					} else {
-						earlyConvergence = false;
-					}
-					if (earlyConvergence == true) {
-						lastIndex = i;
-						break;
-					}
-				}
-
-				// correct for early convergence in results vectors
-				int finalIndex = lastIndex;
-				for (int i = lastIndex; i >= 0; i--) {
-					if (maxQArray[i] == maxQArray[lastIndex]) {
-						finalIndex = i;
-					} else {
-						break;
-					}
-				}
-				
-				double[] maxQArrayTemp = new double[finalIndex + 1];
-				double[] avgQArrayTemp = new double[finalIndex + 1];
-				double[] sdQArrayTemp = new double[finalIndex + 1];
-				for (int i = 0; i < finalIndex + 1; i++) {
-					maxQArrayTemp[i] = maxQArray[i];
-					avgQArrayTemp[i] = avgQArray[i];
-					sdQArrayTemp[i] = sdQArray[i];
-				}
-				maxQArray = maxQArrayTemp;
-				avgQArray = avgQArrayTemp;
-				sdQArray = sdQArrayTemp;
-
-				// save results in array as a complex object
-				PolarisationResult pr = new PolarisationResult(
-						maxQArray.clone(),
-						avgQArray.clone(),
-						sdQArray.clone(),
-						maxQ,
-						cs.get(maxIndex).getMemberships().clone(),
-						Exporter.this.matrixResults.get(t).getRowNames(),
-						earlyConvergence,
-						Exporter.this.matrixResults.get(t).getStart(),
-						Exporter.this.matrixResults.get(t).getStop(),
-						Exporter.this.matrixResults.get(t).getDateTime());
-				polarisationResults.add(pr);
-			} else { // zero result because network is empty
-				PolarisationResult pr = new PolarisationResult(
-						new double[] { 0 },
-						new double[] { 0 },
-						new double[] { 0 },
-						0.0,
-						new int[0],
-						new String[0],
-						true,
-						Exporter.this.matrixResults.get(t).getStart(),
-						Exporter.this.matrixResults.get(t).getStop(),
-						Exporter.this.matrixResults.get(t).getDateTime());
-				polarisationResults.add(pr);
-			}
-		}
+		ArrayList<PolarisationResult> polarisationResults = ProgressBar.wrap(Exporter.this.matrixResults.stream(), "Genetic algorithm")
+		.map(matrix -> geneticAlgorithmOneNetwork(
+			matrix,
+			iterations,
+			numClusterSolutions,
+			k,
+			elitePercentage,
+			mutationPercentage,
+			qualityFunction,
+			rng)) // Apply the function to each matrix
+			.collect(Collectors.toCollection(ArrayList::new));
 		return polarisationResults;
+	}
+
+	/**
+	 * Executes a genetic algorithm on a single network to find the optimal clustering solution.
+	 *
+	 * @param subtract The subtracted network as a Matrix object.
+	 * @param iterations The number of iterations to run the genetic algorithm.
+	 * @param numClusterSolutions The number of initial cluster solutions to generate.
+	 * @param k The number of clusters.
+	 * @param elitePercentage The percentage of elite solutions to retain in each generation.
+	 * @param mutationPercentage The percentage of solutions to mutate in each generation.
+	 * @param qualityFunction The quality function to evaluate the clustering solutions.
+	 * @param rng The random number generator used for random operations.
+	 * @return A PolarisationResult object containing the results of the genetic algorithm, including
+	 *         the maximum, mean, and standard deviation of quality scores at each iteration and the best cluster solution.
+	 */
+	private PolarisationResult geneticAlgorithmOneNetwork(Matrix subtract, int iterations, int numClusterSolutions, int k, double elitePercentage, double mutationPercentage, String qualityFunction, Random rng) {
+		if (subtract.getMatrix().length > 0 && calculateMatrixNorm(subtract.getMatrix()) != 0) { // if the network has no nodes or activity, skip this step and return 0 directly
+			double[] qualityScores; // Quality scores for each time step
+			double maxQ = -1;
+			double avgQ, sdQ;
+			int maxIndex = -1;
+			boolean earlyConvergence = false;
+			int lastIndex = -1;
+
+			double[] maxQArray = new double[iterations];
+			double[] avgQArray = new double[iterations];
+			double[] sdQArray = new double[iterations];
+
+			// Create initially random cluster solutions; supply the number of nodes and clusters
+			ArrayList<ClusterSolution> cs = new ArrayList<ClusterSolution>();
+			for (int i = 0; i < numClusterSolutions; i++) {
+				cs.add(new ClusterSolution(subtract.getMatrix().length, k, rng));
+			}
+
+			// Run through iterations and do the breeding, then collect results and stats
+			lastIndex = iterations - 1; // choose last possible value here as a default if early convergence does not happen
+			for (int i = 0; i < iterations; i++) {
+				GeneticIteration geneticIteration = new GeneticIteration(
+						cs,
+						subtract.getMatrix(),
+						qualityFunction,
+						subtract.getMatrix().length,
+						elitePercentage,
+						mutationPercentage,
+						k,
+						rng);
+				cs = geneticIteration.getChildren();
+
+				// compute summary statistics based on iteration step and retain them
+				qualityScores = geneticIteration.getQ();
+				maxQ = -1.0;
+				avgQ = 0.0;
+				sdQ = 0.0;
+				maxIndex = -1;
+				for (int j = 0; j < cs.size(); j++) {
+					avgQ += qualityScores[j];
+					if (qualityScores[j] > maxQ) {
+						maxQ = qualityScores[j];
+						maxIndex = j;
+					}
+				}
+				avgQ = avgQ / numClusterSolutions;
+				for (int j = 0; j < numClusterSolutions; j++) {
+					sdQ = sdQ + Math.sqrt(((qualityScores[j] - avgQ) * (qualityScores[j] - avgQ)) / numClusterSolutions);
+				}
+				maxQArray[i] = maxQ;
+				avgQArray[i] = avgQ;
+				sdQArray[i] = sdQ;
+
+				// check early convergence
+				earlyConvergence = true;
+				if (i >= 10 && (double) Math.round(sdQ * 100) / 100 == 0.00 && (double) Math.round(maxQ * 100) / 100 == (double) Math.round(avgQ * 100) / 100) {
+					for (int j = i - 10; j < i; j++) {
+						if ((double) Math.round(maxQArray[j] * 100) / 100 != (double) Math.round(maxQ * 100) / 100 ||
+								(double) Math.round(avgQArray[j] * 100) / 100 != (double) Math.round(avgQ * 100) / 100 ||
+								(double) Math.round(sdQArray[j] * 100) / 100 != 0.00) {
+							earlyConvergence = false;
+						}
+					}
+				} else {
+					earlyConvergence = false;
+				}
+				if (earlyConvergence == true) {
+					lastIndex = i;
+					break;
+				}
+			}
+
+			// correct for early convergence in results vectors
+			int finalIndex = lastIndex;
+			for (int i = lastIndex; i >= 0; i--) {
+				if (maxQArray[i] == maxQArray[lastIndex]) {
+					finalIndex = i;
+				} else {
+					break;
+				}
+			}
+			
+			// System.out.println("Final length: " + finalIndex + 1 + "; values: " + Arrays.toString(maxQArray));
+			double[] maxQArrayTemp = new double[finalIndex + 1];
+			double[] avgQArrayTemp = new double[finalIndex + 1];
+			double[] sdQArrayTemp = new double[finalIndex + 1];
+			for (int i = 0; i < finalIndex + 1; i++) {
+				maxQArrayTemp[i] = maxQArray[i];
+				avgQArrayTemp[i] = avgQArray[i];
+				sdQArrayTemp[i] = sdQArray[i];
+			}
+			maxQArray = maxQArrayTemp;
+			avgQArray = avgQArrayTemp;
+			sdQArray = sdQArrayTemp;
+
+			// save results in array as a complex object
+			PolarisationResult pr = new PolarisationResult(
+					maxQArray.clone(),
+					avgQArray.clone(),
+					sdQArray.clone(),
+					maxQ,
+					cs.get(maxIndex).getMemberships().clone(),
+					subtract.getRowNames(),
+					earlyConvergence,
+					subtract.getStart(),
+					subtract.getStop(),
+					subtract.getDateTime());
+			return pr;
+		} else { // zero result because network is empty
+			PolarisationResult pr = new PolarisationResult(
+					new double[] { 0 },
+					new double[] { 0 },
+					new double[] { 0 },
+					0.0,
+					new int[0],
+					new String[0],
+					true,
+					subtract.getStart(),
+					subtract.getStop(),
+					subtract.getDateTime());
+			return pr;
+		}
 	}
 
 	/** Calculate the entrywise 1-norm (= the sum of absolute values) of a matrix. The
@@ -4874,18 +4893,25 @@ public class Exporter {
 						.toArray(String[]::new);
 			}
 		}
+
+		// create master label hash maps for fast retrieval of indices; do it now for the isolates or Gaussian case and inside create3dArray for the non-isolates/non-Gaussian case
 		HashMap<String, Integer> var1Map = new HashMap<>();
-		for (int i = 0; i < var1Values.length; i++) {
-			var1Map.put(var1Values[i], i);
-		}
 		HashMap<String, Integer> var2Map = new HashMap<>();
-		for (int i = 0; i < var2Values.length; i++) {
-			var2Map.put(var2Values[i], i);
-		}
 		HashMap<String, Integer> qualMap = new HashMap<>();
-		if (Exporter.this.qualifier != null) {
-			for (int i = 0; i < qualValues.length; i++) {
-				qualMap.put(qualValues[i], i);
+		if (isolates || Exporter.this.kernel.equals("gaussian")) {
+			var1Map =  new HashMap<>();
+			for (int i = 0; i < var1Values.length; i++) {
+				var1Map.put(var1Values[i], i);
+			}
+			var2Map =  new HashMap<>();
+			for (int i = 0; i < var2Values.length; i++) {
+				var2Map.put(var2Values[i], i);
+			}
+			qualMap =  new HashMap<>();
+			if (Exporter.this.qualifier != null) {
+				for (int i = 0; i < qualValues.length; i++) {
+					qualMap.put(qualValues[i], i);
+				}
 			}
 		}
 
@@ -5028,9 +5054,24 @@ public class Exporter {
 		ArrayList<Matrix> processedResults = ProgressBar.wrap(
 				Stream.iterate(0, i -> i + 1).limit(Exporter.this.matrixResults.size()).parallel(), "Kernel smoothing")
 				.map(index -> processTimeSlice(Exporter.this.matrixResults.get(index), xArrayList.get(index)))
+				//.map(m -> removeNegativeValuesFromMatrix(m)) // TODO: check if needed
 				.collect(Collectors.toCollection(ArrayList::new));
 		Exporter.this.matrixResults = processedResults;
 	}
+
+	/*
+	 * TODO: remove if not needed
+	private Matrix removeNegativeValuesFromMatrix(Matrix m) {
+		for (int i = 0; i < m.getMatrix().length; i++) {
+			for (int j = 0; j < m.getMatrix()[i].length; j++) {
+				if (m.getMatrix()[i][j] < 0) {
+					m.getMatrix()[i][j] = 0;
+				}
+			}
+		}
+		return m;
+	}
+	*/
 
 	/** Create a 3D array of ExportStatements for the kernel smoothing approach (variable 1 x variable 2 x qualifier).
 	 *
@@ -5044,6 +5085,21 @@ public class Exporter {
 	 * @return A 3D array of array lists of ExportStatements.
 	 */
 	private ArrayList<ExportStatement>[][][] create3dArray(String[] var1Values, String[] var2Values, String[] qualValues, ArrayList<ExportStatement> statements, HashMap<String, Integer> var1Map, HashMap<String, Integer> var2Map, HashMap<String, Integer> qualMap) {
+		final HashMap<String, Integer> v1Map = new HashMap<>();
+		for (int i = 0; i < var1Values.length; i++) {
+			v1Map.put(var1Values[i], i);
+		}
+		final HashMap<String, Integer> v2Map = new HashMap<>();
+		for (int i = 0; i < var2Values.length; i++) {
+			v2Map.put(var2Values[i], i);
+		}
+		final HashMap<String, Integer> qMap = new HashMap<>();
+		if (Exporter.this.qualifier != null) {
+			for (int i = 0; i < qualValues.length; i++) {
+				qMap.put(qualValues[i], i);
+			}
+		}
+		
 		@SuppressWarnings("unchecked")
 		ArrayList<ExportStatement>[][][] X = (ArrayList<ExportStatement>[][][]) new ArrayList<?>[var1Values.length][var2Values.length][qualValues.length];
 		for (int i = 0; i < var1Values.length; i++) {
@@ -5062,61 +5118,61 @@ public class Exporter {
 			int var1Index = -1;
 			if (Exporter.this.variable1Document) {
 				if (Exporter.this.variable1.equals("author")) {
-					var1Index = var1Map.get(s.getAuthor());
+					var1Index = v1Map.get(s.getAuthor());
 				} else if (Exporter.this.variable1.equals("source")) {
-					var1Index = var1Map.get(s.getSource());
+					var1Index = v1Map.get(s.getSource());
 				} else if (Exporter.this.variable1.equals("section")) {
-					var1Index = var1Map.get(s.getSection());
+					var1Index = v1Map.get(s.getSection());
 				} else if (Exporter.this.variable1.equals("type")) {
-					var1Index = var1Map.get(s.getType());
+					var1Index = v1Map.get(s.getType());
 				} else if (Exporter.this.variable1.equals("id")) {
-					var1Index = var1Map.get(s.getDocumentIdAsString());
+					var1Index = v1Map.get(s.getDocumentIdAsString());
 				} else if (Exporter.this.variable1.equals("title")) {
-					var1Index = var1Map.get(s.getTitle());
+					var1Index = v1Map.get(s.getTitle());
 				}
 			} else {
-				var1Index = var1Map.get(((Entity) s.get(Exporter.this.variable1)).getValue());
+				var1Index = v1Map.get(((Entity) s.get(Exporter.this.variable1)).getValue());
 			}
 			int var2Index = -1;
 			if (Exporter.this.variable2Document) {
 				if (Exporter.this.variable2.equals("author")) {
-					var2Index = var2Map.get(s.getAuthor());
+					var2Index = v2Map.get(s.getAuthor());
 				} else if (Exporter.this.variable2.equals("source")) {
-					var2Index = var2Map.get(s.getSource());
+					var2Index = v2Map.get(s.getSource());
 				} else if (Exporter.this.variable2.equals("section")) {
-					var2Index = var2Map.get(s.getSection());
+					var2Index = v2Map.get(s.getSection());
 				} else if (Exporter.this.variable2.equals("type")) {
-					var2Index = var2Map.get(s.getType());
+					var2Index = v2Map.get(s.getType());
 				} else if (Exporter.this.variable2.equals("id")) {
-					var2Index = var2Map.get(s.getDocumentIdAsString());
+					var2Index = v2Map.get(s.getDocumentIdAsString());
 				} else if (Exporter.this.variable2.equals("title")) {
-					var2Index = var2Map.get(s.getTitle());
+					var2Index = v2Map.get(s.getTitle());
 				}
 			} else {
-				var2Index = var2Map.get(((Entity) s.get(Exporter.this.variable2)).getValue());
+				var2Index = v2Map.get(((Entity) s.get(Exporter.this.variable2)).getValue());
 			}
 			int qualIndex = -1;
 			if (Exporter.this.qualifierDocument && Exporter.this.qualifier != null) {
 				if (Exporter.this.qualifier.equals("author")) {
-					qualIndex = qualMap.get(s.getAuthor());
+					qualIndex = qMap.get(s.getAuthor());
 				} else if (Exporter.this.qualifier.equals("source")) {
-					qualIndex = qualMap.get(s.getSource());
+					qualIndex = qMap.get(s.getSource());
 				} else if (Exporter.this.qualifier.equals("section")) {
-					qualIndex = qualMap.get(s.getSection());
+					qualIndex = qMap.get(s.getSection());
 				} else if (Exporter.this.qualifier.equals("type")) {
-					qualIndex = qualMap.get(s.getType());
+					qualIndex = qMap.get(s.getType());
 				} else if (Exporter.this.qualifier.equals("id")) {
-					qualIndex = qualMap.get(s.getDocumentIdAsString());
+					qualIndex = qMap.get(s.getDocumentIdAsString());
 				} else if (Exporter.this.qualifier.equals("title")) {
-					qualIndex = qualMap.get(s.getTitle());
+					qualIndex = qMap.get(s.getTitle());
 				}
 			} else {
 				if (Exporter.this.qualifier == null) {
 					qualIndex = 0;
 				} else if (dataTypes.get(Exporter.this.qualifier).equals("integer") || dataTypes.get(Exporter.this.qualifier).equals("boolean")) {
-					qualIndex = qualMap.get(String.valueOf((int) s.get(Exporter.this.qualifier)));
+					qualIndex = qMap.get(String.valueOf((int) s.get(Exporter.this.qualifier)));
 				} else {
-					qualIndex = qualMap.get(((Entity) s.get(Exporter.this.qualifier)).getValue());
+					qualIndex = qMap.get(((Entity) s.get(Exporter.this.qualifier)).getValue());
 				}
 			}
 			X[var1Index][var2Index][qualIndex].add(s);
@@ -5124,6 +5180,4 @@ public class Exporter {
 
 		return X;
 	}
-
-	// TODO: function that creates subtract networks, initialises the polarisation algorithm, and returns an array list with results
 }
