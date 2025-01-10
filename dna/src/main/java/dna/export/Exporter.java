@@ -2111,8 +2111,7 @@ public class Exporter {
 	}
 
 	/**
-	 * Normalize all values in each results matrix to make them sum to 1.0. Useful for phase transition methods. Called
-	 * directly from R.
+	 * Normalize all values in each results matrix to make them sum to 1.0. Useful for phase transition methods.
 	 */
 	public void normalizeMatrixResultsToOne() {
 		try (ProgressBar pb = new ProgressBar("Matrix normalization", Exporter.this.matrixResults.size())) {
@@ -2134,6 +2133,35 @@ public class Exporter {
 				pb.step();
 			}
 		}
+	}
+
+	/**
+	 * Normalises the matrices in the matrixResults list.
+	 * This method uses a parallel stream to process each matrix concurrently.
+	 * A progress bar is displayed to indicate the progress of the matrix normalisation.
+	 */
+	public void normaliseMatrices() {
+		ProgressBar.wrap(Exporter.this.matrixResults.stream().parallel(), "Matrix normalisation").forEach(m -> m.setMatrix(normaliseMatrix(m.getMatrix())));
+	}
+
+	/**
+	 * Normalises the given matrix by dividing each element by the matrix norm.
+	 * The matrix norm is calculated using the calculateMatrixNorm method.
+	 * If the norm is zero, the matrix remains unchanged.
+	 *
+	 * @param matrix the matrix to be normalised
+	 * @return the normalised matrix
+	 */
+	private double[][] normaliseMatrix(double[][] matrix) {
+		double norm = calculateMatrixNorm(matrix);
+		if (norm != 0.0) {
+			for (int i = 0; i < matrix.length; i++) {
+				for (int j = 0; j < matrix[0].length; j++) {
+					matrix[i][j] = matrix[i][j] / norm;
+				}
+			}
+		}
+		return matrix;
 	}
 
 	/**
@@ -3809,12 +3837,11 @@ public class Exporter {
 		double m = 0.0; // Total weight of all edges
 
 		// Precompute degrees (k_i) and total edge weight (m)
-		// This corresponds to the summation \sum_j A_{ij} for k_i in the modularity
-		// formula
+		// This corresponds to the summation \sum_j A_{ij} for k_i in the modularity formula
 		for (int i = 0; i < n; i++) {
 			for (int j = 0; j < n; j++) {
 				degrees[i] += mat[i][j];
-				m += mat[i][j];
+				m += Math.abs(mat[i][j]); // absolute value to account for negative weights
 			}
 		}
 		m /= 2.0; // Divide total edge weight by 2 to account for double-counting i-j and j-i
@@ -3825,8 +3852,7 @@ public class Exporter {
 			for (int j = 0; j < n; j++) {
 				if (mem[i] == mem[j]) { // Check if nodes i and j are in the same community (\delta(c_i, c_j))
 					// Add the contribution of this pair to modularity
-					// The first term (A_{ij}) and the second term (-k_i*k_j/2m) of Equation 6 are
-					// combined here
+					// The first term (A_{ij}) and the second term (-k_i*k_j/2m) of Equation 6 are combined here
 					Q += mat[i][j] - (degrees[i] * degrees[j]) / (2.0 * m);
 				}
 			}
@@ -4575,9 +4601,9 @@ public class Exporter {
 	 * @param qualityFunction      The quality function to evaluate cluster solutions. Supported values are "modularity" and "eiIndex".
 	 * @param subtractList         Array list of signed network matrices, for example normalised actor networks with "subtract" qualifier aggregation.
 	 * @param randomSeed           The random seed to use for the random number generator. Pass 0 for random behaviour.
-	 * @return An array list of PolarisationResult objects, one for each time step.
+	 * @return A PolarisationResultTimeSeries object containing the results of the genetic algorithm for each time step and iteration.
 	 */
-	public ArrayList<PolarisationResult> geneticAlgorithm (
+	public PolarisationResultTimeSeries geneticAlgorithm (
 			int numClusterSolutions,
 			int k,
 			int iterations,
@@ -4640,6 +4666,7 @@ public class Exporter {
 		Random rng = (randomSeed == 0) ? new Random() : new Random(randomSeed); // Initialize random number generator
 
 		ArrayList<PolarisationResult> polarisationResults = ProgressBar.wrap(Exporter.this.matrixResults.stream(), "Genetic algorithm")
+		//.peek(m -> System.out.println("Matrix result number: " + Exporter.this.matrixResults.indexOf(m)))
 		.map(matrix -> geneticAlgorithmOneNetwork(
 			matrix,
 			iterations,
@@ -4650,7 +4677,8 @@ public class Exporter {
 			qualityFunction,
 			rng)) // Apply the function to each matrix
 			.collect(Collectors.toCollection(ArrayList::new));
-		return polarisationResults;
+		PolarisationResultTimeSeries polarisationResultTimeSeries = new PolarisationResultTimeSeries(polarisationResults);
+		return polarisationResultTimeSeries;
 	}
 
 	/**
@@ -4702,6 +4730,7 @@ public class Exporter {
 
 				// compute summary statistics based on iteration step and retain them
 				qualityScores = geneticIteration.getQ();
+				//System.out.println("Iteration " + i + ": " + Arrays.toString(qualityScores) + "\n");
 				maxQ = -1.0;
 				avgQ = 0.0;
 				sdQ = 0.0;
@@ -4742,6 +4771,7 @@ public class Exporter {
 
 			// correct for early convergence in results vectors
 			int finalIndex = lastIndex;
+			/*
 			for (int i = lastIndex; i >= 0; i--) {
 				if (maxQArray[i] == maxQArray[lastIndex]) {
 					finalIndex = i;
@@ -4749,8 +4779,8 @@ public class Exporter {
 					break;
 				}
 			}
+			*/
 			
-			// System.out.println("Final length: " + finalIndex + 1 + "; values: " + Arrays.toString(maxQArray));
 			double[] maxQArrayTemp = new double[finalIndex + 1];
 			double[] avgQArrayTemp = new double[finalIndex + 1];
 			double[] sdQArrayTemp = new double[finalIndex + 1];
@@ -5054,13 +5084,18 @@ public class Exporter {
 		ArrayList<Matrix> processedResults = ProgressBar.wrap(
 				Stream.iterate(0, i -> i + 1).limit(Exporter.this.matrixResults.size()).parallel(), "Kernel smoothing")
 				.map(index -> processTimeSlice(Exporter.this.matrixResults.get(index), xArrayList.get(index)))
-				//.map(m -> removeNegativeValuesFromMatrix(m)) // TODO: check if needed
+				.map(m -> {
+					for (int i = 0; i < m.getMatrix().length; i++) {
+						m.getMatrix()[i][i] = 0.0; // set diagonal to zero
+					}
+					return m;
+				})
+				.map(m -> removeNegativeValuesFromMatrix(m)) // TODO: check if needed
 				.collect(Collectors.toCollection(ArrayList::new));
 		Exporter.this.matrixResults = processedResults;
 	}
 
-	/*
-	 * TODO: remove if not needed
+	// TODO: remove if not needed
 	private Matrix removeNegativeValuesFromMatrix(Matrix m) {
 		for (int i = 0; i < m.getMatrix().length; i++) {
 			for (int j = 0; j < m.getMatrix()[i].length; j++) {
@@ -5071,7 +5106,6 @@ public class Exporter {
 		}
 		return m;
 	}
-	*/
 
 	/** Create a 3D array of ExportStatements for the kernel smoothing approach (variable 1 x variable 2 x qualifier).
 	 *

@@ -631,9 +631,9 @@ public class HeadlessDna implements Logger.LogListener {
 	 * @param mutationPercentage The probability with which each bit in any cluster solution is selected for mutation after the cross-over step. For example 0.1 to select 10% of the nodes to swap their memberships.
 	 * @param qualityFunction    The quality function to evaluate cluster solutions. Supported values are "modularity" and "eiIndex".
 	 * @param randomSeed         The random seed to use for the random number generator. Pass 0 for random behaviour.
-	 * @return                   An array list of {@link PolarisationResult} objects.
+	 * @return                   A PolarisationResultTimeSeries object containing the results of the genetic algorithm for each time step and iteration.
 	 */
-	public ArrayList<PolarisationResult> rPolarisation(String statementType, String variable1, boolean variable1Document,
+	public PolarisationResultTimeSeries rPolarisation(String statementType, String variable1, boolean variable1Document,
 			String variable2, boolean variable2Document, String qualifier, String normalization, String duplicates,
 			String startDate, String stopDate, String timeWindow, int windowSize, String kernel, boolean indentTime,
 			String[] excludeVariables, String[] excludeValues, String[] excludeAuthors, String[] excludeSources,
@@ -705,10 +705,10 @@ public class HeadlessDna implements Logger.LogListener {
 
 		// step 3: compute and normalise networks
 		this.exporter.computeKernelSmoothedTimeSlices(false);
-		this.exporter.normalizeMatrixResultsToOne();
+		this.exporter.normaliseMatrices();
 
 		// step 4: compute polarisation
-		ArrayList<PolarisationResult> polarisationResults = this.exporter.geneticAlgorithm(numParents, k, iterations, elitePercentage, mutationPercentage, qualityFunction, randomSeed);
+		PolarisationResultTimeSeries polarisationResults = this.exporter.geneticAlgorithm(numParents, k, iterations, elitePercentage, mutationPercentage, qualityFunction, randomSeed);
 		return polarisationResults;
 	}
 
