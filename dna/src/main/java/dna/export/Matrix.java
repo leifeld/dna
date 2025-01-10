@@ -58,8 +58,8 @@ public class Matrix implements Cloneable {
 	}
 
 	protected Object clone() throws CloneNotSupportedException {
-        return super.clone();
-    }
+		return super.clone();
+	}
 	
 	/**
 	 * @return the numStatements
@@ -192,5 +192,17 @@ public class Matrix implements Cloneable {
 	 */
 	public void setStop(LocalDateTime stop) {
 		this.stop = stop;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < matrix.length; i++) {
+			for (int j = 0; j < matrix[i].length; j++) {
+				sb.append(String.format("%.2f", matrix[i][j])).append("\t");
+			}
+			sb.append("\n");
+		}
+		return sb.toString();
 	}
 }

@@ -605,7 +605,6 @@ public class HeadlessDna implements Logger.LogListener {
 	 * @param variable2          Second variable for export, provided as a {@link String}.
 	 * @param variable2Document  boolean indicating if the second variable is at the document level.
 	 * @param qualifier          Qualifier variable as a {@link String}.
-	 * @param normalization      Normalization setting as a {@link String}, as provided by rDNA (can be {@code "no"}, {@code "activity"}, {@code "prominence"}, {@code "average"}, {@code "jaccard"}, or {@code "cosine"}).
 	 * @param duplicates         An input {@link String} from rDNA that can be {@code "include"}, {@code "document"}, {@code "week"}, {@code "month"}, {@code "year"}, or {@code "acrossrange"}.
 	 * @param startDate          Start date for the export, provided as a {@link String} with format {@code "dd.MM.yyyy"}.
 	 * @param stopDate           Stop date for the export, provided as a {@link String} with format {@code "dd.MM.yyyy"}.
@@ -629,17 +628,19 @@ public class HeadlessDna implements Logger.LogListener {
 	 * @param iterations         For how many generations should the genetic algorithm run at most? This is the maximal number of generations through which optimisation should be attempted. Will be lower if early convergence is detected. A suggested starting value is 1000.
 	 * @param elitePercentage    The share of cluster solutions in each parent generation that is copied into the children generation without changes, between 0.0 and 1.0, usually around 0.1.
 	 * @param mutationPercentage The probability with which each bit in any cluster solution is selected for mutation after the cross-over step. For example 0.1 to select 10% of the nodes to swap their memberships.
-	 * @param qualityFunction    The quality function to evaluate cluster solutions. Supported values are "modularity" and "eiIndex".
+	 * @param qualityFunction    The quality function to evaluate cluster solutions. Supported values are "modularity", "eiIndex", and "absdiff".
+	 * @param normaliseMatrices  boolean indicating whether the network matrices should be normalised before computing the polarisation score.
 	 * @param randomSeed         The random seed to use for the random number generator. Pass 0 for random behaviour.
 	 * @return                   A PolarisationResultTimeSeries object containing the results of the genetic algorithm for each time step and iteration.
 	 */
 	public PolarisationResultTimeSeries rPolarisation(String statementType, String variable1, boolean variable1Document,
-			String variable2, boolean variable2Document, String qualifier, String normalization, String duplicates,
-			String startDate, String stopDate, String timeWindow, int windowSize, String kernel, boolean indentTime,
+			String variable2, boolean variable2Document, String qualifier, String duplicates, String startDate,
+			String stopDate, String timeWindow, int windowSize, String kernel, boolean indentTime,
 			String[] excludeVariables, String[] excludeValues, String[] excludeAuthors, String[] excludeSources,
 			String[] excludeSections, String[] excludeTypes, boolean invertValues, boolean invertAuthors,
 			boolean invertSources, boolean invertSections, boolean invertTypes, int k, int numParents, int iterations,
-			double elitePercentage, double mutationPercentage, String qualityFunction, long randomSeed) {
+			double elitePercentage, double mutationPercentage, String qualityFunction, boolean normaliseMatrices,
+			long randomSeed) {
 
 		// step 1: preprocess arguments
 		StatementType st = Dna.sql.getStatementType(statementType); // format statement type
@@ -666,50 +667,15 @@ public class HeadlessDna implements Logger.LogListener {
 			}
 		}
 
-		// initialize Exporter class
-		this.exporter = new Exporter(
-				"onemode",
-				st,
-				variable1,
-				variable1Document,
-				variable2,
-				variable2Document,
-				qualifier,
-				false,
-				"subtract",
-				normalization,
-				false,
-				duplicates,
-				ldtStart,
-				ldtStop,
-				timeWindow,
-				windowSize,
-				map,
-				Stream.of(excludeAuthors).collect(Collectors.toCollection(ArrayList::new)),
-				Stream.of(excludeSources).collect(Collectors.toCollection(ArrayList::new)),
-				Stream.of(excludeSections).collect(Collectors.toCollection(ArrayList::new)),
-				Stream.of(excludeTypes).collect(Collectors.toCollection(ArrayList::new)),
-				invertValues,
-				invertAuthors,
-				invertSources,
-				invertSections,
-				invertTypes,
-				null,
-				null);
-		this.exporter.setKernelFunction(kernel);
-		this.exporter.setIndentTime(indentTime);
+		Polarisation polarisation = new Polarisation(st, variable1, variable1Document, variable2,
+				variable2Document, qualifier, false, duplicates,
+				ldtStart, ldtStop, timeWindow, windowSize, map, excludeAuthors, excludeSources,
+				excludeSections, excludeTypes, invertValues, invertAuthors, invertSources,
+				invertSections, invertTypes, kernel, indentTime, k, numParents,
+				iterations, elitePercentage, mutationPercentage, qualityFunction, normaliseMatrices,
+				randomSeed);
 
-		// step 2: filter
-		this.exporter.loadData();
-		this.exporter.filterStatements();
-
-		// step 3: compute and normalise networks
-		this.exporter.computeKernelSmoothedTimeSlices(false);
-		this.exporter.normaliseMatrices();
-
-		// step 4: compute polarisation
-		PolarisationResultTimeSeries polarisationResults = this.exporter.geneticAlgorithm(numParents, k, iterations, elitePercentage, mutationPercentage, qualityFunction, randomSeed);
-		return polarisationResults;
+		return polarisation.getResults();
 	}
 
 	/**

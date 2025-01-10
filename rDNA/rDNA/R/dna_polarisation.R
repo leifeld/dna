@@ -9,7 +9,8 @@
 #' @param iterations Number of iterations of the genetic algorithm. Often, 50 or 100 is enough, but since there is a built-in convergence check, it is recommended to keep this number large. Default is 1000.
 #' @param elitePercentage A double specifying the percentage of the best solutions that are kept for the next generation. Useful values range between 0.05 and 0.2. Default is 0.1.
 #' @param mutationPercentage A double specifying the percentage of the solutions that are mutated. Useful values range between 0.05 and 0.2. Default is 0.1.
-#' @param qualityFunction A character string specifying the quality function to be used. Can be "modularity" or "eiIndex". Default is "modularity".
+#' @param qualityFunction A character string specifying the quality function to be used. Can be "modularity", "eiIndex", or "absdiff". Default is "absdiff".
+#' @param normaliseMatrices A logical specifying whether the matrices should be normalised. Default is FALSE.
 #' @param randomSeed An integer specifying the random seed for reproducibility of exact findings. Default is 0, which means the algorithm generates the random seed (= no reproducibility).
 #'
 #' @return An object representing the polarisation of actors and the results of the genetic algorithm for all time steps and iterations.
@@ -36,7 +37,6 @@ dna_polarisation <- function(statementType = "DNA Statement",
                              variable2 = "concept",
                              variable2Document = FALSE,
                              qualifier = "agreement",
-                             normalization = "average",
                              duplicates = "include",
                              start.date = "01.01.1900",
                              stop.date = "31.12.2099",
@@ -59,7 +59,8 @@ dna_polarisation <- function(statementType = "DNA Statement",
                              iterations = 1000,
                              elitePercentage = 0.1,
                              mutationPercentage = 0.1,
-                             qualityFunction = "modularity",
+                             qualityFunction = "absdiff",
+                             normaliseMatrices = FALSE,
                              randomSeed = 0) {
   
   # wrap the vectors of exclude values for document variables into Java arrays
@@ -105,7 +106,6 @@ dna_polarisation <- function(statementType = "DNA Statement",
                                variable2,
                                variable2Document,
                                qualifier,
-                               normalization,
                                duplicates,
                                start.date,
                                stop.date,
@@ -130,6 +130,7 @@ dna_polarisation <- function(statementType = "DNA Statement",
                                as.double(elitePercentage),
                                as.double(mutationPercentage),
                                qualityFunction,
+                                normaliseMatrices,
                                .jlong(randomSeed)
   )
   
