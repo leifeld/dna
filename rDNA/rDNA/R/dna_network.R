@@ -332,7 +332,7 @@ dna_network <- function(networkType = "twomode",
          fileFormat
   )
 
-  exporter <- .jcall(dna_getHeadlessDna(), "Lexport/Exporter;", "getExporter") # get a reference to the Exporter object, in which results are stored
+  exporter <- .jcall(dna_getHeadlessDna(), "Ldna/export/Exporter;", "getExporter") # get a reference to the Exporter object, in which results are stored
 
   if (networkType == "eventlist") { # assemble an event list in the form of a data frame of filtered statements
     f <- J(exporter, "getFilteredStatements", simplify = TRUE) # array list of filtered export statements; use J because array list return type not recognized using .jcall
@@ -370,7 +370,7 @@ dna_network <- function(networkType = "twomode",
     d$time <- as.POSIXct(d$time, origin = "1970-01-01 00:00:00") # convert long date/time to POSIXct
     return(d)
   } else { # assemble a one-mode or two-mode matrix with attributes or a list of matrices (if time window)
-    m <- .jcall(exporter, "[Lexport/Matrix;", "getMatrixResultsArray") # get list of Matrix objects from Exporter object
+    m <- .jcall(exporter, "[Ldna/export/Matrix;", "getMatrixResultsArray") # get list of Matrix objects from Exporter object
     l <- list() # create a list in which each result is stored; can be of length 1 if no time window is used
     for (t in 1:length(m)) { # loop through the matrices
       mat <- .jcall(m[[t]], "[[D", "getMatrix", simplify = TRUE) # get the resulting matrix at step t as a double[][] object and save as matrix

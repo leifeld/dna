@@ -52,13 +52,13 @@ dna_barplot <- function(statementType = "DNA Statement",
                         invertSources = FALSE,
                         invertSections = FALSE,
                         invertTypes = FALSE) {
-  
+
   # wrap the vectors of exclude values for document variables into Java arrays
   excludeAuthors <- .jarray(excludeAuthors)
   excludeSources <- .jarray(excludeSources)
   excludeSections <- .jarray(excludeSections)
   excludeTypes <- .jarray(excludeTypes)
-  
+
   # compile exclude variables and values vectors
   dat <- matrix("", nrow = length(unlist(excludeValues)), ncol = 2)
   count <- 0
@@ -80,15 +80,15 @@ dna_barplot <- function(statementType = "DNA Statement",
   }
   var <- .jarray(var) # array of variable names of each excluded value
   val <- .jarray(val) # array of values to be excluded
-  
+
   # encode R NULL as Java null value if necessary
   if (is.null(qualifier) || is.na(qualifier)) {
     qualifier <- .jnull(class = "java/lang/String")
   }
-  
+
   # call rBarplotData function to compute results
   b <- .jcall(dnaEnvironment[["dna"]]$headlessDna,
-              "Lexport/BarplotResult;",
+              "Ldna/export/BarplotResult;",
               "rBarplotData",
               statementType,
               variable,
@@ -110,37 +110,37 @@ dna_barplot <- function(statementType = "DNA Statement",
               invertSections,
               invertTypes,
               simplify = TRUE)
-  
+
   at <- .jcall(b, "[[Ljava/lang/String;", "getAttributes")
   at <- t(sapply(at, FUN = .jevalArray))
-  
+
   counts <- .jcall(b, "[[I", "getCounts")
   counts <- t(sapply(counts, FUN = .jevalArray))
   if (nrow(counts) < nrow(at)) {
     counts <- t(counts)
   }
-  
+
   results <- data.frame(.jcall(b, "[S", "getValues"),
                         counts,
                         at)
-  
+
   intValues <- .jcall(b, "[I", "getIntValues")
   intColNames <- intValues
   if (is.jnull(qualifier)) {
     intValues <- integer(0)
     intColNames <- "Frequency"
   }
-  
+
   atVar <- .jcall(b, "[S", "getAttributeVariables")
-  
+
   colnames(results) <- c("Entity", intColNames, atVar)
-  
+
   attributes(results)$variable <- .jcall(b, "S", "getVariable")
   attributes(results)$intValues <- intValues
   attributes(results)$attributeVariables <- atVar
-  
+
   class(results) <- c("dna_barplot", class(results))
-  
+
   return(results)
 }
 
@@ -281,47 +281,47 @@ autoplot.dna_barplot <- function(object,
                                  axisWidth = 1.5,
                                  truncate = 40,
                                  exclude.min = NULL) {
-  
-  
+
+
   if (!("dna_barplot" %in% class(object))) {
     stop("Invalid data object. Please compute a dna_barplot object via the ",
          "dna_barplot function before plotting.")
   }
-  
+
   if (!("Entity" %in% colnames(object))) {
     stop("dna_barplot object does not have a \'Entity\' variable. Please ",
          "compute a new dna_barplot object via the dna_barplot function before",
          " plotting.")
   }
-  
+
   if (isTRUE(colors) & !("Color" %in% colnames(object)) |
       is.character(colors) & !(colors %in% colnames(object))) {
     colors <- FALSE
     warning("No color variable found in dna_barplot object. Colors will be",
             " ignored.")
   }
-  
+
   if (!is.numeric(truncate)) {
     truncate <- Inf
     warning("No numeric value provided for trimming of entities. Truncation ",
             "will be ignored.")
   }
-  
+
   # Get qualifier values
   w <- attr(object, "intValues")
-  
+
   if (!all(w %in% colnames(object))) {
     stop("dna_barplot object does not include all qualifier values of the ",
          "statement type. Please compute a new dna_barplot object via the ",
          "dna_barplot function.")
   }
-  
+
   # Check if qualifier is binary
   binary <- all(w %in% c(0, 1))
-  
+
   # Compute total values per entity
   object$sum <- rowSums(object[, colnames(object) %in% w])
-  
+
   # Exclude minimum number of statements per entity
   if (is.numeric(exclude.min)) {
     if (exclude.min > max(object$sum)) {
@@ -332,15 +332,15 @@ autoplot.dna_barplot <- function(object,
       object <- object[object$sum >= exclude.min, ]
     }
   }
-  
+
   # Stack agreement and disagreement
   object2 <- cbind(object$Entity, utils::stack(object, select = colnames(object) %in% w))
   colnames(object2) <- c("entity", "frequency", "agreement")
-  
+
   object <- object[order(object$sum, decreasing = TRUE), ]
-  
+
   object2$entity <- factor(object2$entity, levels = rev(object$Entity))
-  
+
   # Get colors
   if (isTRUE(colors)) {
     object2$color <- object$Color[match(object2$entity, object$Entity)]
@@ -354,14 +354,14 @@ autoplot.dna_barplot <- function(object,
     object2$color <- "white"
     object2$text_color <- "black"
   }
-  
-  
+
+
   if (binary) {
     # setting disagreement as -1 instead 0
     object2$agreement <- ifelse(object2$agreement == 0, -1, 1)
     # recode frequency in positive and negative
     object2$frequency <- object2$frequency * as.integer(object2$agreement)
-    
+
     # generate position of bar labels
     offset <- (max(object2$frequency) + abs(min(object2$frequency))) * 0.05
     offset <- ifelse(offset < 0.5, 0.5, offset) # offset should be at least 0.5
@@ -374,7 +374,7 @@ autoplot.dna_barplot <- function(object,
     object2$pos <- ifelse(object2$frequency > 0,
                           object2$frequency + offset,
                           object2$frequency - offset)
-    
+
     # move 0 labels where necessary
     object2$pos[object2$frequency == 0] <- ifelse(object2$agreement[object2$frequency == 0] == 1,
                                                   object2$pos[object2$frequency == 0] * -1,
@@ -394,17 +394,17 @@ autoplot.dna_barplot <- function(object,
     # Add labels
     object2$label <- paste(object2$count, object2$agreement, sep = " x ")
   }
-  
+
   offset <- (max(object2$frequency) + abs(min(object2$frequency))) * 0.05
   offset <- ifelse(offset < 0.5, 0.5, offset)
   yintercepts <- data.frame(x = c(0.5, length(unique(object2$entity)) + 0.5),
                             y = c(0, 0))
   high <- yintercepts$x[2] + 0.25
-  
+
   object2 <- object2[order(as.numeric(as.character(object2$agreement)),
                            decreasing = FALSE), ]
   object2$agreement <- factor(object2$agreement, levels = w)
-  
+
   # Plot
   g <- ggplot2::ggplot(object2,
                        ggplot2::aes(x = .data[["entity"]],

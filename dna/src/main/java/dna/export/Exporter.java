@@ -12,7 +12,6 @@ import me.tongfei.progressbar.ProgressBar;
 import model.*;
 import org.apache.commons.math3.linear.EigenDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.analysis.function.Log;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.jdom.Attribute;
 import org.jdom.Comment;
@@ -27,7 +26,6 @@ import org.ojalgo.matrix.Primitive64Matrix;
 import org.ojalgo.matrix.decomposition.Eigenvalue;
 
 import java.io.*;
-import java.lang.reflect.Array;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.Period;

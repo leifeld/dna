@@ -3,21 +3,55 @@
 #' This function calculates the polarisation scores for a series of time windows.
 #'
 #' @inheritParams dna_network
-#' @param statementType A character string specifying the type of DNA statement. Default is "DNA Statement".
-#' @param k An integer specifying the number of clusters. Default is 2.
-#' @param numParents An integer specifying the number of cluster solutions ("parents"). For example, 30 or 50. Default is 50.
-#' @param iterations Number of iterations of the genetic algorithm. Often, 50 or 100 is enough, but since there is a built-in convergence check, it is recommended to keep this number large. Default is 1000.
-#' @param elitePercentage A double specifying the percentage of the best solutions that are kept for the next generation. Useful values range between 0.05 and 0.2. Default is 0.1.
-#' @param mutationPercentage A double specifying the percentage of the solutions that are mutated. Useful values range between 0.05 and 0.2. Default is 0.1.
-#' @param qualityFunction A character string specifying the quality function to be used. Can be "modularity", "eiIndex", or "absdiff". Default is "absdiff".
-#' @param normaliseMatrices A logical specifying whether the matrices should be normalised. Default is FALSE.
-#' @param randomSeed An integer specifying the random seed for reproducibility of exact findings. Default is 0, which means the algorithm generates the random seed (= no reproducibility).
+#' @param indentTime If \code{TRUE}, the sequence of time slices under the time
+#'   window algorithm starts with the first network and ends with the last
+#'   network that are entirely covered within the timeline defined by the start
+#'   and stop dates and times. For example, if the start date is 1 February, the
+#'   stop date is 31 December, and the time window duration is 21 days, the
+#'   mid-point of the first time window will be 11 February (to ensure the first
+#'   network entirely fits into the timeline), and the last network will be
+#'   centered around 20 December (to ensure the last network entirely fits into
+#'   the timeline). If \code{FALSE}, the start and stop dates and times are used
+#'   as the first and last mid-points. In that case, the first and last few
+#'   networks may contain fewer statements than other time slices and may,
+#'   therefore, be more similar to each other.
+#' @param algorithm The algorithm to compute polarisation. Can be "greedy" (for
+#'   a greedy algorithm) or "genetic" (for a genetic algorithm).
+#' @param normaliseScores A logical specifying whether the polarisation scores
+#'   should be normalised by edge mass per network to take away the effect of
+#'   networks over time having different activity levels.
+#' @param numClusters An integer specifying the number of clusters k. Default is
+#'   \code{2}.
+#' @param numParents Only for the genetic algorithm: An integer specifying the
+#'   number of cluster solutions ("parents"). For example, \code{30} or
+#'   \code{50}.
+#' @param numIterations Only for the genetic algorithm: Number of iterations of
+#'   the genetic algorithm. Often, \code{50} or \code{100} is enough, but since
+#'   there is a built-in convergence check, it is recommended to keep this
+#'   number large. The default is \code{1000}.
+#' @param elitePercentage Only for the genetic algorithm: A double specifying
+#'   the percentage of the best solutions that are kept for the next generation.
+#'   Useful values range between 0.05 and 0.2.
+#' @param mutationPercentage Only for the genetic algorithm: A double specifying
+#'   the percentage of the solutions that are mutated. Useful values range
+#'   between 0.05 and 0.2.
+#' @param randomSeed Only for the genetic algorithm: An integer specifying the
+#'   random seed for reproducibility of exact findings. The default is \code{0},
+#'   which means the algorithm generates the random seed (= no reproducibility).
 #'
-#' @return An object representing the polarisation of actors and the results of the genetic algorithm for all time steps and iterations.
+#' @return An object representing the polarisation of actors and the results of
+#'   the algorithm for all time steps and iterations.
 #'
 #' @examples
 #' \dontrun{
-#' p <- dna_polarisation()
+#' dna_init()
+#' dna_sample()
+#' dna_openDatabase("sample.dna", coderId = 1, coderPassword = "sample")
+#'
+#' p <- dna_polarisation(timeWindow = "days", windowSize = 40, normaliseScores = TRUE)
+#' str(p)
+#'
+#' library("ggplot2")
 #' autoplot(p)
 #' }
 #'
@@ -49,26 +83,21 @@ dna_polarisation <- function(statementType = "DNA Statement",
                              excludeSources = character(),
                              excludeSections = character(),
                              excludeTypes = character(),
-                             invertValues = FALSE,
-                             invertAuthors = FALSE,
-                             invertSources = FALSE,
-                             invertSections = FALSE,
-                             invertTypes = FALSE,
-                             k = 2,
+                             algorithm = "greedy",
+                             normaliseScores = FALSE,
+                             numClusters = 2,
                              numParents = 50,
-                             iterations = 1000,
+                             numIterations = 1000,
                              elitePercentage = 0.1,
                              mutationPercentage = 0.1,
-                             qualityFunction = "absdiff",
-                             normaliseMatrices = FALSE,
                              randomSeed = 0) {
-  
+
   # wrap the vectors of exclude values for document variables into Java arrays
   excludeAuthors <- .jarray(excludeAuthors)
   excludeSources <- .jarray(excludeSources)
   excludeSections <- .jarray(excludeSections)
   excludeTypes <- .jarray(excludeTypes)
-  
+
   # compile exclude variables and values vectors
   dat <- matrix("", nrow = length(unlist(excludeValues)), ncol = 2)
   count <- 0
@@ -90,12 +119,12 @@ dna_polarisation <- function(statementType = "DNA Statement",
   }
   var <- .jarray(var) # array of variable names of each excluded value
   val <- .jarray(val) # array of values to be excluded
-  
+
   # encode R NULL as Java null value if necessary
   if (is.null(qualifier) || is.na(qualifier)) {
-    qualifier <- .jnull(class = "java/lang/String;")
+    qualifier <- .jnull(class = "Ljava/lang/String;")
   }
-  
+
   # call rNetwork function to compute results
   polarisationObject <- .jcall(dna_getHeadlessDna(),
                                "Ldna/export/PolarisationResultTimeSeries;",
@@ -119,21 +148,21 @@ dna_polarisation <- function(statementType = "DNA Statement",
                                excludeSources,
                                excludeSections,
                                excludeTypes,
-                               invertValues,
-                               invertAuthors,
-                               invertSources,
-                               invertSections,
-                               invertTypes,
-                               as.integer(k),
+                               FALSE,
+                               FALSE,
+                               FALSE,
+                               FALSE,
+                               FALSE,
+                               algorithm,
+                               normaliseScores,
+                               as.integer(numClusters),
                                as.integer(numParents),
-                               as.integer(iterations),
+                               as.integer(numIterations),
                                as.double(elitePercentage),
                                as.double(mutationPercentage),
-                               qualityFunction,
-                                normaliseMatrices,
                                .jlong(randomSeed)
   )
-  
+
   l <- list()
   l$finalMaxQs <- .jcall(polarisationObject, "[D", "getFinalMaxQs")
   l$earlyConvergence <- .jcall(polarisationObject, "[Z", "getEarlyConvergence")
@@ -171,13 +200,6 @@ dna_polarisation <- function(statementType = "DNA Statement",
 #'   polarization over time.
 #'
 #' @return A list of ggplot objects corresponding to the specified plots.
-#' @export
-#'
-#' @examples
-#' \dontrun{
-#' p <- dna_polarisation()
-#' autoplot(p)
-#' }
 #'
 #' @author Philip Leifeld
 #'
@@ -191,22 +213,21 @@ dna_polarisation <- function(statementType = "DNA Statement",
 #' @importFrom ggplot2 scale_x_datetime
 #' @importFrom ggplot2 theme
 #' @importFrom ggplot2 element_text
-#' 
 #'
 #' @export
 autoplot.dna_polarisation <- function(object, ..., plots = c("hair", "hist", "time_series")) {
   l <- list()
-  
+
   # hair diagnostic convergence plot
   hairData <- data.frame("Polarization" = do.call("c", object$maxQs),
-                         "Iteration" = do.call("c", sapply(object$maxQs, function(x) 1:length(x))),
+                         "Iteration" = do.call("c", lapply(object$maxQs, function(x) 1:length(x))),
                          "Time" = rep(object$middleDates, times = sapply(object$maxQs, length)))
   gg_ha <- ggplot2::ggplot(hairData, ggplot2::aes(x = .data[["Iteration"]], y = .data[["Polarization"]], group = .data[["Time"]])) +
     ggplot2::geom_line(alpha = 0.3) +
     ggplot2::ylab("Maximal polarization") +
     ggplot2::theme_minimal()
   l$hair <- gg_ha
-  
+
   # histogram diagnostic convergence plot
   histData <- data.frame("Iterations" = sapply(object$maxQs, length),
                          "Time" = object$middleDates)
@@ -215,7 +236,7 @@ autoplot.dna_polarisation <- function(object, ..., plots = c("hair", "hist", "ti
     ggplot2::labs(y = "Number of time windows", x = "Iterations until convergence") +
     ggplot2::theme_minimal()
   l$histogram <- gg_hi
-  
+
   # time series plot
   timeSeriesData <- data.frame("Time" = object$middleDates, "Polarization" = object$finalMaxQs)
   gg_ts <- ggplot2::ggplot(timeSeriesData, ggplot2::aes(x = .data[["Time"]], y = .data[["Polarization"]])) +
@@ -225,6 +246,6 @@ autoplot.dna_polarisation <- function(object, ..., plots = c("hair", "hist", "ti
     ggplot2::theme_minimal() +
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, vjust = 1, hjust=1))
   l$polarisation <- gg_ts
-  
+
   return(l)
 }

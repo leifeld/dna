@@ -26,8 +26,8 @@ import model.StatementType;
 public class Polarisation {
     Exporter exporter;
     final StatementType statementType;
-    final String variable1, variable2, qualifier, normalization, duplicates, timeWindow, kernel, qualityFunction;
-    final boolean variable1Document, variable2Document, qualifierDocument, invertValues, invertAuthors, invertSources, invertSections, invertTypes, indentTime, normaliseMatrices;
+    final String variable1, variable2, qualifier, duplicates, timeWindow, kernel, algorithm;
+    final boolean variable1Document, variable2Document, qualifierDocument, invertValues, invertAuthors, invertSources, invertSections, invertTypes, indentTime, normaliseScores;
     final LocalDateTime ldtStart, ldtStop;
     int windowSize;
     final HashMap<String, ArrayList<String>> excludeValueMap;
@@ -36,19 +36,26 @@ public class Polarisation {
 	final int numParents, numClusters, numIterations;
 	final double elitePercentage, mutationPercentage;
 	final long randomSeed;
-	Random rng;
 	PolarisationResultTimeSeries results;
 
     public Polarisation(StatementType statementType, String variable1, boolean variable1Document, String variable2,
             boolean variable2Document, String qualifier, boolean qualifierDocument, String duplicates,
-			LocalDateTime ldtStart, LocalDateTime ldtStop, String timeWindow, int windowSize,
-            HashMap<String, ArrayList<String>> excludeValueMap, String[] excludeAuthors, String[] excludeSources,
-            String[] excludeSections, String[] excludeTypes, boolean invertValues, boolean invertAuthors,
-            boolean invertSources, boolean invertSections, boolean invertTypes, String kernel, boolean indentTime,
-			int numClusters, int numParents, int numIterations, double elitePercentage, double mutationPercentage,
-			String qualityFunction, boolean normaliseMatrices, long randomSeed) {
+			LocalDateTime ldtStart, LocalDateTime ldtStop, String timeWindow, int windowSize, String kernel,
+			boolean indentTime, HashMap<String, ArrayList<String>> excludeValueMap, String[] excludeAuthors,
+			String[] excludeSources, String[] excludeSections, String[] excludeTypes, boolean invertValues,
+			boolean invertAuthors, boolean invertSources, boolean invertSections, boolean invertTypes,
+			String algorithm, boolean normaliseScores, int numClusters, int numParents, int numIterations,
+			double elitePercentage, double mutationPercentage, long randomSeed) {
 
 		// Validate input parameters
+		if (!algorithm.equals("genetic") && !algorithm.equals("greedy")) {
+			this.algorithm = "greedy";
+			LogEvent log = new LogEvent(Logger.WARNING, "Invalid algorithm.",
+					"Algorithm must be 'genetic' or 'greedy'. Using 'greedy' instead.");
+			Dna.logger.log(log);
+		} else {
+			this.algorithm = algorithm;
+		}
 		if (numParents <= 0) {
 			this.numParents = 50;
 			LogEvent log = new LogEvent(Logger.WARNING, "Invalid number of cluster solutions.",
@@ -89,14 +96,6 @@ public class Polarisation {
 		} else {
 			this.mutationPercentage = mutationPercentage;
 		}
-		if (!qualityFunction.equals("modularity") && !qualityFunction.equals("eiIndex") && !qualityFunction.equals("absdiff")) {
-			this.qualityFunction = "absdiff";
-			LogEvent log = new LogEvent(Logger.WARNING, "Invalid quality function.",
-					"Quality function must be 'modularity', 'eiIndex', or 'absdiff'. Using 'absdiff' instead.");
-			Dna.logger.log(log);
-		} else {
-			this.qualityFunction = qualityFunction;
-		}
 
         this.statementType = statementType;
         this.variable1 = variable1;
@@ -122,10 +121,8 @@ public class Polarisation {
         this.invertTypes = invertTypes;
 		this.kernel = kernel;
 		this.indentTime = indentTime;
-		this.normaliseMatrices = normaliseMatrices;
+		this.normaliseScores = normaliseScores;
 		this.randomSeed = randomSeed;
-		this.rng = (randomSeed == 0) ? new Random() : new Random(randomSeed); // Initialize random number generator
-		this.normalization = "average";
 		this.congruence = new ArrayList<Matrix>();
 		this.conflict = new ArrayList<Matrix>();
 
@@ -140,7 +137,7 @@ public class Polarisation {
             this.qualifier,
             false,
             "subtract",
-            this.normalization,
+            "average",
             false,
             this.duplicates,
             this.ldtStart,
@@ -168,11 +165,11 @@ public class Polarisation {
 
 		this.computeKernelSmoothedTimeSlices();
 
-		if (normaliseMatrices) {
-			this.normaliseMatrices();
+		if (this.algorithm.equals("genetic")) {
+			this.results = this.geneticAlgorithm();
+		} else if (this.algorithm.equals("greedy")) {
+			this.results = this.greedyAlgorithm();
 		}
-
-		this.results = this.geneticAlgorithm();
     }
 
 	public PolarisationResultTimeSeries getResults() {
@@ -180,117 +177,16 @@ public class Polarisation {
 	}
 
 	/**
-	 * Compute Newman's modularity score for a given binary or weighted network
-	 * matrix. It works with signed networks and takes loops into account if they
-	 * exist. This implementation is based on the formulation presented in Newman
-	 * (2004), "Finding and evaluating community structure in networks," Physical
-	 * Review E, Equation 6. Values of 1 indicate perfect community structure, 0
-	 * indicates no community structure, and values of -1 indicate complete ties
-	 * between groups but no ties within groups, which is inversely related to the
-	 * interpretation of the EI index.
-	 * 
-	 * @param mem The community membership array (one value per node).
-	 * @param mat The network matrix (binary or weighted adjacency matrix).
-	 * @param K   The number of communities.
-	 * @return The modularity score.
-	 */
-	private double qualityModularity(int[] mem, double[][] mat, int K) {
-		if (mat == null || mat.length == 0 || mat.length != mat[0].length) {
-			throw new IllegalArgumentException("Matrix must be square and non-empty.");
-		}
-		if (mem == null || mem.length != mat.length) {
-			throw new IllegalArgumentException(
-					"Community membership array must match the number of nodes in the matrix.");
-		}
-		if (K <= 0) {
-			throw new IllegalArgumentException("Number of communities (K) must be greater than 0.");
-		}
-
-		int n = mat.length; // Number of nodes
-		double[] degrees = new double[n];
-		double m = 0.0; // Total weight of all edges
-
-		// Precompute degrees (k_i) and total edge weight (m)
-		// This corresponds to the summation \sum_j A_{ij} for k_i in the modularity formula
-		for (int i = 0; i < n; i++) {
-			for (int j = 0; j < n; j++) {
-				degrees[i] += mat[i][j];
-				m += mat[i][j];
-			}
-		}
-		m /= 2.0; // Divide total edge weight by 2 to account for double-counting i-j and j-i
-
-		// Compute modularity Q using the edge-based approach
-		double Q = 0.0;
-		for (int i = 0; i < n; i++) {
-			for (int j = 0; j < n; j++) {
-				if (mem[i] == mem[j]) { // Check if nodes i and j are in the same community (\delta(c_i, c_j))
-					// Add the contribution of this pair to modularity
-					// The first term (A_{ij}) and the second term (-k_i*k_j/2m) of Equation 6 are combined here
-					Q += mat[i][j] - (degrees[i] * degrees[j]) / (2.0 * m);
-				}
-			}
-		}
-
-		// Normalize the modularity score by dividing by 2m (as per the modularity
-		// formula)
-		return Q / (2.0 * m);
-	}
-
-	/**
-	 * Compute the E-I index for binary or weighted networks.
-	 *
-	 * This implementation calculates the E-I index as introduced by Krackhardt
-	 * (1987): "Cognitive Social Structures," Social Networks, 9(2), 109–134 (DOI:
-	 * 10.1016/0378-8733(87)90009-8). The function works for binary or weighted
-	 * networks and directed or undirected networks, while self-loops are ignored.
-	 * Note that -1 indicates complete segregation, 0 indicates no segregation, and
-	 * 1 indicates ties only between groups (i.e. the inverse interpretation of
-	 * modularity).
-	 *
-	 * @param memberships The community membership array (one value per node).
-	 * @param mat         The network matrix (weighted adjacency matrix).
-	 * @return The E-I index.
-	 */
-	private double qualityEi(int[] memberships, double[][] mat) {
-		double external = 0.0, internal = 0.0;
-		int n = mat.length;
-
-		// Iterate over all pairs (i, j)
-		for (int i = 0; i < n; i++) {
-			for (int j = 0; j < n; j++) {
-				if (i != j) { // Exclude self-loops
-					if (memberships[i] == memberships[j]) {
-						internal += mat[i][j];
-					} else {
-						external += mat[i][j];
-					}
-				}
-			}
-		}
-
-		// Compute total weight of ties
-		double total = external + internal;
-
-		// Handle division by zero
-		if (total == 0) {
-			return 0.0; // No ties in the network
-		}
-
-		// Compute the combined E-I index
-		return (external - internal) / total;
-	}
-
-	/**
-	 * Calculates the quality of polarization based on the absolute differences 
+	 * Calculates the quality of polarisation based on the absolute differences 
 	 * between observed and expected congruence and conflict within and between clusters.
 	 *
 	 * @param memberships An array where each element represents the cluster membership of a node.
 	 * @param congruenceNetwork A 2D array representing the congruence network.
 	 * @param conflictNetwork A 2D array representing the conflict network.
+	 * @param normaliseScores Should the result be divided by its theoretical maximum (the sum of the two matrix norms)?
 	 * @return The quality of polarization as a double value.
 	 */
-	private double qualityAbsdiff(int[] memberships, double[][] congruenceNetwork, double[][] conflictNetwork) {
+	private double qualityAbsdiff(int[] memberships, double[][] congruenceNetwork, double[][] conflictNetwork, boolean normalise) {
 		double congruenceNorm = calculateMatrixNorm(congruenceNetwork);
 		double conflictNorm = calculateMatrixNorm(conflictNetwork);
 
@@ -314,10 +210,10 @@ public class Polarisation {
 			for (int j = 0; j < congruenceNetwork[0].length; j++) {
 				if (i != j) {
 					if (memberships[i] == memberships[j]) {
-						absdiff += Math.abs(congruenceNetwork[i][j] - expectedWithinClusterCongruence[memberships[i]]); // Within-cluster congruenc
-						absdiff += Math.abs(conflictNetwork[i][j]); // Conflict within clusters
+						absdiff += Math.abs(congruenceNetwork[i][j] - expectedWithinClusterCongruence[memberships[i]]); // Within-cluster congruence
+						// absdiff += Math.abs(conflictNetwork[i][j]); // Conflict within clusters // not necessary, would count deviation twice
 					} else {
-						absdiff += Math.abs(congruenceNetwork[i][j]); // Between-cluster congruence
+						// absdiff += Math.abs(congruenceNetwork[i][j]); // Between-cluster congruence // not necessary, would count deviation twice
 						double betweenFactor = (double) clusterMembers[memberships[i]] * clusterMembers[memberships[j]] / numBetweenClusterDyads;
 						double expectedBetweenClusterConflict = betweenFactor * (conflictNorm / numBetweenClusterDyads);
 						absdiff += Math.abs(conflictNetwork[i][j] - expectedBetweenClusterConflict); // Between-cluster conflict
@@ -325,62 +221,11 @@ public class Polarisation {
 				}
 			}
 		}
-		return 0.5 * absdiff;
-	}
-
-	/**
-	 * Normalises the congruence and conflict matrices by dividing each element 
-	 * by the joint norm of the corresponding matrices. The joint norm is 
-	 * calculated as the sum of the norms of the congruence and conflict matrices 
-	 * at each time step. A progress bar is displayed to indicate the progress 
-	 * of the normalisation process.
-	 */
-	private void normaliseMatrices() {
-		try (ProgressBar pb = new ProgressBar("Normalisation", this.congruence.size())) {
-			for (int t = 0; t < congruence.size(); t++) {
-				double jointNorm = calculateMatrixNorm(congruence.get(t).getMatrix()) + calculateMatrixNorm(conflict.get(t).getMatrix());
-				for (int i = 0; i < congruence.get(t).getMatrix().length; i++) {
-					for (int j = 0; j < congruence.get(t).getMatrix()[0].length; j++) {
-						congruence.get(t).getMatrix()[i][j] /= jointNorm;
-						conflict.get(t).getMatrix()[i][j] /= jointNorm;
-					}
-				}
-				pb.step();
-			}
+		if (normalise) {
+			return (absdiff / (congruenceNorm + conflictNorm));
+		} else {
+			return absdiff;
 		}
-	}
-
-	/**
-	 * For a given int array, rank its values in descending order, starting at 0.
-	 *
-	 * @param arr An int array.
-	 * @return An array of ranks, starting with 0.
-	 */
-	private int[] calculateRanks(int... arr) {
-		class Pair {
-			final int value;
-			final int index;
-
-			Pair(int value, int index) {
-				this.value = value;
-				this.index = index;
-			}
-		}
-
-		Pair[] pairs = new Pair[arr.length];
-		for (int index = 0; index < arr.length; ++index) {
-			pairs[index] = new Pair(arr[index], index);
-		}
-
-		// Sort pairs by value in descending order
-		Arrays.sort(pairs, (pair1, pair2) -> -Integer.compare(pair1.value, pair2.value));
-
-		int[] ranks = new int[arr.length];
-		for (int i = 0; i < pairs.length; ++i) {
-			ranks[pairs[i].index] = i;
-		}
-
-		return ranks;
 	}
 
 	/**
@@ -502,7 +347,7 @@ public class Polarisation {
 		 * @param rng The random number generator.
 		 * @throws IllegalArgumentException If any parameter is invalid.
 		 */
-		ClusterSolution(int n, int k) {
+		ClusterSolution(int n, int k, Random rng) {
 			if (n <= 0) {
 				throw new IllegalArgumentException("N must be positive.");
 			}
@@ -514,16 +359,7 @@ public class Polarisation {
 			}
 			this.N = n;
 			this.K = k;
-			this.memberships = createRandomMemberships(n, k, Polarisation.this.rng);
-		}
-
-		/**
-		 * Returns the number of clusters.
-		 *
-		 * @return The number of clusters.
-		 */
-		public int getK() {
-			return K;
+			this.memberships = createRandomMemberships(n, k, rng);
 		}
 
 		/**
@@ -596,9 +432,10 @@ public class Polarisation {
 		 * a foreign solution  to produce an offspring with balanced cluster distribution.
 		 *
 		 * @param foreignMemberships A membership vector of a foreign cluster solution.
+		 * @param rng                The random number generator to use.
 		 * @throws IllegalArgumentException If the input vector is invalid or incompatible.
 		 */
-		int[] crossover(int[] foreignMemberships) {
+		int[] crossover(int[] foreignMemberships, Random rng) {
 			// Validate input
 			if (foreignMemberships == null || foreignMemberships.length != this.memberships.length) {
 				throw new IllegalArgumentException("Incompatible membership vector lengths.");
@@ -610,7 +447,7 @@ public class Polarisation {
 			int[] newMemberships = performRelabeling(this.memberships, foreignMemberships, overlapMatrix);
 
 			// Step 2: Perform random crossover between relabeled membership vectors
-			newMemberships = performCrossover(newMemberships, foreignMemberships);
+			newMemberships = performCrossover(newMemberships, foreignMemberships, rng);
 
 			// Step 3: Adjust cluster distribution to achieve balance
 			newMemberships = balanceClusterDistribution(newMemberships, K);
@@ -670,12 +507,16 @@ public class Polarisation {
 		
 		/**
 		 * Performs crossover by randomly combining bits from two membership vectors.
+		 * 
+		 * @param memberships1 The first membership vector.
+		 * @param memberships2 The second membership vector.
+		 * @param rng          The random number generator to use.
+		 * @return recombined membership vector
 		 */
-		private int[] performCrossover(int[] memberships1, int[] memberships2) {
-			Random rand = new Random(); // Optionally pass a seed here for reproducibility
+		private int[] performCrossover(int[] memberships1, int[] memberships2, Random rng) {
 			int[] result = new int[memberships1.length];
 			for (int i = 0; i < memberships1.length; i++) {
-				result[i] = (rand.nextBoolean()) ? memberships1[i] : memberships2[i];
+				result[i] = (rng.nextBoolean()) ? memberships1[i] : memberships2[i];
 			}
 			return result;
 		}
@@ -733,17 +574,24 @@ public class Polarisation {
 		final int numElites;
 		final int numMutations;
 		final ArrayList<ClusterSolution> clusterSolutions;
-		final double[] q; // quality scores for each cluster solution
+		final boolean normalise;
+		double[] q; // quality scores for each cluster solution
 		ArrayList<ClusterSolution> children; // children cluster solutions
 
 		/**
 		 * Performs a single iteration of the genetic algorithm, including quality
 		 * evaluation, elite retention, crossover, and mutation.
 		 *
+		 * @param clusterSolutions The cluster solutions (= parents).
+		 * @param congruenceNetwork The congruence matrix.
+		 * @param conflictNetwork The conflict matrix.
+		 * @param normalise Should the quality/fitness scores be normalised?
+		 * @param rng The random number generator to use.
 		 * @return A list of children cluster solutions.
 		 */
-		GeneticIteration(ArrayList<ClusterSolution> clusterSolutions, double[][] congruenceNetwork, double[][] conflictNetwork) {
+		GeneticIteration(ArrayList<ClusterSolution> clusterSolutions, double[][] congruenceNetwork, double[][] conflictNetwork, boolean normalise, Random rng) {
 			this.clusterSolutions = new ArrayList<>(clusterSolutions);
+			this.normalise = normalise;
 			this.congruenceNetwork = congruenceNetwork.clone();
 			this.conflictNetwork = conflictNetwork.clone();
 			this.n = this.congruenceNetwork.length;
@@ -760,31 +608,27 @@ public class Polarisation {
 					"Number of mutations based on the mutation percentage.");
 			Dna.logger.log(log);
 
-			this.q = evaluateQuality(congruenceNetwork, conflictNetwork);
+			this.q = evaluateQuality(this.congruenceNetwork, this.conflictNetwork, this.normalise);
 			this.children = eliteRetentionStep(this.clusterSolutions, this.q, this.numElites);
-			this.children = crossoverStep(this.clusterSolutions, this.q, this.children);
-			this.children = mutationStep(this.children, this.numMutations, this.n);
+			this.children = crossoverStep(this.clusterSolutions, this.q, this.children, rng);
+			this.children = mutationStep(this.children, this.numMutations, this.n,  rng);
 		}
 
 		/**
 		 * Evaluates the quality of cluster solutions using the specified quality function.
-		 * The quality scores are transformed to the range [0, 1] where 1 is high fitness.
+		 * The quality scores are transformed to the range [-Inf, 0] where 0 is high fitness
+		 * or [-1, 0] if normalisation is used.
 		 *
 		 * @param congruenceNetwork The congruence network matrix.
-		 * @param conflictNetwork    The conflict network matrix.
+		 * @param conflictNetwork   The conflict network matrix.
+		 * @param normalise         Normalise the results?
 		 * @return An array of quality scores for each cluster solution.
 		 */
-		private double[] evaluateQuality(double[][] congruenceNetwork, double[][] conflictNetwork) {
+		private double[] evaluateQuality(double[][] congruenceNetwork, double[][] conflictNetwork, boolean normalise) {
 			double[] q = new double[clusterSolutions.size()];
 			for (int i = 0; i < clusterSolutions.size(); i++) {
 				int[] mem = clusterSolutions.get(i).getMemberships();
-				if  (qualityFunction.equals("modularity")) {
-					q[i] = 2.0 * (qualityModularity(mem, congruenceNetwork, numClusters) - qualityModularity(mem, congruenceNetwork, numClusters));
-				} else if (qualityFunction.equals("eiIndex")) {
-					q[i] = 2.0 * (qualityEi(mem, conflictNetwork) - qualityEi(mem, congruenceNetwork));
-				} else if (qualityFunction.equals("absdiff")) {
-					q[i] = qualityAbsdiff(mem, congruenceNetwork, conflictNetwork);
-				}
+				q[i] = qualityAbsdiff(mem, congruenceNetwork, conflictNetwork, normalise);
 			}
 			return q;
 		}
@@ -823,94 +667,96 @@ public class Polarisation {
 		 * @param clusterSolutions The list of parent cluster solutions.
 		 * @param q                An array of quality scores corresponding to the cluster solutions.
 		 * @param children         The existing children list produced by the elite retention step.
+		 * @param rng              The random number generator to use.
 		 * @return The updated children list with additional solutions generated through roulette sampling and crossover.
 		 */
-		private ArrayList<ClusterSolution> crossoverStep(ArrayList<ClusterSolution> clusterSolutions, double[] q, ArrayList<ClusterSolution> children) {
+		private ArrayList<ClusterSolution> crossoverStep(ArrayList<ClusterSolution> clusterSolutions, double[] q, ArrayList<ClusterSolution> children, Random rng) {
 
-			// Replace negative quality values with zero to ensure roulette sampling works
+			// adjust fitness scores to ensure that they are all non-negative and the sum is positive to make roulette wheel selection work
+			double qMinimum = 0.0, qMaximum = 0.0, qTotal = 0.0;
 			for (int i = 0; i < q.length; i++) {
-				if (q[i] < 0) {
-					q[i] = 0;
+				if (i == 0) {
+					qMinimum = q[i];
+					qMaximum = q[i];
+				} else {
+					if (q[i] < qMinimum) {
+						qMinimum = q[i];
+					}
+					if (q[i] > qMaximum) {
+						qMaximum = q[i];
+					}
 				}
+				qTotal += q[i];
 			}
-
-			// Compute the total quality
-			double qTotal = 0.0;
-			for (double quality : q) {
-				qTotal += quality;
-			}
-
-			// Handle case where total quality is zero
-			if (qTotal == 0) {
-				// Replace all q values with equal probabilities
+			if (qMinimum < 0) { // either completely in the [-Inf, 0] range or in [-x, x] with unknown x (e.g., modularity, where x = 1) -> shift to [0, 2x] by subtracting lowest (negative) value
+				qTotal = 0.0;
 				for (int i = 0; i < q.length; i++) {
-					q[i] = 1.0; // Assign uniform score
+					q[i] = q[i] - qMinimum;
+					qTotal += q[i];
 				}
-				qTotal = q.length; // New total becomes the number of items
-				LogEvent log = new LogEvent(Logger.MESSAGE, "Total quality is zero. Using uniform probabilities.", "Roulette wheel sampling fallback.");
-				Dna.logger.log(log);
+			}
+			if (qTotal == 0.0) { // all values are 0 -> replace by uniform probabilities
+				for (int i = 0; i < q.length; i++) {
+					q[i] = 1.0;
+					qTotal += 1.0;
+				}
 			}
 
-			// Generate additional children until the desired total size is reached
-			int numClusterSolutions = clusterSolutions.size();
-			while (children.size() < numClusterSolutions) {
-				// Perform weighted sampling for the first parent
-				double r1 = rng.nextDouble() * qTotal;
-				int index1 = selectIndexByRoulette(q, r1);
-				ClusterSolution parent1 = clusterSolutions.get(index1);
+			// hybrid roulette wheel sampling for fitness-proportional sampling with uniform random sampling element to create more diversity in the gene pool
+			while (children.size() < numParents) {
+				int firstParentIndex = -1, secondParentIndex = -1;
 
-				// Perform weighted sampling for the second parent, ensuring it's different from the first
-				int index2;
-				//  next two lines: perhaps worth trying to ensure that the second parent is different from the first, but there are apparently cases where this is not possible, so we don't do it for now
-				double r2 = rng.nextDouble() * qTotal;
-				index2 = selectIndexByRoulette(q, r2);
-				ClusterSolution parent2 = clusterSolutions.get(index2);
-
-				// Clone and perform crossover
-				try {
-					ClusterSolution child = (ClusterSolution) parent1.clone();
-					child.crossover(parent2.getMemberships());
-					children.add(child);
-				} catch (CloneNotSupportedException e) {
-					LogEvent log = new LogEvent(Logger.ERROR,
-					 "Cluster solution could not be cloned.",
-					 "A child was not added to the generation.");
-					Dna.logger.log(log);
+				//  select first parent with roulette wheel sampling (= probability proportional to fitness)
+				double r = rng.nextDouble() * qTotal;
+				double cumulative = 0.0;
+				for (int i = 0; i < q.length; i++) {
+					cumulative += q[i];
+					if (r <= cumulative) {
+						firstParentIndex = i;
+						secondParentIndex = i; // provisional value to avoid breeding with oneself
+						break;
+					}
 				}
+
+				// select second parent with roulette wheel sampling or uniform random sampling
+				while (secondParentIndex == firstParentIndex) { // avoid breeding with oneself
+					// flip a coin to decide whether the second parent is selected via roulette wheel sampling or uniform random sampling
+					if (rng.nextDouble() <= 0.5) {
+						// select second parent with roulette wheel sampling (= probability proportional to fitness)
+						r = rng.nextDouble() * qTotal;
+						cumulative = 0.0;
+						for (int i = 0; i < q.length; i++) {
+							cumulative += q[i];
+							if (r <= cumulative) {
+								secondParentIndex = i;
+								break;
+							}
+						}
+					} else {
+						// select second parent with uniform random sampling (to create more diversity in the gene pool)
+						secondParentIndex = rng.nextInt(q.length);
+					}
+				}
+
+				// create child by crossover of the two selected parents
+				ClusterSolution c = clusterSolutions.get(firstParentIndex);
+				int[] child = c.crossover(clusterSolutions.get(secondParentIndex).getMemberships(), rng);
+				children.add(new ClusterSolution(n, numClusters, child));
 			}
 
 			return children;
 		}
 
 		/**
-		 * Selects the index of a cluster solution using roulette wheel sampling based on a random value.
-		 *
-		 * @param q The quality scores of the cluster solutions.
-		 * @param r The random value for selection.
-		 * @return  The index of the selected cluster solution.
-		 */
-		private int selectIndexByRoulette(double[] q, double r) {
-			double cumulative = 0.0;
-			for (int i = 0; i < q.length; i++) {
-				cumulative += q[i];
-				if (r <= cumulative) {
-					return i;
-				}
-			}
-			LogEvent log = new LogEvent(Logger.WARNING, "Roulette wheel selection failed.", "Returning the last index.");
-			Dna.logger.log(log);
-			return q.length - 1; // Fallback in case of rounding issues
-		}
-
-		/**
 		 * Mutation step: Randomly select some pairs of cluster memberships ("chromosomes") in non-elite solutions and swap around their cluster membership.
 		 * 
-		 * @param children            The children generation of cluster solutions as an array list.
-		 * @param numMutations        The number of mutations to perform.
-		 * @param n                   The number of nodes in the network.
+		 * @param children     The children generation of cluster solutions as an array list.
+		 * @param numMutations The number of mutations to perform.
+		 * @param n            The number of nodes in the network.
+		 * @param rng          The random number generator to use.
 		 * @return An array list with the mutated children generation of cluster solutions.
 		 */
-		private ArrayList<ClusterSolution> mutationStep(ArrayList<ClusterSolution> children, int numMutations, int n) {
+		private ArrayList<ClusterSolution> mutationStep(ArrayList<ClusterSolution> children, int numMutations, int n, Random rng) {
 			if (numMutations <= 0) {
 				return children; // No mutations to perform
 			}
@@ -958,33 +804,6 @@ public class Polarisation {
 		}
 
 		/**
-		 * Returns the number of nodes in the network.
-		 *
-		 * @return The number of nodes in the network.
-		 */
-		public int getN() {
-			return n;
-		}
-
-		/**
-		 * Returns the number of elite cluster solutions.
-		 *
-		 * @return The number of elite cluster solutions.
-		 */
-		public int getNumElites() {
-			return numElites;
-		}
-
-		/**
-		 * Returns the number of mutations performed.
-		 *
-		 * @return The number of mutations performed.
-		 */
-		public int getNumMutations() {
-			return numMutations;
-		}
-
-		/**
 		 * Returns the quality scores for each cluster solution.
 		 * 
 		 * @return The quality scores for each cluster solution.
@@ -1002,6 +821,7 @@ public class Polarisation {
 	 * @return A PolarisationResultTimeSeries object containing the results of the genetic algorithm for each time step and iteration.
 	 */
 	public PolarisationResultTimeSeries geneticAlgorithm () {
+		Random rng = (this.randomSeed == 0) ? new Random() : new Random(this.randomSeed); // Initialize random number generator
 		ArrayList<PolarisationResult> polarisationResults = new ArrayList<>();
 		try (ProgressBar pb = new ProgressBar("Genetic algorithm", this.congruence.size())) {
 			for (int t = 0; t < this.congruence.size(); t++) {
@@ -1020,13 +840,13 @@ public class Polarisation {
 					// Create initially random cluster solutions; supply the number of nodes and clusters
 					ArrayList<ClusterSolution> cs = new ArrayList<ClusterSolution>();
 					for (int i = 0; i < numParents; i++) {
-						cs.add(new ClusterSolution(this.congruence.get(t).getMatrix().length, numClusters));
+						cs.add(new ClusterSolution(this.congruence.get(t).getMatrix().length, numClusters, rng));
 					}
 		
 					// Run through iterations and do the breeding, then collect results and stats
 					lastIndex = numIterations - 1; // choose last possible value here as a default if early convergence does not happen
 					for (int i = 0; i < numIterations; i++) {
-						GeneticIteration geneticIteration = new GeneticIteration(cs, this.congruence.get(t).getMatrix(), this.conflict.get(t).getMatrix());
+						GeneticIteration geneticIteration = new GeneticIteration(cs, this.congruence.get(t).getMatrix(), this.conflict.get(t).getMatrix(), this.normaliseScores, rng);
 						cs = geneticIteration.getChildren();
 		
 						// compute summary statistics based on iteration step and retain them
@@ -1071,7 +891,6 @@ public class Polarisation {
 		
 					// correct for early convergence in results vectors
 					int finalIndex = lastIndex;
-					/*
 					for (int i = lastIndex; i >= 0; i--) {
 						if (maxQArray[i] == maxQArray[lastIndex]) {
 							finalIndex = i;
@@ -1079,7 +898,6 @@ public class Polarisation {
 							break;
 						}
 					}
-					*/
 					
 					double[] maxQArrayTemp = new double[finalIndex + 1];
 					double[] avgQArrayTemp = new double[finalIndex + 1];
@@ -1455,5 +1273,111 @@ public class Polarisation {
 		});
 
 		return X;
+	}
+
+
+	/**
+	 * Prepare the greedy membership swapping algorithm and run all the iterations.
+	 * Take out the maximum quality measure at the last step and create an object
+	 * that stores the polarisation results.
+	 */
+	private PolarisationResultTimeSeries greedyAlgorithm () {
+		Random rng = (this.randomSeed == 0) ? new Random() : new Random(this.randomSeed); // Initialize random number generator
+		ArrayList<PolarisationResult> polarisationResults = new ArrayList<PolarisationResult>();
+
+		// for each time step, run the algorithm over the cluster solutions; retain quality and memberships
+		double[][] congruenceMatrix, conflictMatrix;
+		int t, oldI, oldJ;
+		ArrayList<Double> maxQArray = new ArrayList<Double>();
+		int[] bestMemberships, mem, mem2;
+		double maxQ, q1, q2;
+		boolean noChanges;
+
+		try (ProgressBar pb = new ProgressBar("Greedy algorithm", this.congruence.size())) {
+			for (t = 0; t < congruence.size(); t++) { // go through all time steps of the time window networks
+				maxQArray.clear();
+				congruenceMatrix = congruence.get(t).getMatrix();
+				conflictMatrix = conflict.get(t).getMatrix();
+				double combinedNorm = calculateMatrixNorm(congruenceMatrix) + calculateMatrixNorm(congruenceMatrix);
+	
+				if (congruenceMatrix.length > 0 || combinedNorm == 0.0) { // if the network has no nodes or edges, skip this step and return 0 directly
+	
+					// Create initially random cluster solution to update
+					ClusterSolution cs = new ClusterSolution(congruence.get(t).getMatrix().length, numClusters, rng);
+					mem = cs.getMemberships();
+	
+					// evaluate quality of initial solution
+					maxQArray.add(qualityAbsdiff(mem, congruenceMatrix, conflictMatrix, this.normaliseScores));
+					bestMemberships = mem.clone();
+					maxQ = maxQArray.get(0);
+	
+					boolean convergence  = false;
+					while (!convergence) { // run the two nested for-loops repeatedly until there are no more swaps
+						noChanges = true;
+						for (int i = 0; i < mem.length; i++) {
+							for (int j = 1; j < mem.length; j++) { // swap positions i and j in the membership vector and see if leads to higher fitness
+								if (i < j && mem[i] != mem[j]) {
+									mem2 = mem.clone();
+									oldI = mem2[i];
+									oldJ = mem2[j];
+									mem2[i] = oldJ;
+									mem2[j] = oldI;
+									q1 = qualityAbsdiff(mem, congruenceMatrix, conflictMatrix, this.normaliseScores);
+									q2 = qualityAbsdiff(mem2, congruenceMatrix, conflictMatrix, this.normaliseScores);
+									if (q2 > q1) { // candidate solution has higher fitness -> keep it
+										mem = mem2.clone(); // accept the new solution if it was better than the previous
+										maxQArray.add(q2);
+										maxQ = q2;
+										bestMemberships = mem.clone();
+										noChanges = false;
+									}
+								}
+							}
+						}
+						if (noChanges) {
+							convergence = true;
+						}
+					}
+	
+					double[] maxQArray2 = new double[maxQArray.size()];
+					for (int i = 0; i < maxQArray.size(); i++) {
+						maxQArray2[i] = maxQArray.get(i);
+					}
+	
+					// save results in array as a complex object
+					double[] avgQArray = maxQArray2;
+					double[] sdQArray = new double[maxQArray.size()];
+					PolarisationResult pr = new PolarisationResult(
+							maxQArray2,
+							avgQArray,
+							sdQArray,
+							maxQ,
+							bestMemberships,
+							congruence.get(t).getRowNames(),
+							true,
+							congruence.get(t).getStart(),
+							congruence.get(t).getStop(),
+							congruence.get(t).getDateTime());
+					polarisationResults.add(pr);
+				} else { // zero result because network is empty
+					PolarisationResult pr = new PolarisationResult(
+							new double[] { 0 },
+							new double[] { 0 },
+							new double[] { 0 },
+							0.0,
+							new int[0],
+							new String[0],
+							true,
+							congruence.get(t).getStart(),
+							congruence.get(t).getStop(),
+							congruence.get(t).getDateTime());
+					polarisationResults.add(pr);
+				}
+				pb.step();
+			}
+		}
+
+		PolarisationResultTimeSeries polarisationResultTimeSeries = new PolarisationResultTimeSeries(polarisationResults);
+		return polarisationResultTimeSeries;
 	}
 }

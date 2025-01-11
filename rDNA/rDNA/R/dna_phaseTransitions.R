@@ -222,7 +222,7 @@ dna_phaseTransitions <- function(distanceMethod = "absdiff",
                                  invertSources = FALSE,
                                  invertSections = FALSE,
                                  invertTypes = FALSE) {
-  
+
   # check arguments and packages
   if (distanceMethod == "spectral" && networkType == "twomode") {
     distanceMethod <- "absdiff"
@@ -247,19 +247,19 @@ dna_phaseTransitions <- function(distanceMethod = "absdiff",
   }
   clusterMethods <- rev(clusterMethods) # reverse order to save time during parallel computation by starting the computationally intensive methods first
   mcall <- match.call() # save the arguments for storing them in the results later
-  
+
   # generate the time window networks
   if (is.null(timeWindow) || is.na(timeWindow) || !is.character(timeWindow) || length(timeWindow) != 1 || !timeWindow %in% c("events", "seconds", "minutes", "hours", "days", "weeks", "months", "years")) {
     timeWindow <- "events"
     warning("The 'timeWindow' argument was invalid. Proceeding with 'timeWindow = \"events\" instead.")
   }
-  
+
   # wrap the vectors of exclude values for document variables into Java arrays
   excludeAuthors <- .jarray(excludeAuthors)
   excludeSources <- .jarray(excludeSources)
   excludeSections <- .jarray(excludeSections)
   excludeTypes <- .jarray(excludeTypes)
-  
+
   # compile exclude variables and values vectors
   dat <- matrix("", nrow = length(unlist(excludeValues)), ncol = 2)
   count <- 0
@@ -281,12 +281,12 @@ dna_phaseTransitions <- function(distanceMethod = "absdiff",
   }
   var <- .jarray(var) # array of variable names of each excluded value
   val <- .jarray(val) # array of values to be excluded
-  
+
   # encode R NULL as Java null value if necessary
   if (is.null(qualifier) || is.na(qualifier)) {
     qualifier <- .jnull(class = "java/lang/String")
   }
-  
+
   # call rNetwork function to compute results
   .jcall(dna_getHeadlessDna(),
          "V",
@@ -325,7 +325,7 @@ dna_phaseTransitions <- function(distanceMethod = "absdiff",
          invertTypes
   )
   exporter <- dna_getHeadlessDna()$getExporter() # save Java object reference to exporter class
-  
+
   # compute distance matrix
   if (distanceMethod == "modularity") {
     stop("Differences in modularity have not been implemented yet. Please use absolute differences or spectral Euclidean distance as a distance method.")
@@ -338,11 +338,11 @@ dna_phaseTransitions <- function(distanceMethod = "absdiff",
                          distanceMethod,
                          simplify = TRUE)
   distance_mat <- distance_mat / max(distance_mat) # rescale between 0 and 1
-  
+
   # retrieve mid-point dates (gamma)
-  m <- .jcall(exporter, "[Lexport/Matrix;", "getMatrixResultsArray") # get list of Matrix objects from Exporter object
+  m <- .jcall(exporter, "[Ldna/export/Matrix;", "getMatrixResultsArray") # get list of Matrix objects from Exporter object
   dates <- sapply(m, function(x) .jcall(x, "J", "getDateTimeLong")) # long integers, still needs conversion to date
-  
+
   # define clustering function
   hclustMethods <- c("single", "average", "complete", "ward")
   cl <- function(method, distmat) {
@@ -444,7 +444,7 @@ dna_phaseTransitions <- function(distanceMethod = "absdiff",
       warning("Cluster method '", method, "' threw a warning: ", w)
     })
   }
-  
+
   # apply all clustering methods to distance matrix
   if (cores > 1) {
     cat(paste("Clustering distance matrix on", cores, "cores.\n"))
@@ -470,7 +470,7 @@ dna_phaseTransitions <- function(distanceMethod = "absdiff",
   best <- which(mod == max(mod))[1]
   results$modularity <- mod[best]
   results$clusterMethod <- clusterMethods[best]
-  
+
   # temporal embedding via MDS
   if (!requireNamespace("MASS", quietly = TRUE)) {
     mem <- data.frame("date" = as.POSIXct(dates, tz = "UTC", origin = "1970-01-01"),
@@ -491,7 +491,7 @@ dna_phaseTransitions <- function(distanceMethod = "absdiff",
     b <- Sys.time()
     print(b - a)
   }
-  
+
   results$distmat <- distance_mat
   class(results) <- "dna_phaseTransitions"
   attributes(results)$stress <- ifelse(ncol(results$states) == 2, NA, mds$stress)
@@ -538,7 +538,7 @@ autoplot.dna_phaseTransitions <- function(object, ..., plots = c("heatmap", "sil
   k <- max(object$states$state)
   shapes <- c(21:25, 0:14)[1:k]
   l <- list()
-  
+
   # heatmap
   if ("heatmap" %in% plots) {
     try({
@@ -553,7 +553,7 @@ autoplot.dna_phaseTransitions <- function(object, ..., plots = c("heatmap", "sil
       }
     })
   }
-  
+
   # silhouette plot
   if ("silhouette" %in% plots) {
     try({
@@ -572,7 +572,7 @@ autoplot.dna_phaseTransitions <- function(object, ..., plots = c("heatmap", "sil
       }
     })
   }
-  
+
   # temporal embedding
   if ("mds" %in% plots) {
     try({
@@ -586,10 +586,10 @@ autoplot.dna_phaseTransitions <- function(object, ..., plots = c("heatmap", "sil
         nodes <- object$states
         nodes$date <- as.character(nodes$date)
         nodes$State <- as.factor(nodes$state)
-        
+
         # Extract state values
         state_values <- nodes$State
-        
+
         edges <- data.frame(sender = as.character(object$states$date),
                             receiver = c(as.character(object$states$date[2:(nrow(object$states))]), "NA"))
         edges <- edges[-nrow(edges), ]
@@ -609,7 +609,7 @@ autoplot.dna_phaseTransitions <- function(object, ..., plots = c("heatmap", "sil
       }
     })
   }
-  
+
   # state dynamics
   if ("states" %in% plots) {
     try({
@@ -619,12 +619,12 @@ autoplot.dna_phaseTransitions <- function(object, ..., plots = c("heatmap", "sil
         State = factor(object$states$state, levels = 1:k, labels = paste("State", 1:k)),
         time1 = as.Date(object$states$date)
       )
-      
+
       # Extracting values
       time_values <- d$time
       state_values <- d$State
       id_values <- d$id
-      
+
       l[[length(l) + 1]] <- ggplot2::ggplot(d, ggplot2::aes(x = time_values, y = state_values, colour = state_values)) +
         ggplot2::geom_line(aes(group = 1), linewidth = 2, color = "black", lineend = "square") +
         ggplot2::geom_line(aes(group = id_values), linewidth = 2, lineend = "square") +
@@ -638,6 +638,6 @@ autoplot.dna_phaseTransitions <- function(object, ..., plots = c("heatmap", "sil
         ggplot2::labs(color = "State")
     })
   }
-  
+
   return(l)
 }
