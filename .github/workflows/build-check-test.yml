@@ -39,7 +39,7 @@ jobs:
       run: ./gradlew :bibliography:build
 
     - name: Store artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: Bibliography
         path: build/bibliography.*
@@ -62,7 +62,7 @@ jobs:
       run: ./gradlew :dna:build
     
     - name: Store artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: DNA
         path: build/*.jar
@@ -103,7 +103,7 @@ jobs:
       run: ./gradlew :rDNA:build
 
     - name: Store artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: rDNA
         path: build/*.tar.gz
