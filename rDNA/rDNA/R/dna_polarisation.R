@@ -219,33 +219,39 @@ autoplot.dna_polarisation <- function(object, ..., plots = c("hair", "hist", "ti
   l <- list()
 
   # hair diagnostic convergence plot
-  hairData <- data.frame("Polarization" = do.call("c", object$maxQs),
-                         "Iteration" = do.call("c", lapply(object$maxQs, function(x) 1:length(x))),
-                         "Time" = rep(object$middleDates, times = sapply(object$maxQs, length)))
-  gg_ha <- ggplot2::ggplot(hairData, ggplot2::aes(x = .data[["Iteration"]], y = .data[["Polarization"]], group = .data[["Time"]])) +
-    ggplot2::geom_line(alpha = 0.3) +
-    ggplot2::ylab("Maximal polarization") +
-    ggplot2::theme_minimal()
-  l$hair <- gg_ha
+  if ("hair" %in% plots) {
+    hairData <- data.frame("Polarization" = do.call("c", object$maxQs),
+                           "Iteration" = do.call("c", lapply(object$maxQs, function(x) 1:length(x))),
+                           "Time" = rep(object$middleDates, times = sapply(object$maxQs, length)))
+    gg_ha <- ggplot2::ggplot(hairData, ggplot2::aes(x = .data[["Iteration"]], y = .data[["Polarization"]], group = .data[["Time"]])) +
+      ggplot2::geom_line(alpha = 0.3) +
+      ggplot2::ylab("Maximal polarization") +
+      ggplot2::theme_minimal()
+      l$hair <- gg_ha
+  }
 
   # histogram diagnostic convergence plot
-  histData <- data.frame("Iterations" = sapply(object$maxQs, length),
-                         "Time" = object$middleDates)
-  gg_hi <- ggplot2::ggplot(histData, ggplot2::aes(x = .data[["Iterations"]])) +
-    ggplot2::geom_histogram() +
-    ggplot2::labs(y = "Number of time windows", x = "Iterations until convergence") +
-    ggplot2::theme_minimal()
-  l$histogram <- gg_hi
+  if ("hist" %in% plots) {
+    histData <- data.frame("Iterations" = sapply(object$maxQs, length),
+                           "Time" = object$middleDates)
+    gg_hi <- ggplot2::ggplot(histData, ggplot2::aes(x = .data[["Iterations"]])) +
+      ggplot2::geom_histogram() +
+      ggplot2::labs(y = "Number of time windows", x = "Iterations until convergence") +
+      ggplot2::theme_minimal()
+    l$histogram <- gg_hi
+  }
 
   # time series plot
-  timeSeriesData <- data.frame("Time" = object$middleDates, "Polarization" = object$finalMaxQs)
-  gg_ts <- ggplot2::ggplot(timeSeriesData, ggplot2::aes(x = .data[["Time"]], y = .data[["Polarization"]])) +
-    ggplot2::geom_line() +
-    ggplot2::scale_x_datetime(date_breaks = "6 months", date_labels = "%b %Y") +
-    ggplot2::labs(y = "Polarization") +
-    ggplot2::theme_minimal() +
-    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, vjust = 1, hjust=1))
-  l$polarisation <- gg_ts
+  if ("time_series" %in% plots) {
+    timeSeriesData <- data.frame("Time" = object$middleDates, "Polarization" = object$finalMaxQs)
+    gg_ts <- ggplot2::ggplot(timeSeriesData, ggplot2::aes(x = .data[["Time"]], y = .data[["Polarization"]])) +
+      ggplot2::geom_line() +
+      ggplot2::scale_x_datetime(date_breaks = "6 months", date_labels = "%b %Y") +
+      ggplot2::labs(y = "Polarization") +
+      ggplot2::theme_minimal() +
+      ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, vjust = 1, hjust=1))
+    l$polarisation <- gg_ts
+  }
 
   return(l)
 }
