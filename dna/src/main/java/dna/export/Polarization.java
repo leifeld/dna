@@ -533,8 +533,8 @@ public class Polarization {
 				Dna.logger.log(log);
 			}
 			if (n <= k) {
-				LogEvent log = new LogEvent(Logger.ERROR, "Invalid number of nodes and clusters.",
-						"Number of nodes (N) must be greater than the number of clusters (K).");
+				LogEvent log = new LogEvent(Logger.WARNING, "Invalid number of nodes and clusters.",
+						"Number of nodes (N) must be greater than the number of clusters (K). Try increasing the time window size for more statements.");
 				Dna.logger.log(log);
 			}
 		}
@@ -1017,8 +1017,8 @@ public class Polarization {
 	 * @return The PolarizationResult for the given time step.
 	 */
 	private PolarizationResult geneticTimeStep(int t, long seed) {
-		// Skip empty networks
-		if (this.congruence.get(t).getMatrix().length == 0 || 
+		// Skip empty or near-empty networks
+		if (this.congruence.get(t).getMatrix().length <= numClusters || 
 			(calculateMatrixNorm(this.congruence.get(t).getMatrix()) + calculateMatrixNorm(this.conflict.get(t).getMatrix())) == 0) {
 			
 			return new PolarizationResult(
@@ -1512,7 +1512,7 @@ public class Polarization {
 			Dna.logger.log(log);
 		}
 
-		if (congruenceMatrix.length > 0 || combinedNorm == 0.0) { // if the network has no nodes or edges, skip this step and return 0 directly
+		if (congruenceMatrix.length >= numClusters || combinedNorm == 0.0) { // if the network has no (or too few) nodes or edges, skip this step and return 0 directly
 
 			// Create initially random cluster solution to update
 			Random random = new Random(seed);
@@ -1572,7 +1572,7 @@ public class Polarization {
 					congruence.getStop(),
 					congruence.getDateTime());
 			return pr;
-		} else { // zero result because network is empty
+		} else { // zero result because network is empty or too small
 			PolarizationResult pr = new PolarizationResult(
 					new double[] { 0 },
 					new double[] { 0 },
