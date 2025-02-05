@@ -56,15 +56,22 @@
 #'
 #' @examples
 #' \dontrun{
+#' library("ggplot2")
 #' dna_init()
 #' dna_sample()
 #' dna_openDatabase("sample.dna", coderId = 1, coderPassword = "sample")
 #'
-#' p <- dna_polarization(timeWindow = "days", windowSize = 40, normalizeScores = TRUE)
+#' p <- dna_polarization(timeWindow = "days",
+#'                       windowSize = 8,
+#'                       kernel = "gaussian",
+#'                       normalizeScores = FALSE)
 #' str(p)
-#'
-#' library("ggplot2")
 #' autoplot(p)
+#'
+#' p2 <- dna_polarization(timeWindow = "no",
+#'                        normalizeScores = TRUE,
+#'                        algorithm = "genetic")
+#' p2$finalMaxQs # polarization between 0 and 1
 #' }
 #'
 #' @author Philip Leifeld
