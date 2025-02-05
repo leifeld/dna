@@ -823,130 +823,161 @@ public class Polarisation {
 	 * 
 	 * @return A PolarisationResultTimeSeries object containing the results of the genetic algorithm for each time step and iteration.
 	 */
-	public PolarisationResultTimeSeries geneticAlgorithm () {
-		Random rng = (this.randomSeed == 0) ? new Random() : new Random(this.randomSeed); // Initialize random number generator
-		ArrayList<PolarisationResult> polarisationResults = new ArrayList<>();
-		try (ProgressBar pb = new ProgressBar("Genetic algorithm", this.congruence.size())) {
-			for (int t = 0; t < this.congruence.size(); t++) {
-				if (this.congruence.get(t).getMatrix().length > 0 && calculateMatrixNorm(this.congruence.get(t).getMatrix()) + calculateMatrixNorm(this.conflict.get(t).getMatrix()) != 0) { // if the network has no nodes or activity, skip this step and return 0 directly
-					double[] qualityScores; // Quality scores for each time step
-					double maxQ = -1;
-					double avgQ, sdQ;
-					int maxIndex = -1;
-					boolean earlyConvergence = false;
-					int lastIndex = -1;
-		
-					double[] maxQArray = new double[numIterations];
-					double[] avgQArray = new double[numIterations];
-					double[] sdQArray = new double[numIterations];
-		
-					// Create initially random cluster solutions; supply the number of nodes and clusters
-					ArrayList<ClusterSolution> cs = new ArrayList<ClusterSolution>();
-					for (int i = 0; i < numParents; i++) {
-						cs.add(new ClusterSolution(this.congruence.get(t).getMatrix().length, numClusters, rng));
-					}
-		
-					// Run through iterations and do the breeding, then collect results and stats
-					lastIndex = numIterations - 1; // choose last possible value here as a default if early convergence does not happen
-					for (int i = 0; i < numIterations; i++) {
-						GeneticIteration geneticIteration = new GeneticIteration(cs, this.congruence.get(t).getMatrix(), this.conflict.get(t).getMatrix(), this.normaliseScores, this.numClusters, rng);
-						cs = geneticIteration.getChildren();
-		
-						// compute summary statistics based on iteration step and retain them
-						qualityScores = geneticIteration.getQ();
-						maxQ = -1.0;
-						avgQ = 0.0;
-						sdQ = 0.0;
-						maxIndex = -1;
-						for (int j = 0; j < cs.size(); j++) {
-							avgQ += qualityScores[j];
-							if (qualityScores[j] > maxQ) {
-								maxQ = qualityScores[j];
-								maxIndex = j;
-							}
-						}
-						avgQ = avgQ / numParents;
-						for (int j = 0; j < numParents; j++) {
-							sdQ = sdQ + Math.sqrt(((qualityScores[j] - avgQ) * (qualityScores[j] - avgQ)) / numParents);
-						}
-						maxQArray[i] = maxQ;
-						avgQArray[i] = avgQ;
-						sdQArray[i] = sdQ;
-		
-						// check early convergence
-						earlyConvergence = true;
-						if (i >= 10 && (double) Math.round(sdQ * 100) / 100 == 0.00 && (double) Math.round(maxQ * 100) / 100 == (double) Math.round(avgQ * 100) / 100) {
-							for (int j = i - 10; j < i; j++) {
-								if ((double) Math.round(maxQArray[j] * 100) / 100 != (double) Math.round(maxQ * 100) / 100 ||
-										(double) Math.round(avgQArray[j] * 100) / 100 != (double) Math.round(avgQ * 100) / 100 ||
-										(double) Math.round(sdQArray[j] * 100) / 100 != 0.00) {
-									earlyConvergence = false;
-								}
-							}
-						} else {
-							earlyConvergence = false;
-						}
-						if (earlyConvergence == true) {
-							lastIndex = i;
-							break;
-						}
-					}
-		
-					// correct for early convergence in results vectors
-					int finalIndex = lastIndex;
-					for (int i = lastIndex; i >= 0; i--) {
-						if (maxQArray[i] == maxQArray[lastIndex]) {
-							finalIndex = i;
-						} else {
-							break;
-						}
-					}
-					
-					double[] maxQArrayTemp = new double[finalIndex + 1];
-					double[] avgQArrayTemp = new double[finalIndex + 1];
-					double[] sdQArrayTemp = new double[finalIndex + 1];
-					for (int i = 0; i < finalIndex + 1; i++) {
-						maxQArrayTemp[i] = maxQArray[i];
-						avgQArrayTemp[i] = avgQArray[i];
-						sdQArrayTemp[i] = sdQArray[i];
-					}
-					maxQArray = maxQArrayTemp;
-					avgQArray = avgQArrayTemp;
-					sdQArray = sdQArrayTemp;
-		
-					// save results in array as a complex object
-					PolarisationResult pr = new PolarisationResult(
-							maxQArray.clone(),
-							avgQArray.clone(),
-							sdQArray.clone(),
-							maxQ,
-							cs.get(maxIndex).getMemberships().clone(),
-							this.congruence.get(t).getRowNames(),
-							earlyConvergence,
-							this.congruence.get(t).getStart(),
-							this.congruence.get(t).getStop(),
-							this.congruence.get(t).getDateTime());
-					polarisationResults.add(pr);
-				} else { // zero result because network is empty
-					PolarisationResult pr = new PolarisationResult(
-							new double[] { 0 },
-							new double[] { 0 },
-							new double[] { 0 },
-							0.0,
-							new int[0],
-							new String[0],
-							true,
-							this.congruence.get(t).getStart(),
-							this.congruence.get(t).getStop(),
-							this.congruence.get(t).getDateTime());
-							polarisationResults.add(pr);
+	public PolarisationResultTimeSeries geneticAlgorithm() {
+		Random r = (this.randomSeed == 0) ? new Random() : new Random(this.randomSeed); // Initialize RNG
+	
+		ArrayList<PolarisationResult> polarisationResults = ProgressBar
+				.wrap(IntStream.range(0, Polarisation.this.congruence.size()).parallel(), "Genetic algorithm")
+				.map(t -> geneticTimeStep(t, r.nextLong()))
+		  		.collect(Collectors.toCollection(ArrayList::new));
+  
+		return new PolarisationResultTimeSeries(polarisationResults);
+	}
+	
+	/**
+	 * Runs the genetic algorithm for a single time step.
+	 *
+	 * @param t The time step index.
+	 * @param seed A random seed to ensure reproducibility.
+	 * @return The PolarisationResult for the given time step.
+	 */
+	private PolarisationResult geneticTimeStep(int t, long seed) {
+		// Skip empty networks
+		if (this.congruence.get(t).getMatrix().length == 0 || 
+			(calculateMatrixNorm(this.congruence.get(t).getMatrix()) + calculateMatrixNorm(this.conflict.get(t).getMatrix())) == 0) {
+			
+			return new PolarisationResult(
+				new double[]{0}, new double[]{0}, new double[]{0}, 0.0, 
+				new int[0], new String[0], true, 
+				this.congruence.get(t).getStart(), 
+				this.congruence.get(t).getStop(), 
+				this.congruence.get(t).getDateTime()
+			);
+		}
+	
+		// Genetic Algorithm Variables
+		Random rng = new Random(seed);
+		double maxQ = -1, avgQ, sdQ;
+		int maxIndex = -1;
+		boolean earlyConvergence = false;
+		int lastIndex = numIterations - 1; // choose last possible value here as a default if early convergence does not happen
+	
+		double[] maxQArray = new double[numIterations];
+		double[] avgQArray = new double[numIterations];
+		double[] sdQArray = new double[numIterations];
+	
+		// Initialize random cluster solutions
+		ArrayList<ClusterSolution> cs = new ArrayList<>();
+		for (int i = 0; i < numParents; i++) {
+			cs.add(new ClusterSolution(this.congruence.get(t).getMatrix().length, numClusters, rng));
+		}
+	
+		// Iterative breeding process
+		for (int i = 0; i < numIterations; i++) {
+			GeneticIteration geneticIteration = new GeneticIteration(
+				cs, this.congruence.get(t).getMatrix(), 
+				this.conflict.get(t).getMatrix(), 
+				this.normaliseScores, this.numClusters, rng
+			);
+			cs = geneticIteration.getChildren();
+	
+			// Compute quality metrics
+			double[] qualityScores = geneticIteration.getQ();
+			maxQ = -1.0;
+			avgQ = 0.0;
+			sdQ = 0.0;
+			maxIndex = -1;
+	
+			for (int j = 0; j < cs.size(); j++) {
+				avgQ += qualityScores[j];
+				if (qualityScores[j] > maxQ) {
+					maxQ = qualityScores[j];
+					maxIndex = j;
 				}
-				pb.step();
+			}
+			avgQ /= numParents;
+	
+			for (int j = 0; j < numParents; j++) {
+				sdQ += Math.sqrt(((qualityScores[j] - avgQ) * (qualityScores[j] - avgQ)) / numParents);
+			}
+	
+			maxQArray[i] = maxQ;
+			avgQArray[i] = avgQ;
+			sdQArray[i] = sdQ;
+	
+			// Early Convergence Check
+			earlyConvergence = true;
+			if (i >= 10 && (double) Math.round(sdQ * 100) / 100 == 0.00 &&
+				(double) Math.round(maxQ * 100) / 100 == (double) Math.round(avgQ * 100) / 100) {
+				
+				for (int j = i - 10; j < i; j++) {
+					if ((double) Math.round(maxQArray[j] * 100) / 100 != (double) Math.round(maxQ * 100) / 100 ||
+						(double) Math.round(avgQArray[j] * 100) / 100 != (double) Math.round(avgQ * 100) / 100 ||
+						(double) Math.round(sdQArray[j] * 100) / 100 != 0.00) {
+						
+						earlyConvergence = false;
+					}
+				}
+			} else {
+				earlyConvergence = false;
+			}
+	
+			if (earlyConvergence) {
+				lastIndex = i;
+				break;
 			}
 		}
-		PolarisationResultTimeSeries polarisationResultTimeSeries = new PolarisationResultTimeSeries(polarisationResults);
-		return polarisationResultTimeSeries;
+	
+		// Adjust results for early convergence
+		int finalIndex = lastIndex;
+		for (int i = lastIndex; i >= 0; i--) {
+			if (maxQArray[i] == maxQArray[lastIndex]) {
+				finalIndex = i;
+			} else {
+				break;
+			}
+		}
+	
+		double[] maxQArrayTemp = new double[finalIndex + 1];
+		double[] avgQArrayTemp = new double[finalIndex + 1];
+		double[] sdQArrayTemp = new double[finalIndex + 1];
+	
+		for (int i = 0; i < finalIndex + 1; i++) {
+			maxQArrayTemp[i] = maxQArray[i];
+			avgQArrayTemp[i] = avgQArray[i];
+			sdQArrayTemp[i] = sdQArray[i];
+		}
+	
+		// Store results
+		return new PolarisationResult(
+			maxQArrayTemp, avgQArrayTemp, sdQArrayTemp, 
+			maxQ, cs.get(maxIndex).getMemberships().clone(), 
+			this.congruence.get(t).getRowNames(), earlyConvergence, 
+			this.congruence.get(t).getStart(), 
+			this.congruence.get(t).getStop(), 
+			this.congruence.get(t).getDateTime()
+		);
 	}
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	/** Calculate the entrywise 1-norm (= the sum of absolute values) of a matrix. The
 	 *  input matrix is represented by a two-dimensional double array.

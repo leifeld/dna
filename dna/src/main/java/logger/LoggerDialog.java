@@ -45,7 +45,6 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableRowSorter;
 
 import gui.FileChooser;
-import gui.NewDatabaseDialog;
 import org.jdesktop.swingx.JXTextArea;
 
 import com.google.gson.Gson;
