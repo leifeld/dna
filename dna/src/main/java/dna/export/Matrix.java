@@ -26,6 +26,12 @@ public class Matrix implements Cloneable {
 		this.integer = integer;
 		this.start = start;
 		this.stop = stop;
+
+		// calculate the mid-point date/time
+		long startEpoch = start.toEpochSecond(ZoneOffset.UTC);
+        long endEpoch = stop.toEpochSecond(ZoneOffset.UTC);
+        long midpointEpoch = (startEpoch + endEpoch) / 2; // Average of timestamps
+		this.dateTime = LocalDateTime.ofEpochSecond(midpointEpoch, 0, ZoneOffset.UTC);
 	}
 
 	/**

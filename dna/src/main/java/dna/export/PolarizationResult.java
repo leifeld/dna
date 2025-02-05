@@ -9,7 +9,7 @@ import java.util.Objects;
  * single time step of the time window algorithm or the whole network if no
  * time window was set.
  */
-public final class PolarisationResult {
+public final class PolarizationResult {
 
     private final double[] maxQ;
     private final double[] avgQ;
@@ -37,7 +37,7 @@ public final class PolarisationResult {
      * @param middle           The mid-point date of the time window network. Cannot be null. If no time window was set, this is the date of the network.
      * @throws IllegalArgumentException if any array is null, has invalid sizes, or if start, stop, or middle is null.
      */
-    public PolarisationResult(double[] maxQ, double[] avgQ, double[] sdQ, double finalMaxQ,
+    public PolarizationResult(double[] maxQ, double[] avgQ, double[] sdQ, double finalMaxQ,
                               int[] memberships, String[] names, boolean earlyConvergence,
                               LocalDateTime start, LocalDateTime stop, LocalDateTime middle) {
 
@@ -128,7 +128,7 @@ public final class PolarisationResult {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        PolarisationResult that = (PolarisationResult) o;
+        PolarizationResult that = (PolarizationResult) o;
         return Double.compare(that.finalMaxQ, finalMaxQ) == 0 &&
                 earlyConvergence == that.earlyConvergence &&
                 Arrays.equals(maxQ, that.maxQ) &&

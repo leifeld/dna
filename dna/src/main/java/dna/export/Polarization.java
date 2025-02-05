@@ -1,3 +1,62 @@
+/**
+ * The Polarization class is responsible for calculating the polarization of a series of networks.
+ * It supports two algorithms: genetic and greedy, for clustering and evaluating the polarization quality.
+ * The class uses kernel smoothing to compute network matrices over time and evaluates the quality of polarization
+ * based on the absolute differences between observed and expected congruence and conflict within and between clusters.
+ * 
+ * <p>Constructor Parameters:</p>
+ * <ul>
+ *   <li>statementType: The type of statement to be analyzed.</li>
+ *   <li>variable1: The first variable for analysis.</li>
+ *   <li>variable1Document: Indicates if the first variable is a document attribute.</li>
+ *   <li>variable2: The second variable for analysis.</li>
+ *   <li>variable2Document: Indicates if the second variable is a document attribute.</li>
+ *   <li>qualifier: An optional qualifier variable for analysis.</li>
+ *   <li>qualifierDocument: Indicates if the qualifier is a document attribute.</li>
+ *   <li>duplicates: Handling of duplicate statements.</li>
+ *   <li>ldtStart: The start date-time for analysis.</li>
+ *   <li>ldtStop: The stop date-time for analysis.</li>
+ *   <li>timeWindow: The time window for kernel smoothing.</li>
+ *   <li>windowSize: The size of the time window.</li>
+ *   <li>kernel: The kernel function to be used for smoothing.</li>
+ *   <li>indentTime: Indicates if the time should be indented.</li>
+ *   <li>excludeValueMap: A map of values to be excluded from the analysis.</li>
+ *   <li>excludeAuthors: An array of authors to be excluded.</li>
+ *   <li>excludeSources: An array of sources to be excluded.</li>
+ *   <li>excludeSections: An array of sections to be excluded.</li>
+ *   <li>excludeTypes: An array of types to be excluded.</li>
+ *   <li>invertValues: Indicates if values should be inverted.</li>
+ *   <li>invertAuthors: Indicates if authors should be inverted.</li>
+ *   <li>invertSources: Indicates if sources should be inverted.</li>
+ *   <li>invertSections: Indicates if sections should be inverted.</li>
+ *   <li>invertTypes: Indicates if types should be inverted.</li>
+ *   <li>algorithm: The algorithm to be used ('genetic' or 'greedy').</li>
+ *   <li>normalizeScores: Indicates if scores should be normalized.</li>
+ *   <li>numClusters: The number of clusters.</li>
+ *   <li>numParents: The number of parent solutions in the genetic algorithm.</li>
+ *   <li>numIterations: The number of iterations for the genetic algorithm.</li>
+ *   <li>elitePercentage: The percentage of elite solutions to retain.</li>
+ *   <li>mutationPercentage: The percentage of mutations to apply.</li>
+ *   <li>randomSeed: The random seed for reproducibility. If 0, random results are produced.</li>
+ * </ul>
+ * 
+ * <p>Methods:</p>
+ * <ul>
+ *   <li>{@link #getResults()}: Returns the results of the polarization analysis.</li>
+ *   <li>{@link #qualityAbsdiff(int[], double[][], double[][], boolean, int)}: Calculates the quality of polarization based on absolute differences.</li>
+ *   <li>{@link #calculateRanks(double...)}: Ranks the values of a double array in descending order.</li>
+ *   <li>{@link MembershipPair}: Represents pairs of indices for membership bits in the genetic algorithm.</li>
+ *   <li>{@link ClusterSolution}: Represents a cluster solution in the genetic algorithm.</li>
+ *   <li>{@link GeneticIteration}: Represents a single iteration of the genetic algorithm.</li>
+ *   <li>{@link #geneticAlgorithm()}: Runs the genetic algorithm over all time steps.</li>
+ *   <li>{@link #geneticTimeStep(int, long)}: Runs the genetic algorithm for a single time step.</li>
+ *   <li>{@link #calculateMatrixNorm(double[][])}: Calculates the entrywise 1-norm of a matrix.</li>
+ *   <li>{@link #computeKernelSmoothedTimeSlices()}: Computes a series of network matrices using kernel smoothing.</li>
+ *   <li>{@link #create3dArray(String[], String[], String[], ArrayList)}: Creates a 3D array of ExportStatements for kernel smoothing.</li>
+ *   <li>{@link #greedyAlgorithm()}: Runs the greedy membership swapping algorithm over all time steps.</li>
+ *   <li>{@link #greedyTimeStep(Matrix, Matrix, boolean, int, long)}: Runs the greedy algorithm for a single time step.</li>
+ * </ul>
+ */
 package dna.export;
 
 import java.time.LocalDateTime;
@@ -20,31 +79,75 @@ import me.tongfei.progressbar.ProgressBar;
 import model.Entity;
 import model.StatementType;
 
-/*
-* Class to calculate the polarisation of a series of networks.
-*/
-public class Polarisation {
+/**
+ * The Polarization class calculates the polarization of a network using either a
+ * genetic algorithm or a greedy algorithm. It processes network data over time if
+ * necessary, applying kernel smoothing and an absolute difference quality/fitness
+ * function to evaluate the quality of polarization within the network.
+ * 
+ * <p>This class includes methods for initializing the network data, validating input
+ * parameters, and running the genetic and greedy algorithms. It also provides utility
+ * methods for calculating matrix norms, creating 3D arrays of statements, and computing
+ * kernel-smoothed time slices.</p>
+ * 
+ * <p>Valid input parameters are described in the Exporter class documentation where
+ * not explicitly defined here.</p>
+ * 
+ * @param statementType The type of statement to be processed.
+ * @param variable1 The first variable for analysis.
+ * @param variable1Document Whether the first variable is a document attribute.
+ * @param variable2 The second variable for analysis.
+ * @param variable2Document Whether the second variable is a document attribute.
+ * @param qualifier An optional qualifier for the analysis.
+ * @param qualifierDocument Whether the qualifier is a document attribute.
+ * @param duplicates How to handle duplicate statements.
+ * @param ldtStart The start date-time for the analysis.
+ * @param ldtStop The stop date-time for the analysis.
+ * @param timeWindow The time window for kernel smoothing. Can be "no" (for no time window), "minutes", "hours", "days", "weeks", "months", or "years".
+ * @param windowSize The size of the time window. Should be a positive integer indicating the number of days, weeks etc or 0 if no time window.
+ * @param kernel The kernel function to use for smoothing. Can be "uniform", "triangular", "epanechnikov", or "gaussian".
+ * @param indentTime Whether to indent the time window. If true, the first time window starts half the time window size after the first statement and ends half the time window size before the last statement.
+ * @param excludeValueMap A map of values to exclude from the analysis.
+ * @param excludeAuthors An array of authors to exclude.
+ * @param excludeSources An array of sources to exclude.
+ * @param excludeSections An array of sections to exclude.
+ * @param excludeTypes An array of types to exclude.
+ * @param invertValues Whether to invert the values.
+ * @param invertAuthors Whether to invert the authors.
+ * @param invertSources Whether to invert the sources.
+ * @param invertSections Whether to invert the sections.
+ * @param invertTypes Whether to invert the types.
+ * @param algorithm The algorithm to use ("genetic" or "greedy").
+ * @param normalizeScores Whether to normalize the scores. This removes the effect of the number of statements.
+ * @param numClusters The number of clusters. Usually 2 for bipolarization into two groups.
+ * @param numParents The number of parent solutions. The number of parent solutions for the genetic algorithm. For example, 30 or 50.
+ * @param numIterations The number of iterations. Maximum number of iterations for the genetic algorithm if no convergence.
+ * @param elitePercentage The percentage of elite solutions to retain. Between 0 and 1.
+ * @param mutationPercentage The percentage of mutations to apply. Between 0 and 1.
+ * @param randomSeed The random seed for reproducibility. 0 for random results.
+ */
+public class Polarization {
     Exporter exporter;
     final StatementType statementType;
     final String variable1, variable2, qualifier, duplicates, timeWindow, kernel, algorithm;
-    final boolean variable1Document, variable2Document, qualifierDocument, invertValues, invertAuthors, invertSources, invertSections, invertTypes, indentTime, normaliseScores;
+    final boolean variable1Document, variable2Document, qualifierDocument, invertValues, invertAuthors, invertSources, invertSections, invertTypes, indentTime, normalizeScores;
     final LocalDateTime ldtStart, ldtStop;
-    int windowSize;
+    final int windowSize;
     final HashMap<String, ArrayList<String>> excludeValueMap;
     final String[] excludeAuthors, excludeSources, excludeSections, excludeTypes;
 	ArrayList<Matrix> congruence, conflict;
 	final int numParents, numClusters, numIterations;
 	final double elitePercentage, mutationPercentage;
 	final long randomSeed;
-	PolarisationResultTimeSeries results;
+	PolarizationResultTimeSeries results;
 
-    public Polarisation(StatementType statementType, String variable1, boolean variable1Document, String variable2,
+    public Polarization(StatementType statementType, String variable1, boolean variable1Document, String variable2,
             boolean variable2Document, String qualifier, boolean qualifierDocument, String duplicates,
 			LocalDateTime ldtStart, LocalDateTime ldtStop, String timeWindow, int windowSize, String kernel,
 			boolean indentTime, HashMap<String, ArrayList<String>> excludeValueMap, String[] excludeAuthors,
 			String[] excludeSources, String[] excludeSections, String[] excludeTypes, boolean invertValues,
 			boolean invertAuthors, boolean invertSources, boolean invertSections, boolean invertTypes,
-			String algorithm, boolean normaliseScores, int numClusters, int numParents, int numIterations,
+			String algorithm, boolean normalizeScores, int numClusters, int numParents, int numIterations,
 			double elitePercentage, double mutationPercentage, long randomSeed) {
 
 		// Validate input parameters
@@ -96,6 +199,43 @@ public class Polarisation {
 		} else {
 			this.mutationPercentage = mutationPercentage;
 		}
+		if (timeWindow == null) {
+			this.timeWindow = "no";
+		} else if (!timeWindow.equals("no") &&
+				!timeWindow.equals("seconds") &&
+				!timeWindow.equals("minutes") &&
+				!timeWindow.equals("hours") &&
+				!timeWindow.equals("days") &&
+				!timeWindow.equals("weeks") &&
+				!timeWindow.equals("months") &&
+				!timeWindow.equals("years") &&
+				!timeWindow.equals("events")) {
+			LogEvent le = new LogEvent(Logger.WARNING,
+					"Polarization: Time window setting invalid.",
+					"When exporting a network, the time window setting was \"" + timeWindow + "\", which is invalid. The only valid values are \"no\", \"minutes\", \"hours\", \"days\", \"weeks\", \"months\", and \"years\". Using the default value \"no\" in this case.");
+			Dna.logger.log(le);
+			this.timeWindow = "no";
+		} else {
+			this.timeWindow = timeWindow;
+		}
+		if (this.timeWindow.equals("no") && windowSize != 0) {
+			this.windowSize = 0;
+			LogEvent log = new LogEvent(Logger.WARNING, "Invalid window size.",
+					"Window size must be 0 because no time window is used. Setting time window size to 0.");
+			Dna.logger.log(log);
+		} else if (windowSize <= 0) {
+			this.windowSize = 10;
+			LogEvent log = new LogEvent(Logger.WARNING, "Invalid window size.",
+					"Window size must be positive. Using 10 instead.");
+			Dna.logger.log(log);
+		} else if (windowSize % 2 != 0) { // windowSize is the w constant in the paper; only even numbers are acceptable because adding or subtracting w / 2 to or from gamma would not yield integers
+			this.windowSize = windowSize + 1;
+			LogEvent log = new LogEvent(Logger.WARNING, "Invalid window size.",
+					"Window size must be an even number. Using " + this.windowSize + " instead.");
+			Dna.logger.log(log);
+		} else {
+			this.windowSize = windowSize;
+		}
 
         this.statementType = statementType;
         this.variable1 = variable1;
@@ -107,8 +247,6 @@ public class Polarisation {
         this.duplicates = duplicates;
         this.ldtStart = ldtStart;
         this.ldtStop = ldtStop;
-        this.timeWindow = timeWindow;
-        this.windowSize = windowSize;
         this.excludeValueMap = excludeValueMap;
         this.excludeAuthors = excludeAuthors;
         this.excludeSources = excludeSources;
@@ -121,7 +259,7 @@ public class Polarisation {
         this.invertTypes = invertTypes;
 		this.kernel = kernel;
 		this.indentTime = indentTime;
-		this.normaliseScores = normaliseScores;
+		this.normalizeScores = normalizeScores;
 		this.randomSeed = randomSeed;
 		this.congruence = new ArrayList<Matrix>();
 		this.conflict = new ArrayList<Matrix>();
@@ -163,7 +301,16 @@ public class Polarisation {
 		this.exporter.loadData();
 		this.exporter.filterStatements();
 
-		this.computeKernelSmoothedTimeSlices();
+		if (this.timeWindow.equals("no")) {
+			this.exporter.setQualifierAggregation("conflict");
+			this.exporter.computeResults();
+			this.conflict.add(new Matrix(this.exporter.getMatrixResults().get(0)));
+			this.exporter.setQualifierAggregation("congruence");
+			this.exporter.computeResults();
+			this.congruence.add(new Matrix(this.exporter.getMatrixResults().get(0)));
+		} else {
+			this.computeKernelSmoothedTimeSlices();
+		}
 
 		if (this.algorithm.equals("genetic")) {
 			this.results = this.geneticAlgorithm();
@@ -172,22 +319,22 @@ public class Polarisation {
 		}
     }
 
-	public PolarisationResultTimeSeries getResults() {
+	public PolarizationResultTimeSeries getResults() {
 		return this.results;
 	}
 
 	/**
-	 * Calculates the quality of polarisation based on the absolute differences 
+	 * Calculates the quality of polarization based on the absolute differences 
 	 * between observed and expected congruence and conflict within and between clusters.
 	 *
 	 * @param memberships An array where each element represents the cluster membership of a node.
 	 * @param congruenceNetwork A 2D array representing the congruence network.
 	 * @param conflictNetwork A 2D array representing the conflict network.
-	 * @param normaliseScores Should the result be divided by its theoretical maximum (the sum of the two matrix norms)?
+	 * @param normalizeScores Should the result be divided by its theoretical maximum (the sum of the two matrix norms)?
 	 * @param numClusters The number of clusters.
 	 * @return The quality of polarization as a double value.
 	 */
-	private double qualityAbsdiff(int[] memberships, double[][] congruenceNetwork, double[][] conflictNetwork, boolean normalise, int numClusters) {
+	private double qualityAbsdiff(int[] memberships, double[][] congruenceNetwork, double[][] conflictNetwork, boolean normalize, int numClusters) {
 		double congruenceNorm = calculateMatrixNorm(congruenceNetwork);
 		double conflictNorm = calculateMatrixNorm(conflictNetwork);
 
@@ -222,7 +369,7 @@ public class Polarisation {
 				}
 			}
 		}
-		if (normalise) {
+		if (normalize) {
 			return (absdiff / (2.0 * (congruenceNorm + conflictNorm))); // 2.0 factor adjustment because we count conflict and congruence twice each -- within and between clusters
 		} else {
 			return absdiff * 0.5; // 0.5 factor adjustment because we count conflict and congruence twice each -- within and between clusters
@@ -436,7 +583,7 @@ public class Polarisation {
 		 * @param rng                The random number generator to use.
 		 * @throws IllegalArgumentException If the input vector is invalid or incompatible.
 		 */
-		int[] crossover(int[] foreignMemberships, Random rng) {
+		int[] crossover(int[] foreignMemberships, Random rng) throws IllegalArgumentException{
 			// Validate input
 			if (foreignMemberships == null || foreignMemberships.length != this.memberships.length) {
 				throw new IllegalArgumentException("Incompatible membership vector lengths.");
@@ -457,6 +604,11 @@ public class Polarisation {
 
 		/**
 		 * Calculates the overlap matrix between two membership vectors.
+		 * 
+		 * @param memberships1 The first membership vector.
+		 * @param memberships2 The second membership vector.
+		 * @param k            The number of clusters.
+		 * @return The overlap matrix.
 		 */
 		private int[][] calculateOverlapMatrix(int[] memberships1, int[] memberships2, int k) {
 			int[][] matrix = new int[k][k];
@@ -468,6 +620,11 @@ public class Polarisation {
 
 		/**
 		 * Relabels clusters to maximize overlap between two membership vectors.
+		 * 
+		 * @param memberships1   The first membership vector.
+		 * @param memberships2   The second membership vector.
+		 * @param overlapMatrix  The overlap matrix between the two membership vectors.
+		 * @return The relabeled membership vector.
 		 */
 		private int[] performRelabeling(int[] memberships1, int[] memberships2, int[][] overlapMatrix) {
 			int k = overlapMatrix.length; // Number of clusters
@@ -524,6 +681,10 @@ public class Polarisation {
 
 		/**
 		 * Balances cluster distribution by adjusting over- and under-represented clusters.
+		 * 
+		 * @param memberships The membership vector to balance.
+		 * @param k           The number of clusters.
+		 * @return The balanced membership vector.
 		 */
 		private int[] balanceClusterDistribution(int[] memberships, int k) {
 			int[] counts = new int[k];
@@ -575,7 +736,7 @@ public class Polarisation {
 		final int numElites;
 		final int numMutations;
 		final ArrayList<ClusterSolution> clusterSolutions;
-		final boolean normalise;
+		final boolean normalize;
 		double[] q; // quality scores for each cluster solution
 		ArrayList<ClusterSolution> children; // children cluster solutions
 
@@ -586,14 +747,14 @@ public class Polarisation {
 		 * @param clusterSolutions The cluster solutions (= parents).
 		 * @param congruenceNetwork The congruence matrix.
 		 * @param conflictNetwork The conflict matrix.
-		 * @param normalise Should the quality/fitness scores be normalised?
+		 * @param normalize Should the quality/fitness scores be normalized?
 		 * @param numClusters The number of clusters.
 		 * @param rng The random number generator to use.
 		 * @return A list of children cluster solutions.
 		 */
-		GeneticIteration(ArrayList<ClusterSolution> clusterSolutions, double[][] congruenceNetwork, double[][] conflictNetwork, boolean normalise, int numClusters, Random rng) {
+		GeneticIteration(ArrayList<ClusterSolution> clusterSolutions, double[][] congruenceNetwork, double[][] conflictNetwork, boolean normalize, int numClusters, Random rng) {
 			this.clusterSolutions = new ArrayList<>(clusterSolutions);
-			this.normalise = normalise;
+			this.normalize = normalize;
 			this.congruenceNetwork = congruenceNetwork.clone();
 			this.conflictNetwork = conflictNetwork.clone();
 			this.n = this.congruenceNetwork.length;
@@ -610,7 +771,7 @@ public class Polarisation {
 					"Number of mutations based on the mutation percentage.");
 			Dna.logger.log(log);
 
-			this.q = evaluateQuality(this.congruenceNetwork, this.conflictNetwork, normalise, numClusters);
+			this.q = evaluateQuality(this.congruenceNetwork, this.conflictNetwork, this.normalize, numClusters);
 			this.children = eliteRetentionStep(this.clusterSolutions, this.q, this.numElites);
 			this.children = crossoverStep(this.clusterSolutions, this.q, this.children, rng);
 			this.children = mutationStep(this.children, this.numMutations, this.n,  rng);
@@ -619,19 +780,19 @@ public class Polarisation {
 		/**
 		 * Evaluates the quality of cluster solutions using the specified quality function.
 		 * The quality scores are transformed to the range [-Inf, 0] where 0 is high fitness
-		 * or [-1, 0] if normalisation is used.
+		 * or [-1, 0] if normalization is used.
 		 *
 		 * @param congruenceNetwork The congruence network matrix.
 		 * @param conflictNetwork   The conflict network matrix.
-		 * @param normalise         Normalise the results?
+		 * @param normalize         Normalize the results?
 		 * @param numClusters       The number of clusters.
 		 * @return An array of quality scores for each cluster solution.
 		 */
-		private double[] evaluateQuality(double[][] congruenceNetwork, double[][] conflictNetwork, boolean normalise, int numClusters) {
+		private double[] evaluateQuality(double[][] congruenceNetwork, double[][] conflictNetwork, boolean normalize, int numClusters) {
 			double[] q = new double[clusterSolutions.size()];
 			for (int i = 0; i < clusterSolutions.size(); i++) {
 				int[] mem = clusterSolutions.get(i).getMemberships();
-				q[i] = qualityAbsdiff(mem, congruenceNetwork, conflictNetwork, normalise, numClusters);
+				q[i] = qualityAbsdiff(mem, congruenceNetwork, conflictNetwork, normalize, numClusters);
 			}
 			return q;
 		}
@@ -821,17 +982,17 @@ public class Polarisation {
 	 * Take out the maximum quality measure at the last step and create an object
 	 * that stores the polarization results.
 	 * 
-	 * @return A PolarisationResultTimeSeries object containing the results of the genetic algorithm for each time step and iteration.
+	 * @return A PolarizationResultTimeSeries object containing the results of the genetic algorithm for each time step and iteration.
 	 */
-	public PolarisationResultTimeSeries geneticAlgorithm() {
+	public PolarizationResultTimeSeries geneticAlgorithm() {
 		Random r = (this.randomSeed == 0) ? new Random() : new Random(this.randomSeed); // Initialize RNG
 	
-		ArrayList<PolarisationResult> polarisationResults = ProgressBar
-				.wrap(IntStream.range(0, Polarisation.this.congruence.size()).parallel(), "Genetic algorithm")
+		ArrayList<PolarizationResult> polarizationResults = ProgressBar
+				.wrap(IntStream.range(0, Polarization.this.congruence.size()).parallel(), "Genetic algorithm")
 				.map(t -> geneticTimeStep(t, r.nextLong()))
 		  		.collect(Collectors.toCollection(ArrayList::new));
   
-		return new PolarisationResultTimeSeries(polarisationResults);
+		return new PolarizationResultTimeSeries(polarizationResults);
 	}
 	
 	/**
@@ -839,14 +1000,14 @@ public class Polarisation {
 	 *
 	 * @param t The time step index.
 	 * @param seed A random seed to ensure reproducibility.
-	 * @return The PolarisationResult for the given time step.
+	 * @return The PolarizationResult for the given time step.
 	 */
-	private PolarisationResult geneticTimeStep(int t, long seed) {
+	private PolarizationResult geneticTimeStep(int t, long seed) {
 		// Skip empty networks
 		if (this.congruence.get(t).getMatrix().length == 0 || 
 			(calculateMatrixNorm(this.congruence.get(t).getMatrix()) + calculateMatrixNorm(this.conflict.get(t).getMatrix())) == 0) {
 			
-			return new PolarisationResult(
+			return new PolarizationResult(
 				new double[]{0}, new double[]{0}, new double[]{0}, 0.0, 
 				new int[0], new String[0], true, 
 				this.congruence.get(t).getStart(), 
@@ -877,7 +1038,7 @@ public class Polarisation {
 			GeneticIteration geneticIteration = new GeneticIteration(
 				cs, this.congruence.get(t).getMatrix(), 
 				this.conflict.get(t).getMatrix(), 
-				this.normaliseScores, this.numClusters, rng
+				this.normalizeScores, this.numClusters, rng
 			);
 			cs = geneticIteration.getChildren();
 	
@@ -949,7 +1110,7 @@ public class Polarisation {
 		}
 	
 		// Store results
-		return new PolarisationResult(
+		return new PolarizationResult(
 			maxQArrayTemp, avgQArrayTemp, sdQArrayTemp, 
 			maxQ, cs.get(maxIndex).getMemberships().clone(), 
 			this.congruence.get(t).getRowNames(), earlyConvergence, 
@@ -959,26 +1120,6 @@ public class Polarisation {
 		);
 	}
 	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 	/** Calculate the entrywise 1-norm (= the sum of absolute values) of a matrix. The
 	 *  input matrix is represented by a two-dimensional double array.
 	 * 
@@ -1006,16 +1147,14 @@ public class Polarisation {
      * but using kernel smoothing around a forward-moving mid-point on the time axis (gamma). The networks are defined
      * by the mid-point {@code gamma}, the window size {@code w}, and the kernel function. If isolates are included,
 	 * all networks will have the same dimensions and labels. If isolates are excluded, the dimensions and labels will
-	 * change over time. For polarisation, changing dimensions and labels are recommended.
+	 * change over time. For polarization, changing dimensions and labels are recommended.
      */
 	public void computeKernelSmoothedTimeSlices() {
 
 		// initialise variables and constants
 		ArrayList<ExportStatement> filteredStatements = this.exporter.getFilteredStatements();
 		Collections.sort(filteredStatements);
-		if (this.windowSize % 2 != 0) { // windowSize is the w constant in the paper; only even numbers are acceptable because adding or subtracting w / 2 to or from gamma would not yield integers
-			this.windowSize = this.windowSize + 1;
-		}
+
 		LocalDateTime firstDate = filteredStatements.get(0).getDateTime();
 		LocalDateTime lastDate = filteredStatements.get(filteredStatements.size() - 1).getDateTime();
 		final int W_HALF = windowSize / 2;
@@ -1313,23 +1452,23 @@ public class Polarisation {
 	/**
 	 * Prepare the greedy membership swapping algorithm and run all the iterations.
 	 * Take out the maximum quality measure at the last step and create an object
-	 * that stores the polarisation results. Run the algorithm in parallel for all
+	 * that stores the polarization results. Run the algorithm in parallel for all
 	 * time windows.
 	 */
-	private PolarisationResultTimeSeries greedyAlgorithm () {
+	private PolarizationResultTimeSeries greedyAlgorithm () {
 		Random rng = (this.randomSeed == 0) ? new Random() : new Random(this.randomSeed); // Initialize random number generator
 
-		ArrayList<PolarisationResult> polarisationResults = ProgressBar
-		.wrap(IntStream.range(0, Polarisation.this.congruence.size()).parallel(), "Greedy algorithm")
-		.map(t -> greedyTimeStep(Polarisation.this.congruence.get(t),
-				Polarisation.this.conflict.get(t),
-				Polarisation.this.normaliseScores,
-				Polarisation.this.numClusters,
+		ArrayList<PolarizationResult> polarizationResults = ProgressBar
+		.wrap(IntStream.range(0, Polarization.this.congruence.size()).parallel(), "Greedy algorithm")
+		.map(t -> greedyTimeStep(Polarization.this.congruence.get(t),
+				Polarization.this.conflict.get(t),
+				Polarization.this.normalizeScores,
+				Polarization.this.numClusters,
 				rng.nextLong()))
 		.collect(Collectors.toCollection(ArrayList::new));
 
-		PolarisationResultTimeSeries polarisationResultTimeSeries = new PolarisationResultTimeSeries(polarisationResults);
-		return polarisationResultTimeSeries;
+		PolarizationResultTimeSeries polarizationResultTimeSeries = new PolarizationResultTimeSeries(polarizationResults);
+		return polarizationResultTimeSeries;
 	}
 	/**
 	 * A single run of the greedy algorithm, for one pair of congruence and conflict
@@ -1337,12 +1476,12 @@ public class Polarisation {
 	 * 
 	 * @param congruence      A Matrix object containing the 2D congruence array.
 	 * @param conflict        A Matrix object containing the 2D conflict array.
-	 * @param normaliseScores Normalise the absdiff quality/fitness scores to 1.0?
+	 * @param normalizeScores Normalize the absdiff quality/fitness scores to 1.0?
 	 * @param numClusters     The number of clusters.
 	 * @param seed            A random seed, which is used to create a new random number generator for this algorithm run. The seed should have been itself generated by a random number generator to ensure variability across time steps and reproducibility.
-	 * @return a PolarisationResult object
+	 * @return a PolarizationResult object
 	 */
-	private PolarisationResult greedyTimeStep(Matrix congruence, Matrix conflict, boolean normaliseScores, int numClusters, long seed) {
+	private PolarizationResult greedyTimeStep(Matrix congruence, Matrix conflict, boolean normalizeScores, int numClusters, long seed) {
 
 		// for each time step, run the algorithm over the cluster solutions; retain quality and memberships
 		double[][] congruenceMatrix = congruence.getMatrix();
@@ -1358,7 +1497,7 @@ public class Polarisation {
 			int[] mem = cs.getMemberships();
 
 			// evaluate quality of initial solution
-			maxQArray.add(qualityAbsdiff(mem, congruenceMatrix, conflictMatrix, normaliseScores, numClusters));
+			maxQArray.add(qualityAbsdiff(mem, congruenceMatrix, conflictMatrix, normalizeScores, numClusters));
 			int[] bestMemberships = mem.clone();
 			double maxQ = maxQArray.get(0);
 
@@ -1373,8 +1512,8 @@ public class Polarisation {
 							int oldJ = mem2[j];
 							mem2[i] = oldJ;
 							mem2[j] = oldI;
-							double q1 = qualityAbsdiff(mem, congruenceMatrix, conflictMatrix, normaliseScores, numClusters);
-							double q2 = qualityAbsdiff(mem2, congruenceMatrix, conflictMatrix, normaliseScores, numClusters);
+							double q1 = qualityAbsdiff(mem, congruenceMatrix, conflictMatrix, normalizeScores, numClusters);
+							double q2 = qualityAbsdiff(mem2, congruenceMatrix, conflictMatrix, normalizeScores, numClusters);
 							if (q2 > q1) { // candidate solution has higher fitness -> keep it
 								mem = mem2.clone(); // accept the new solution if it was better than the previous
 								maxQArray.add(q2);
@@ -1398,7 +1537,7 @@ public class Polarisation {
 			// save results in array as a complex object
 			double[] avgQArray = maxQArray2;
 			double[] sdQArray = new double[maxQArray.size()];
-			PolarisationResult pr = new PolarisationResult(
+			PolarizationResult pr = new PolarizationResult(
 					maxQArray2,
 					avgQArray,
 					sdQArray,
@@ -1411,7 +1550,7 @@ public class Polarisation {
 					congruence.getDateTime());
 			return pr;
 		} else { // zero result because network is empty
-			PolarisationResult pr = new PolarisationResult(
+			PolarizationResult pr = new PolarizationResult(
 					new double[] { 0 },
 					new double[] { 0 },
 					new double[] { 0 },

@@ -4,16 +4,16 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 /**
- * The PolarisationResultTimeSeries class represents a time series of PolarisationResult objects.
+ * The PolarizationResultTimeSeries class represents a time series of PolarizationResult objects.
  * It provides methods to retrieve various data from the time series, such as final maximum Q values,
  * early convergence flags, date and time arrays, maximum Q values, average Q values, standard deviation
  * of Q values, memberships, and names.
  *
- * <p>This class is designed to facilitate the analysis and export of polarisation results over time.</p>
+ * <p>This class is designed to facilitate the analysis and export of polarization results over time.</p>
  *
  * <p>Methods:</p>
  * <ul>
- *   <li>{@link #getResults()}: Returns the list of PolarisationResult objects.</li>
+ *   <li>{@link #getResults()}: Returns the list of PolarizationResult objects.</li>
  *   <li>{@link #getFinalMaxQs()}: Returns an array of final maximum Q values from the time series.</li>
  *   <li>{@link #getEarlyConvergence()}: Returns an array of boolean values indicating early convergence for each result.</li>
  *   <li>{@link #getDateTimeArray()}: Returns a 2D array of date and time values for start, middle, and stop times of each result.</li>
@@ -26,37 +26,37 @@ import java.util.ArrayList;
  *
  * <p>Constructor:</p>
  * <ul>
- *   <li>{@link #PolarisationResultTimeSeries(ArrayList<PolarisationResult>)}: Constructs a PolarisationResultTimeSeries with the specified list of PolarisationResult objects.</li>
+ *   <li>{@link #PolarizationResultTimeSeries(ArrayList<PolarizationResult>)}: Constructs a PolarizationResultTimeSeries with the specified list of PolarizationResult objects.</li>
  * </ul>
  */
-public class PolarisationResultTimeSeries {
-    final ArrayList<PolarisationResult> results;
+public class PolarizationResultTimeSeries {
+    final ArrayList<PolarizationResult> results;
 
     /**
-     * Constructs a PolarisationResultTimeSeries with the specified list of PolarisationResult objects.
+     * Constructs a PolarizationResultTimeSeries with the specified list of PolarizationResult objects.
      *
-     * @param results an ArrayList of PolarisationResult objects representing the time series data.
+     * @param results an ArrayList of PolarizationResult objects representing the time series data.
      */
-    public PolarisationResultTimeSeries(ArrayList<PolarisationResult> results) {
+    public PolarizationResultTimeSeries(ArrayList<PolarizationResult> results) {
         this.results = results;
     }
 
     /**
-     * Retrieves the list of PolarisationResult objects.
+     * Retrieves the list of PolarizationResult objects.
      *
-     * @return an ArrayList containing PolarisationResult objects.
+     * @return an ArrayList containing PolarizationResult objects.
      */
-    public ArrayList<PolarisationResult> getResults() {
+    public ArrayList<PolarizationResult> getResults() {
         return results;
     }
 
     /**
      * Retrieves an array of final maximum Q values from the results.
      *
-     * @return a double array containing the final maximum Q values from each PolarisationResult in the results list.
+     * @return a double array containing the final maximum Q values from each PolarizationResult in the results list.
      */
     public double[] getFinalMaxQs() {
-        return this.results.stream().mapToDouble(PolarisationResult::getFinalMaxQ).toArray();
+        return this.results.stream().mapToDouble(PolarizationResult::getFinalMaxQ).toArray();
     }
 
     /**

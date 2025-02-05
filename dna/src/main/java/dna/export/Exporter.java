@@ -3385,7 +3385,7 @@ public class Exporter {
 		fullMatrix = this.computeOneModeMatrix(this.filteredStatements, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
 		this.isolates = true; // include isolates in the iterations but not in the full matrix; will be adjusted to smaller full matrix dimensions without isolates manually each time in the iterations; necessary because some actors may be deleted in the backbone matrix otherwise after deleting their concepts
 
-		// compute normalised eigenvalues for the full matrix; no need to recompute every time as they do not change
+		// compute normalized eigenvalues for the full matrix; no need to recompute every time as they do not change
 		eigenvaluesFull = computeNormalizedEigenvalues(fullMatrix.getMatrix(), "ojalgo");
 		iteration = new int[fullConcepts.length];
 		backboneLoss = new double[fullConcepts.length];
@@ -3422,7 +3422,7 @@ public class Exporter {
 			candidateMatrix = this.computeOneModeMatrix(candidateStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
 			candidateMatrix = this.reduceCandidateMatrix(candidateMatrix, fullMatrix.getRowNames()); // ensure it has the right dimensions by purging isolates relative to the full matrix
 			candidateMatrices.add(candidateMatrix);
-			eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix(), "ojalgo"); // normalised eigenvalues for the candidate matrix
+			eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix(), "ojalgo"); // normalized eigenvalues for the candidate matrix
 			currentLosses[i] = spectralLoss(eigenvaluesFull, eigenvaluesCandidate);
 		}
 		double smallestLoss = 0.0;
@@ -3505,7 +3505,7 @@ public class Exporter {
 		fullMatrix = this.computeOneModeMatrix(this.filteredStatements, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
 		this.isolates = true; // include isolates in the iterations; will be adjusted to full matrix without isolates manually each time
 
-		// compute normalised eigenvalues for the full matrix; no need to recompute every time as they do not change
+		// compute normalized eigenvalues for the full matrix; no need to recompute every time as they do not change
 		eigenvaluesFull = computeNormalizedEigenvalues(fullMatrix.getMatrix(), "ojalgo");
 
 		if (penalty) { // simulated annealing with penalty: initially one randomly chosen entity in the backbone set
@@ -3558,7 +3558,7 @@ public class Exporter {
 		finalMatrix = this.reduceCandidateMatrix(finalMatrix, fullMatrix.getRowNames()); // ensure it has the right dimensions by purging isolates relative to the full matrix
 
 		// eigenvalues for final matrix
-		eigenvaluesFinal = computeNormalizedEigenvalues(finalMatrix.getMatrix(), "ojalgo"); // normalised eigenvalues for the candidate matrix
+		eigenvaluesFinal = computeNormalizedEigenvalues(finalMatrix.getMatrix(), "ojalgo"); // normalized eigenvalues for the candidate matrix
 
 		// create an initial current backbone set B_0, also with the one c_j concept like in B: B_0 <- {c_j}
 		currentBackboneList = new ArrayList<String>(finalBackboneList);
@@ -3671,7 +3671,7 @@ public class Exporter {
 				.collect(Collectors.toCollection(ArrayList::new));
 		candidateMatrix = this.computeOneModeMatrix(candidateStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime); // create candidate matrix after filtering the statements based on the action that was executed
 		candidateMatrix = this.reduceCandidateMatrix(candidateMatrix, fullMatrix.getRowNames()); // ensure it has the right dimensions by purging isolates relative to the full matrix
-		eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix(), "ojalgo"); // normalised eigenvalues for the candidate matrix
+		eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix(), "ojalgo"); // normalized eigenvalues for the candidate matrix
 		if (penalty) {
 			newLoss = penalizedLoss(eigenvaluesFull, eigenvaluesCandidate, p, candidateBackboneList.size(), fullConcepts.length); // spectral distance between full and candidate matrix
 		} else {
@@ -3749,7 +3749,7 @@ public class Exporter {
 		fullMatrix = this.computeOneModeMatrix(this.filteredStatements, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
 		this.isolates = true; // include isolates in the iterations; will be adjusted to full matrix without isolates manually each time
 
-		// compute normalised eigenvalues for the full matrix; no need to recompute every time as they do not change
+		// compute normalized eigenvalues for the full matrix; no need to recompute every time as they do not change
 		eigenvaluesFull = computeNormalizedEigenvalues(fullMatrix.getMatrix(), "ojalgo");
 
 		// create copy of filtered statements and remove redundant entities
@@ -3771,7 +3771,7 @@ public class Exporter {
 				.collect(Collectors.toCollection(ArrayList::new));
 		candidateMatrix = this.computeOneModeMatrix(candidateStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime); // create candidate matrix after filtering the statements based on the action that was executed
 		candidateMatrix = this.reduceCandidateMatrix(candidateMatrix, fullMatrix.getRowNames()); // ensure it has the right dimensions by purging isolates relative to the full matrix
-		eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix(), "ojalgo"); // normalised eigenvalues for the candidate matrix
+		eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix(), "ojalgo"); // normalized eigenvalues for the candidate matrix
 		results[0] = penalizedLoss(eigenvaluesFull, eigenvaluesCandidate, p, backboneSet.size(), fullConcepts.length); // spectral distance between full and candidate matrix
 
 		// spectral distance between full and redundant set
@@ -3781,7 +3781,7 @@ public class Exporter {
 				.collect(Collectors.toCollection(ArrayList::new));
 		candidateMatrix = this.computeOneModeMatrix(candidateStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime); // create candidate matrix after filtering the statements based on the action that was executed
 		candidateMatrix = this.reduceCandidateMatrix(candidateMatrix, fullMatrix.getRowNames()); // ensure it has the right dimensions by purging isolates relative to the full matrix
-		eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix(), "ojalgo"); // normalised eigenvalues for the candidate matrix
+		eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix(), "ojalgo"); // normalized eigenvalues for the candidate matrix
 		results[1] = penalizedLoss(eigenvaluesFull, eigenvaluesCandidate, p, redundantSet.size(), fullConcepts.length); // spectral distance between full and candidate matrix
 
 		return results;
