@@ -4,6 +4,9 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Objects;
 
+import dna.Dna;
+import logger.*;
+
 /**
  * Stores the results of a single run of the genetic algorithm, i.e., for a
  * single time step of the time window algorithm or the whole network if no
@@ -35,7 +38,6 @@ public final class PolarizationResult {
      * @param start            The start date and time of the time window network. Cannot be null. If no time window was set, this is the date of the network.
      * @param stop             The end date and time of the time window network. Cannot be null. If no time window was set, this is the date of the network.
      * @param middle           The mid-point date of the time window network. Cannot be null. If no time window was set, this is the date of the network.
-     * @throws IllegalArgumentException if any array is null, has invalid sizes, or if start, stop, or middle is null.
      */
     public PolarizationResult(double[] maxQ, double[] avgQ, double[] sdQ, double finalMaxQ,
                               int[] memberships, String[] names, boolean earlyConvergence,
@@ -43,16 +45,28 @@ public final class PolarizationResult {
 
         // Validate input
         if (maxQ == null || avgQ == null || sdQ == null || memberships == null || names == null) {
-            throw new IllegalArgumentException("Input arrays cannot be null.");
+            LogEvent l = new LogEvent(Logger.ERROR,
+                "Input arrays cannot be null.",
+                "While creating a PolarizationResult object, null objects were encountered.");
+            Dna.logger.log(l);
         }
         if (start == null || stop == null || middle == null) {
-            throw new IllegalArgumentException("Start, stop, and middle dates cannot be null.");
+            LogEvent l = new LogEvent(Logger.ERROR,
+                "Dates cannot be null.",
+                "While creating a PolarizationResult object, the start, stop, or middle date was null.");
+            Dna.logger.log(l);
         }
         if (maxQ.length != avgQ.length || maxQ.length != sdQ.length) {
-            throw new IllegalArgumentException("maxQ, avgQ, and sdQ must have the same length.");
+            LogEvent l = new LogEvent(Logger.ERROR,
+                "maxQ, avgQ, and sdQ must have the same length.",
+                "While creating a PolarizationResult object, the maxQ, avgQ, and sdQ arrays had different lengths.");
+            Dna.logger.log(l);
         }
         if (memberships.length != names.length) {
-            throw new IllegalArgumentException("Memberships and names must have the same length.");
+            LogEvent l = new LogEvent(Logger.ERROR,
+                "Memberships and names must have the same length.",
+                "While creating a PolarizationResult object, the memberships and names arrays had different lengths.");
+            Dna.logger.log(l);
         }
 
         // Assign fields

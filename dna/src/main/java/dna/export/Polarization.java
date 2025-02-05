@@ -466,20 +466,19 @@ public class Polarization {
 		 * @param n           The number of nodes (must be positive).
 		 * @param k           The number of clusters (must be positive).
 		 * @param memberships The membership vector (length must equal n, values must be in the range [0, k - 1]).
-		 * @throws IllegalArgumentException If any parameter is invalid.
 		 */
 		ClusterSolution(int n, int k, int[] memberships) {
 			if (n <= 0) {
-				throw new IllegalArgumentException("N must be positive.");
+				n = memberships.length;
+				LogEvent log = new LogEvent(Logger.WARNING, "Invalid number of nodes.",
+						"Number of nodes (N) must be positive. Using the length of the membership vector (" + n + ") instead.");
+				Dna.logger.log(log);
 			}
-			if (k <= 1) {
-				throw new IllegalArgumentException("K must be larger than 1.");
-			}
-			if (n <= k) {
-				throw new IllegalArgumentException("N must be larger than K.");
-			}
+			validateArguments(n, k);
 			if (memberships == null || memberships.length != n) {
-				throw new IllegalArgumentException("Memberships must have length equal to N.");
+				LogEvent log = new LogEvent(Logger.ERROR, "Invalid membership vector.",
+						"Memberships must have length equal to N.");
+				Dna.logger.log(log);
 			}
 			validateMemberships(memberships, k);
 			this.N = n;
@@ -493,18 +492,9 @@ public class Polarization {
 		 * @param n The number of nodes (must be positive).
 		 * @param k The number of clusters (must be positive).
 		 * @param rng The random number generator.
-		 * @throws IllegalArgumentException If any parameter is invalid.
 		 */
 		ClusterSolution(int n, int k, Random rng) {
-			if (n <= 0) {
-				throw new IllegalArgumentException("N must be positive.");
-			}
-			if (k <= 1) {
-				throw new IllegalArgumentException("K must be larger than 1.");
-			}
-			if (n <= k) {
-				throw new IllegalArgumentException("N must be larger than K.");
-			}
+			validateArguments(n, k);
 			this.N = n;
 			this.K = k;
 			this.memberships = createRandomMemberships(n, k, rng);
@@ -530,12 +520,36 @@ public class Polarization {
 		}
 
 		/**
+		 * Validates the input arguments for the ClusterSolution constructor.
+		 * 
+		 * @param n The number of nodes.
+		 * @param k The number of clusters.
+		 */
+		private void validateArguments(int n, int k) {
+			if (k <= 1) {
+				k = 2;
+				LogEvent log = new LogEvent(Logger.WARNING, "Invalid number of clusters.",
+						"Number of clusters (K) must be greater than 1. Using 2 clusters instead.");
+				Dna.logger.log(log);
+			}
+			if (n <= k) {
+				LogEvent log = new LogEvent(Logger.ERROR, "Invalid number of nodes and clusters.",
+						"Number of nodes (N) must be greater than the number of clusters (K).");
+				Dna.logger.log(log);
+			}
+		}
+		/**
 		 * Validates that all memberships are within the range [0, K - 1].
+		 * 
+		 * @param memberships The membership vector to validate.
+		 * @param k The number of clusters.
 		 */
 		private void validateMemberships(int[] memberships, int k) {
 			for (int membership : memberships) {
 				if (membership < 0 || membership >= k) {
-					throw new IllegalArgumentException("Membership values must be in the range [0, K - 1].");
+					LogEvent log = new LogEvent(Logger.ERROR, "Invalid membership value.",
+							"Membership values must be in the range [0, K - 1].");
+					Dna.logger.log(log);
 				}
 			}
 		}
@@ -581,12 +595,12 @@ public class Polarization {
 		 *
 		 * @param foreignMemberships A membership vector of a foreign cluster solution.
 		 * @param rng                The random number generator to use.
-		 * @throws IllegalArgumentException If the input vector is invalid or incompatible.
 		 */
-		int[] crossover(int[] foreignMemberships, Random rng) throws IllegalArgumentException{
-			// Validate input
+		int[] crossover(int[] foreignMemberships, Random rng) {
 			if (foreignMemberships == null || foreignMemberships.length != this.memberships.length) {
-				throw new IllegalArgumentException("Incompatible membership vector lengths.");
+				LogEvent log = new LogEvent(Logger.ERROR, "Invalid membership vector.",
+						"Membership vector must have the same length as the current solution.");
+				Dna.logger.log(log);
 			}
 			validateMemberships(foreignMemberships, K);
 
@@ -804,7 +818,6 @@ public class Polarization {
 		 * @param q                The array of quality values for the parent generation (their modularity or EI scores transformed to [0, 1] where 1 is high fitness).
 		 * @param numElites        The number of elite solutions to retain for the children generation.
 		 * @return A list of children containing the cloned elite solutions from the parent generation.
-		 * @throws IllegalArgumentException If the elite percentage is outside the valid range [0, 1].
 		 */
 		private ArrayList<ClusterSolution> eliteRetentionStep (ArrayList<ClusterSolution> clusterSolutions, double[] q, int numElites) {
 			int[] qRanks = calculateRanks(q); // Rank the quality values in descending order
@@ -815,7 +828,6 @@ public class Polarization {
 					try {
 						children.add((ClusterSolution) clusterSolutions.get(i).clone());
 					} catch (CloneNotSupportedException e) {
-
 						LogEvent log = new LogEvent(Logger.ERROR, "Elite solution at index " + i + " could not be cloned.", "Elite solutions are not copied to the children generation.");
 						Dna.logger.log(log);
 					}
@@ -925,7 +937,9 @@ public class Polarization {
 				return children; // No mutations to perform
 			}
 			if (numMutations < 0) {
-				throw new IllegalArgumentException("Number of mutations must be non-negative.");
+				LogEvent log = new LogEvent(Logger.ERROR, "Invalid number of mutations.",
+						"Number of mutations must be non-negative.");
+				Dna.logger.log(log);
 			}
 
 			for (int i = numElites; i < numParents; i++) {
@@ -1125,8 +1139,9 @@ public class Polarization {
 	 * 
 	 *  @param matrix The matrix for which to calculate the norm.
 	 *  @return The entrywise 1-norm (= sum of all absolute cell values) of the matrix.
+	 *  @throws IllegalArgumentException if the matrix is null.
 	 */
-	private double calculateMatrixNorm(double[][] matrix) {
+	private double calculateMatrixNorm(double[][] matrix) throws IllegalArgumentException {
 		if (matrix == null) {
 			LogEvent log = new LogEvent(Logger.ERROR, "Matrix is null.", "Error when trying to calculate the matrix norm in the genetic algorithm. Matrix cannot be null.");
 			Dna.logger.log(log);
@@ -1487,7 +1502,15 @@ public class Polarization {
 		double[][] congruenceMatrix = congruence.getMatrix();
 		double[][] conflictMatrix = conflict.getMatrix();
 		ArrayList<Double> maxQArray = new ArrayList<Double>();
-		double combinedNorm = calculateMatrixNorm(congruenceMatrix) + calculateMatrixNorm(congruenceMatrix);
+		double combinedNorm = 0.0;
+		try {
+			combinedNorm = calculateMatrixNorm(congruenceMatrix) + calculateMatrixNorm(congruenceMatrix);
+		} catch (Exception e) {
+			LogEvent log = new LogEvent(Logger.ERROR,
+				"Error when calculating the matrix norm.",
+				"Error when calculating the matrix norm in the greedy algorithm.");
+			Dna.logger.log(log);
+		}
 
 		if (congruenceMatrix.length > 0 || combinedNorm == 0.0) { // if the network has no nodes or edges, skip this step and return 0 directly
 
