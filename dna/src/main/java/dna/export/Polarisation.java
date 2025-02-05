@@ -212,9 +212,9 @@ public class Polarisation {
 				if (i != j) {
 					if (memberships[i] == memberships[j]) {
 						absdiff += Math.abs(congruenceNetwork[i][j] - expectedWithinClusterCongruence[memberships[i]]); // Within-cluster congruence
-						// absdiff += Math.abs(conflictNetwork[i][j]); // Conflict within clusters // not necessary, would count deviation twice
+						absdiff += Math.abs(conflictNetwork[i][j]); // Conflict within clusters
 					} else {
-						// absdiff += Math.abs(congruenceNetwork[i][j]); // Between-cluster congruence // not necessary, would count deviation twice
+						absdiff += Math.abs(congruenceNetwork[i][j]); // Between-cluster congruence
 						double betweenFactor = (double) clusterMembers[memberships[i]] * clusterMembers[memberships[j]] / numBetweenClusterDyads;
 						double expectedBetweenClusterConflict = betweenFactor * (conflictNorm / numBetweenClusterDyads);
 						absdiff += Math.abs(conflictNetwork[i][j] - expectedBetweenClusterConflict); // Between-cluster conflict
@@ -223,9 +223,9 @@ public class Polarisation {
 			}
 		}
 		if (normalise) {
-			return (absdiff / (congruenceNorm + conflictNorm));
+			return (absdiff / (2.0 * (congruenceNorm + conflictNorm))); // 2.0 factor adjustment because we count conflict and congruence twice each -- within and between clusters
 		} else {
-			return absdiff;
+			return absdiff * 0.5; // 0.5 factor adjustment because we count conflict and congruence twice each -- within and between clusters
 		}
 	}
 
