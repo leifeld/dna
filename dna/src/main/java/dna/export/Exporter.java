@@ -1,4 +1,4 @@
-package export;
+package dna.export;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -1962,7 +1962,7 @@ public class Exporter {
 	 * @param X A 3D array containing the data.
 	 * @return The matrix result after inserting the network matrix.
 	 */
-	private Matrix processTimeSlice(Matrix matrixResult, ArrayList<ExportStatement>[][][] X) {
+	public Matrix processTimeSlice(Matrix matrixResult, ArrayList<ExportStatement>[][][] X) {
 		if (this.networkType.equals("twomode")) {
 			double[][] m = new double[X.length][X[0].length];
 			for (int i = 0; i < X.length; i++) {
@@ -2109,8 +2109,7 @@ public class Exporter {
 	}
 
 	/**
-	 * Normalize all values in each results matrix to make them sum to 1.0. Useful for phase transition methods. Called
-	 * directly from R.
+	 * Normalize all values in each results matrix to make them sum to 1.0. Useful for phase transition methods.
 	 */
 	public void normalizeMatrixResultsToOne() {
 		try (ProgressBar pb = new ProgressBar("Matrix normalization", Exporter.this.matrixResults.size())) {
@@ -2360,6 +2359,25 @@ public class Exporter {
 		this.matrixResults = timeWindowMatrices;
 	}
 	
+	/**
+	 * Sets the qualifier aggregation value.
+	 *
+	 * @param qualifierAggregation the new value for qualifier aggregation
+	 */
+	public void setQualifierAggregation(String qualifierAggregation) {
+		this.qualifierAggregation = qualifierAggregation;
+	}
+
+	/**
+	 * Retrieves the data type associated with the specified variable.
+	 *
+	 * @param key the variable name whose associated data type is to be returned
+	 * @return the data type associated with the specified variable, or null if the key does not exist
+	 */
+	public String getDataType(String key) {
+		return this.dataTypes.get(key);
+	}
+
 	/**
 	 * Get the computed network matrix results as an array list.
 	 * 
@@ -3367,7 +3385,7 @@ public class Exporter {
 		fullMatrix = this.computeOneModeMatrix(this.filteredStatements, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
 		this.isolates = true; // include isolates in the iterations but not in the full matrix; will be adjusted to smaller full matrix dimensions without isolates manually each time in the iterations; necessary because some actors may be deleted in the backbone matrix otherwise after deleting their concepts
 
-		// compute normalised eigenvalues for the full matrix; no need to recompute every time as they do not change
+		// compute normalized eigenvalues for the full matrix; no need to recompute every time as they do not change
 		eigenvaluesFull = computeNormalizedEigenvalues(fullMatrix.getMatrix(), "ojalgo");
 		iteration = new int[fullConcepts.length];
 		backboneLoss = new double[fullConcepts.length];
@@ -3404,7 +3422,7 @@ public class Exporter {
 			candidateMatrix = this.computeOneModeMatrix(candidateStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
 			candidateMatrix = this.reduceCandidateMatrix(candidateMatrix, fullMatrix.getRowNames()); // ensure it has the right dimensions by purging isolates relative to the full matrix
 			candidateMatrices.add(candidateMatrix);
-			eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix(), "ojalgo"); // normalised eigenvalues for the candidate matrix
+			eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix(), "ojalgo"); // normalized eigenvalues for the candidate matrix
 			currentLosses[i] = spectralLoss(eigenvaluesFull, eigenvaluesCandidate);
 		}
 		double smallestLoss = 0.0;
@@ -3487,7 +3505,7 @@ public class Exporter {
 		fullMatrix = this.computeOneModeMatrix(this.filteredStatements, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
 		this.isolates = true; // include isolates in the iterations; will be adjusted to full matrix without isolates manually each time
 
-		// compute normalised eigenvalues for the full matrix; no need to recompute every time as they do not change
+		// compute normalized eigenvalues for the full matrix; no need to recompute every time as they do not change
 		eigenvaluesFull = computeNormalizedEigenvalues(fullMatrix.getMatrix(), "ojalgo");
 
 		if (penalty) { // simulated annealing with penalty: initially one randomly chosen entity in the backbone set
@@ -3540,7 +3558,7 @@ public class Exporter {
 		finalMatrix = this.reduceCandidateMatrix(finalMatrix, fullMatrix.getRowNames()); // ensure it has the right dimensions by purging isolates relative to the full matrix
 
 		// eigenvalues for final matrix
-		eigenvaluesFinal = computeNormalizedEigenvalues(finalMatrix.getMatrix(), "ojalgo"); // normalised eigenvalues for the candidate matrix
+		eigenvaluesFinal = computeNormalizedEigenvalues(finalMatrix.getMatrix(), "ojalgo"); // normalized eigenvalues for the candidate matrix
 
 		// create an initial current backbone set B_0, also with the one c_j concept like in B: B_0 <- {c_j}
 		currentBackboneList = new ArrayList<String>(finalBackboneList);
@@ -3653,7 +3671,7 @@ public class Exporter {
 				.collect(Collectors.toCollection(ArrayList::new));
 		candidateMatrix = this.computeOneModeMatrix(candidateStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime); // create candidate matrix after filtering the statements based on the action that was executed
 		candidateMatrix = this.reduceCandidateMatrix(candidateMatrix, fullMatrix.getRowNames()); // ensure it has the right dimensions by purging isolates relative to the full matrix
-		eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix(), "ojalgo"); // normalised eigenvalues for the candidate matrix
+		eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix(), "ojalgo"); // normalized eigenvalues for the candidate matrix
 		if (penalty) {
 			newLoss = penalizedLoss(eigenvaluesFull, eigenvaluesCandidate, p, candidateBackboneList.size(), fullConcepts.length); // spectral distance between full and candidate matrix
 		} else {
@@ -3731,7 +3749,7 @@ public class Exporter {
 		fullMatrix = this.computeOneModeMatrix(this.filteredStatements, this.qualifierAggregation, this.startDateTime, this.stopDateTime);
 		this.isolates = true; // include isolates in the iterations; will be adjusted to full matrix without isolates manually each time
 
-		// compute normalised eigenvalues for the full matrix; no need to recompute every time as they do not change
+		// compute normalized eigenvalues for the full matrix; no need to recompute every time as they do not change
 		eigenvaluesFull = computeNormalizedEigenvalues(fullMatrix.getMatrix(), "ojalgo");
 
 		// create copy of filtered statements and remove redundant entities
@@ -3753,7 +3771,7 @@ public class Exporter {
 				.collect(Collectors.toCollection(ArrayList::new));
 		candidateMatrix = this.computeOneModeMatrix(candidateStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime); // create candidate matrix after filtering the statements based on the action that was executed
 		candidateMatrix = this.reduceCandidateMatrix(candidateMatrix, fullMatrix.getRowNames()); // ensure it has the right dimensions by purging isolates relative to the full matrix
-		eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix(), "ojalgo"); // normalised eigenvalues for the candidate matrix
+		eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix(), "ojalgo"); // normalized eigenvalues for the candidate matrix
 		results[0] = penalizedLoss(eigenvaluesFull, eigenvaluesCandidate, p, backboneSet.size(), fullConcepts.length); // spectral distance between full and candidate matrix
 
 		// spectral distance between full and redundant set
@@ -3763,247 +3781,9 @@ public class Exporter {
 				.collect(Collectors.toCollection(ArrayList::new));
 		candidateMatrix = this.computeOneModeMatrix(candidateStatementList, this.qualifierAggregation, this.startDateTime, this.stopDateTime); // create candidate matrix after filtering the statements based on the action that was executed
 		candidateMatrix = this.reduceCandidateMatrix(candidateMatrix, fullMatrix.getRowNames()); // ensure it has the right dimensions by purging isolates relative to the full matrix
-		eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix(), "ojalgo"); // normalised eigenvalues for the candidate matrix
+		eigenvaluesCandidate = computeNormalizedEigenvalues(candidateMatrix.getMatrix(), "ojalgo"); // normalized eigenvalues for the candidate matrix
 		results[1] = penalizedLoss(eigenvaluesFull, eigenvaluesCandidate, p, redundantSet.size(), fullConcepts.length); // spectral distance between full and candidate matrix
 
 		return results;
-	}
-
-	/*
-	 * =============================================================================
-	 * Polarisation
-	 * =============================================================================
-	 */
-
-	/**
-	 * Compute Newman's modularity score for a given binary or weighted network
-	 * matrix. It works with signed networks and takes loops into account if they
-	 * exist. This implementation is based on the formulation presented in Newman
-	 * (2004), "Finding and evaluating community structure in networks," Physical
-	 * Review E, Equation 6. Values of 1 indicate perfect community structure, 0
-	 * indicates no community structure, and values of -1 indicate complete ties
-	 * between groups but no ties within groups, which is inversely related to the
-	 * interpretation of the EI index.
-	 * 
-	 * @param mem The community membership array (one value per node).
-	 * @param mat The network matrix (binary or weighted adjacency matrix).
-	 * @param K   The number of communities.
-	 * @return The modularity score.
-	 */
-	double modularity(int[] mem, double[][] mat, int K) {
-		if (mat == null || mat.length == 0 || mat.length != mat[0].length) {
-			throw new IllegalArgumentException("Matrix must be square and non-empty.");
-		}
-		if (mem == null || mem.length != mat.length) {
-			throw new IllegalArgumentException(
-					"Community membership array must match the number of nodes in the matrix.");
-		}
-		if (K <= 0) {
-			throw new IllegalArgumentException("Number of communities (K) must be greater than 0.");
-		}
-
-		int n = mat.length; // Number of nodes
-		double[] degrees = new double[n];
-		double m = 0.0; // Total weight of all edges
-
-		// Precompute degrees (k_i) and total edge weight (m)
-		// This corresponds to the summation \sum_j A_{ij} for k_i in the modularity
-		// formula
-		for (int i = 0; i < n; i++) {
-			for (int j = 0; j < n; j++) {
-				degrees[i] += mat[i][j];
-				m += mat[i][j];
-			}
-		}
-		m /= 2.0; // Divide total edge weight by 2 to account for double-counting i-j and j-i
-
-		// Compute modularity Q using the edge-based approach
-		double Q = 0.0;
-		for (int i = 0; i < n; i++) {
-			for (int j = 0; j < n; j++) {
-				if (mem[i] == mem[j]) { // Check if nodes i and j are in the same community (\delta(c_i, c_j))
-					// Add the contribution of this pair to modularity
-					// The first term (A_{ij}) and the second term (-k_i*k_j/2m) of Equation 6 are
-					// combined here
-					Q += mat[i][j] - (degrees[i] * degrees[j]) / (2.0 * m);
-				}
-			}
-		}
-
-		// Normalize the modularity score by dividing by 2m (as per the modularity
-		// formula)
-		return Q / (2.0 * m);
-	}
-
-	/**
-	 * Compute the E-I index for signed networks using the combined approach.
-	 *
-	 * This implementation calculates the E-I index as introduced by Krackhardt
-	 * (1987): "Cognitive Social Structures," Social Networks, 9(2), 109–134 (DOI:
-	 * 10.1016/0378-8733(87)90009-8). It combines positive and negative ties
-	 * directly by summing their contributions, with positive weights added and
-	 * negative weights subtracted in both the external (E) and internal (I) tie
-	 * calculations. The function works for binary or weighted networks, signed or
-	 * unsigned, and directed or undirected networks, while self-loops are ignored.
-	 * Note that -1 indicates complete segregation, 0 indicates no segregation, and
-	 * 1 indicates ties only between groups (i.e. the inverse interpretation of
-	 * modularity).
-	 *
-	 * @param memberships The community membership array (one value per node).
-	 * @param mat         The signed network matrix (weighted adjacency matrix with
-	 *                    positive and negative values).
-	 * @return The E-I index for the combined contributions of positive and negative
-	 *         ties.
-	 */
-	double eiIndex(int[] memberships, double[][] mat) {
-		double external = 0.0, internal = 0.0;
-		int n = mat.length;
-
-		// Iterate over all pairs (i, j)
-		for (int i = 0; i < n; i++) {
-			for (int j = 0; j < n; j++) {
-				if (i != j) { // Exclude self-loops
-					if (memberships[i] == memberships[j]) {
-						internal += mat[i][j]; // Add positive or subtract negative for internal ties
-					} else {
-						external += mat[i][j]; // Add positive or subtract negative for external ties
-					}
-				}
-			}
-		}
-
-		// Compute total weight of ties
-		double total = external + internal;
-
-		// Handle division by zero
-		if (total == 0) {
-			return 0.0; // No ties in the network
-		}
-
-		// Compute the combined E-I index
-		return (external - internal) / total;
-	}
-
-	/**
-	 * For a given int array, rank its values in descending order, starting at 0.
-	 *
-	 * @param arr An int array.
-	 * @return An array of ranks, starting with 0.
-	 */
-	int[] calculateRanks(int... arr) {
-		class Pair {
-			final int value;
-			final int index;
-
-			Pair(int value, int index) {
-				this.value = value;
-				this.index = index;
-			}
-		}
-
-		Pair[] pairs = new Pair[arr.length];
-		for (int index = 0; index < arr.length; ++index) {
-			pairs[index] = new Pair(arr[index], index);
-		}
-
-		// Sort pairs by value in descending order
-		Arrays.sort(pairs, (pair1, pair2) -> -Integer.compare(pair1.value, pair2.value));
-
-		int[] ranks = new int[arr.length];
-		for (int i = 0; i < pairs.length; ++i) {
-			ranks[pairs[i].index] = i;
-		}
-
-		return ranks;
-	}
-
-	/**
-	 * For a given double array, rank its values in descending order, starting at 0.
-	 *
-	 * @param arr A double array.
-	 * @return An array of ranks, starting with 0.
-	 */
-	int[] calculateRanks(double... arr) {
-		class Pair {
-			final double value;
-			final int index;
-
-			Pair(double value, int index) {
-				this.value = value;
-				this.index = index;
-			}
-		}
-
-		Pair[] pairs = new Pair[arr.length];
-		for (int index = 0; index < arr.length; ++index) {
-			pairs[index] = new Pair(arr[index], index);
-		}
-
-		// Sort pairs by value in descending order
-		Arrays.sort(pairs, (p1, p2) -> -Double.compare(p1.value, p2.value));
-
-		int[] ranks = new int[arr.length];
-		for (int i = 0; i < pairs.length; ++i) {
-			ranks[pairs[i].index] = i;
-		}
-
-		return ranks;
-	}
-
-	/**
-	 * Randomly assigns N items into K groups, ensuring a roughly even distribution.
-	 * 
-	 * The group assignments are generated such that each group index (0 to K - 1)
-	 * appears equally in the output unless N is not a multiple of K. The order of
-	 * assignments is randomised to ensure a fair distribution. The function is used
-	 * to create a balanced initial state for community detection algorithms.
-	 *
-	 * @param N Total number of items to assign to groups.
-	 * @param K Number of groups.
-	 * @return A shuffled array of group memberships.
-	 */
-	int[] createRandomMemberships(int N, int K) {
-		// Preallocate ArrayList with an exact capacity of N to avoid resizing
-		ArrayList<Integer> membership = new ArrayList<>(N);
-
-		// Calculate the number of complete repetitions needed to cover N items
-		int repetitions = (N + K - 1) / K; // Ceiling of N / K
-
-		// Populate the membership list with repeated group indices
-		for (int rep = 0; rep < repetitions; rep++) {
-			for (int i = 0; i < K && membership.size() < N; i++) {
-				// Add group index 'i' to the list, stopping early if size reaches N
-				membership.add(i);
-			}
-		}
-
-		// Shuffle the membership list to randomize the group assignments
-		Collections.shuffle(membership);
-
-		// Convert the ArrayList<Integer> to int[] for the final result
-		return membership.stream().mapToInt(Integer::intValue).toArray();
-	}
-
-	/**
-	 * For the genetic algorithm: define a class that represents pairs of two
-	 * indices of membership bits (i.e., index of the first node and index of
-	 * the second node in a membership solution, with a maximum of N nodes).
-	 */
-	class MembershipPair {
-		int firstIndex;
-		int secondIndex;
-
-		public MembershipPair(int firstIndex, int secondIndex) {
-			this.firstIndex = firstIndex;
-			this.secondIndex = secondIndex;
-		}
-
-		public int getFirstIndex() {
-			return this.firstIndex;
-		}
-
-		public int getSecondIndex() {
-			return this.secondIndex;
-		}
 	}
 }

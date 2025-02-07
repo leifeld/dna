@@ -10,13 +10,13 @@ import java.util.HashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import export.*;
 import me.tongfei.progressbar.ProgressBar;
 import model.Value;
 import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
 import org.rosuda.JRI.RConsoleOutputStream;
 import org.rosuda.JRI.Rengine;
 
+import dna.export.*;
 import logger.LogEvent;
 import logger.Logger;
 import model.Coder;
@@ -594,6 +594,86 @@ public class HeadlessDna implements Logger.LogListener {
 				Dna.logger.log(le);
 			}
 		}
+	}
+
+	/**
+	 * Compute a sequence of one-mode network matrices or a single one-mode network matrix, and compute their polarization score(s) and diagnostics.
+	 *
+	 * @param statementType      Statement type as a {@link String}.
+	 * @param variable1          First variable for export, provided as a {@link String}.
+	 * @param variable1Document  boolean indicating if the first variable is at the document level.
+	 * @param variable2          Second variable for export, provided as a {@link String}.
+	 * @param variable2Document  boolean indicating if the second variable is at the document level.
+	 * @param qualifier          Qualifier variable as a {@link String}.
+	 * @param duplicates         An input {@link String} from rDNA that can be {@code "include"}, {@code "document"}, {@code "week"}, {@code "month"}, {@code "year"}, or {@code "acrossrange"}.
+	 * @param startDate          Start date for the export, provided as a {@link String} with format {@code "dd.MM.yyyy"}.
+	 * @param stopDate           Stop date for the export, provided as a {@link String} with format {@code "dd.MM.yyyy"}.
+	 * @param timeWindow         A {@link String} indicating the time window setting. Valid options are {@code "no"}, {@code "events"}, {@code "seconds"}, {@code "minutes"}, {@code "hours"}, {@code "days"}, {@code "weeks"}, {@code "months"}, and {@code "years"}.
+	 * @param windowSize         Duration of the time window in the units specified in the {@code timeWindow} argument.
+	 * @param kernel             The kernel function for temporal smoothing: {@code "no"}, {@code "uniform"}, {@code "epanechnikov"}, {@code "triangular"}, or {@code "gaussian"}.
+	 * @param indentTime         boolean indicating if the timeline should be indented at the beginning and end such that all networks in the sequence of time windows must fit entirely into the timeline. If false, the first mid-point starts at the beginning, and the last network ends at the stop date and time.
+	 * @param excludeVariables   A {@link String} array with n elements, indicating the variable of the n'th value.
+	 * @param excludeValues      A {@link String} array with n elements, indicating the value pertaining to the n'th variable {@link String}.
+	 * @param excludeAuthors     A {@link String} array of values to exclude in the {@code author} variable at the document level.
+	 * @param excludeSources     A {@link String} array of values to exclude in the {@code source} variable at the document level.
+	 * @param excludeSections    A {@link String} array of values to exclude in the {@code section} variable at the document level.
+	 * @param excludeTypes       A {@link String} array of values to exclude in the {@code "type"} variable at the document level.
+	 * @param invertValues       boolean indicating whether the statement-level exclude values should be included (= {@code true}) rather than excluded.
+	 * @param invertAuthors      boolean indicating whether the document-level author values should be included (= {@code true}) rather than excluded.
+	 * @param invertSources      boolean indicating whether the document-level source values should be included (= {@code true}) rather than excluded.
+	 * @param invertSections     boolean indicating whether the document-level section values should be included (= {@code true}) rather than excluded.
+	 * @param invertTypes        boolean indicating whether the document-level type values should be included (= {@code true}) rather than excluded.
+	 * @param algorithm          The algorithm to maximise polarization at each time step. Can be "greedy" (for a greedy algorithm) or "genetic" (for a genetic algorithm).
+	 * @param normaliseScores    boolean indicating whether the polarization scores should be normalised by dividing them by their theoretical maximum within a given network. This takes away the effect of more activity (possibly due to participation by more actors or more statements per actor) contributing to polarization scores and focuses solely on structure given the edge mass in the network. Without normalisation, time periods with more actors and activity will elevate the polarization of the network (at constant levels of being divided over concepts).
+	 * @param numClusters		 The number of clusters or factions k, for example 2 for bi-polarization.
+	 * @param numParents         Only for the genetic algorithm: The number of cluster solutions (i.e., parents) to generate in each iteration, for example 30 or 50.
+	 * @param numterations       Only for the genetic algorithm: For how many generations should the genetic algorithm run at most? This is the maximal number of generations through which optimisation should be attempted. Will be lower if early convergence is detected. A suggested starting value is 1000.
+	 * @param elitePercentage    Only for the genetic algorithm: The share of cluster solutions in each parent generation that is copied into the children generation without changes, between 0.0 and 1.0, usually around 0.1.
+	 * @param mutationPercentage Only for the genetic algorithm: The probability with which each bit in any cluster solution is selected for mutation after the cross-over step. For example 0.1 to select 10% of the nodes to swap their memberships.
+	 * @param randomSeed         Only for the genetic algorithm: The random seed to use for the random number generator. Pass 0 for random behaviour.
+	 * @return                   A PolarizationResultTimeSeries object containing the results of the algorithm for each time step and iteration.
+	 */
+	public PolarizationResultTimeSeries rPolarization(String statementType, String variable1, boolean variable1Document,
+			String variable2, boolean variable2Document, String qualifier, String duplicates, String startDate,
+			String stopDate, String timeWindow, int windowSize, String kernel, boolean indentTime,
+			String[] excludeVariables, String[] excludeValues, String[] excludeAuthors, String[] excludeSources,
+			String[] excludeSections, String[] excludeTypes, boolean invertValues, boolean invertAuthors,
+			boolean invertSources, boolean invertSections, boolean invertTypes, String algorithm, boolean normaliseScores,
+			int numClusters, int numParents, int numIterations, double elitePercentage, double mutationPercentage,
+			long randomSeed) {
+
+		// step 1: preprocess arguments
+		StatementType st = Dna.sql.getStatementType(statementType); // format statement type
+
+		// format dates and times with input formats "dd.MM.yyyy" and "HH:mm:ss"
+		LocalDateTime ldtStart, ldtStop;
+		LocalDateTime[] dateRange = formatDateTime(startDate, "00:00:00", stopDate, "23:59:59");
+		ldtStart = dateRange[0];
+		ldtStop = dateRange[1];
+
+		// process exclude variables: create HashMap with variable:value pairs
+		HashMap<String, ArrayList<String>> map = new HashMap<String, ArrayList<String>>();
+		if (excludeVariables.length > 0) {
+			for (int i = 0; i < excludeVariables.length; i++) {
+				ArrayList<String> values = map.get(excludeVariables[i]);
+				if (values == null) {
+					values = new ArrayList<String>();
+				}
+				if (!values.contains(excludeValues[i])) {
+					values.add(excludeValues[i]);
+				}
+				Collections.sort(values);
+				map.put(excludeVariables[i], values);
+			}
+		}
+
+		Polarization polarization = new Polarization(st, variable1, variable1Document, variable2, variable2Document,
+				qualifier, false, duplicates, ldtStart, ldtStop, timeWindow, windowSize, kernel, indentTime,
+				map, excludeAuthors, excludeSources,	excludeSections, excludeTypes, invertValues, invertAuthors,
+				invertSources, invertSections, invertTypes, algorithm, normaliseScores, numClusters, numParents,
+				numIterations, elitePercentage, mutationPercentage, randomSeed);
+
+		return polarization.getResults();
 	}
 
 	/**

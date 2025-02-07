@@ -759,18 +759,18 @@ dna_getAttributes <- function(statementType = NULL,
   # get the data from the DNA database using rJava
   if (variableIdValid) {
     a <- .jcall(dnaEnvironment[["dna"]]$headlessDna,
-                "Lexport/DataFrame;",
+                "Ldna/export/DataFrame;",
                 "getAttributes",
                 as.integer(variableId))
   } else if (variableValid && statementTypeIdValid) {
     a <- .jcall(dnaEnvironment[["dna"]]$headlessDna,
-                "Lexport/DataFrame;",
+                "Ldna/export/DataFrame;",
                 "getAttributes",
                 as.integer(statementTypeId),
                 variable)
   } else if (variableValid && statementTypeValid) {
     a <- .jcall(dnaEnvironment[["dna"]]$headlessDna,
-                "Lexport/DataFrame;",
+                "Ldna/export/DataFrame;",
                 "getAttributes",
                 statementType,
                 variable)

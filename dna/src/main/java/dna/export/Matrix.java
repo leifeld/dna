@@ -1,4 +1,4 @@
-package export;
+package dna.export;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -26,6 +26,12 @@ public class Matrix implements Cloneable {
 		this.integer = integer;
 		this.start = start;
 		this.stop = stop;
+
+		// calculate the mid-point date/time
+		long startEpoch = start.toEpochSecond(ZoneOffset.UTC);
+        long endEpoch = stop.toEpochSecond(ZoneOffset.UTC);
+        long midpointEpoch = (startEpoch + endEpoch) / 2; // Average of timestamps
+		this.dateTime = LocalDateTime.ofEpochSecond(midpointEpoch, 0, ZoneOffset.UTC);
 	}
 
 	/**
@@ -58,8 +64,8 @@ public class Matrix implements Cloneable {
 	}
 
 	protected Object clone() throws CloneNotSupportedException {
-        return super.clone();
-    }
+		return super.clone();
+	}
 	
 	/**
 	 * @return the numStatements
@@ -192,5 +198,17 @@ public class Matrix implements Cloneable {
 	 */
 	public void setStop(LocalDateTime stop) {
 		this.stop = stop;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < matrix.length; i++) {
+			for (int j = 0; j < matrix[i].length; j++) {
+				sb.append(String.format("%.2f", matrix[i][j])).append("\t");
+			}
+			sb.append("\n");
+		}
+		return sb.toString();
 	}
 }

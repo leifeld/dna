@@ -216,13 +216,13 @@ dna_backbone <- function(method = "nested",
                          invertTypes = FALSE,
                          fileFormat = NULL,
                          outfile = NULL) {
-  
+
   # wrap the vectors of exclude values for document variables into Java arrays
   excludeAuthors <- .jarray(excludeAuthors)
   excludeSources <- .jarray(excludeSources)
   excludeSections <- .jarray(excludeSections)
   excludeTypes <- .jarray(excludeTypes)
-  
+
   # compile exclude variables and values vectors
   dat <- matrix("", nrow = length(unlist(excludeValues)), ncol = 2)
   count <- 0
@@ -244,7 +244,7 @@ dna_backbone <- function(method = "nested",
   }
   var <- .jarray(var) # array of variable names of each excluded value
   val <- .jarray(val) # array of values to be excluded
-  
+
   # encode R NULL as Java null value if necessary
   if (is.null(qualifier) || is.na(qualifier)) {
     qualifier <- .jnull(class = "java/lang/String")
@@ -255,7 +255,7 @@ dna_backbone <- function(method = "nested",
   if (is.null(outfile)) {
     outfile <- .jnull(class = "java/lang/String")
   }
-  
+
   # call rBackbone function to compute results
   .jcall(dnaEnvironment[["dna"]]$headlessDna,
          "V",
@@ -292,12 +292,12 @@ dna_backbone <- function(method = "nested",
          outfile,
          fileFormat
   )
-  
-  exporter <- .jcall(dnaEnvironment[["dna"]]$headlessDna, "Lexport/Exporter;", "getExporter") # get a reference to the Exporter object, in which results are stored
+
+  exporter <- .jcall(dnaEnvironment[["dna"]]$headlessDna, "Ldna/export/Exporter;", "getExporter") # get a reference to the Exporter object, in which results are stored
   if (!is.null(outfile) && !is.null(fileFormat) && is.character(outfile) && is.character(fileFormat) && fileFormat %in% c("json", "xml")) {
     message("File exported.")
   } else if (method[1] %in% c("penalty", "fixed")) {
-    result <- .jcall(exporter, "Lexport/SimulatedAnnealingBackboneResult;", "getSimulatedAnnealingBackboneResult", simplify = TRUE)
+    result <- .jcall(exporter, "Ldna/export/SimulatedAnnealingBackboneResult;", "getSimulatedAnnealingBackboneResult", simplify = TRUE)
     # create a list with various results
     l <- list()
     l$penalty <- .jcall(result, "D", "getPenalty")
@@ -312,7 +312,7 @@ dna_backbone <- function(method = "nested",
     l$unpenalized_backbone_loss <- .jcall(result, "D", "getUnpenalizedBackboneLoss")
     l$unpenalized_redundant_loss <- .jcall(result, "D", "getUnpenalizedRedundantLoss")
     rn <- .jcall(result, "[S", "getLabels")
-    
+
     # store the three matrices in the result list
     fullmat <- .jcall(result, "[[D", "getFullNetwork", simplify = TRUE)
     rownames(fullmat) <- rn
@@ -326,7 +326,7 @@ dna_backbone <- function(method = "nested",
     rownames(redundantmat) <- rn
     colnames(redundantmat) <- rn
     l$redundant_network <- redundantmat
-    
+
     # store diagnostics per iteration as a data frame
     d <- data.frame(iteration = 1:.jcall(result, "I", "getIterations"),
                     temperature = .jcall(result, "[D", "getTemperature"),
@@ -337,9 +337,9 @@ dna_backbone <- function(method = "nested",
                     current_backbone_size = .jcall(result, "[I", "getCurrentBackboneSize"),
                     optimal_backbone_size = .jcall(result, "[I", "getOptimalBackboneSize"),
                     acceptance_ratio_ma = .jcall(result, "[D", "getAcceptanceRatioMovingAverage"))
-    
+
     l$diagnostics <- d
-    
+
     # store start date/time, end date/time, number of statements, call, and class label in each network matrix
     start <- as.POSIXct(.jcall(result, "J", "getStart"), origin = "1970-01-01") # add the start date/time of the result as an attribute to the matrices
     attributes(l$full_network)$start <- start
@@ -360,7 +360,7 @@ dna_backbone <- function(method = "nested",
     class(l) <- c("dna_backbone", class(l))
     return(l)
   } else if (method[1] == "nested") {
-    result <- .jcall(exporter, "Lexport/NestedBackboneResult;", "getNestedBackboneResult", simplify = TRUE)
+    result <- .jcall(exporter, "Ldna/export/NestedBackboneResult;", "getNestedBackboneResult", simplify = TRUE)
     d <- data.frame(i = .jcall(result, "[I", "getIteration"),
                     entity = .jcall(result, "[S", "getEntities"),
                     backboneLoss = .jcall(result, "[D", "getBackboneLoss"),
@@ -409,7 +409,7 @@ print.dna_backbone <- function(x, trim = 50, ...) {
 #' @importFrom rlang .data
 #' @export
 plot.dna_backbone <- function(x, ma = 500, ...) {
-  
+
   if (attr(x, "method") != "nested") {
     # temperature and acceptance probability
     plot(x = x$diagnostics$iteration,
@@ -423,7 +423,7 @@ plot.dna_backbone <- function(x, ma = 500, ...) {
     # note that better solutions are coded as -1 and need to be skipped:
     lines(x = x$diagnostics$iteration[x$diagnostics$acceptance_prob >= 0],
           y = x$diagnostics$acceptance_prob[x$diagnostics$acceptance_prob >= 0])
-    
+
     # spectral distance between full network and backbone network per iteration
     bb_loss <- stats::filter(x$diagnostics$penalized_backbone_loss,
                              rep(1 / ma, ma),
@@ -441,7 +441,7 @@ plot.dna_backbone <- function(x, ma = 500, ...) {
          xlab = "Iteration",
          ylab = yl,
          main = ti)
-    
+
     # number of concepts in the backbone solution per iteration
     current_size_ma <- stats::filter(x$diagnostics$current_backbone_size,
                                      rep(1 / ma, ma),
@@ -458,7 +458,7 @@ plot.dna_backbone <- function(x, ma = 500, ...) {
          ylab = paste0("Number of elements (MA, last ", ma, ")"),
          main = "Backbone size (red = best)")
     lines(x = x$diagnostics$iteration, y = optimal_size_ma, col = "red")
-    
+
     # ratio of recent acceptances
     accept_ratio <- stats::filter(x$diagnostics$acceptance,
                                   rep(1 / ma, ma),
@@ -472,33 +472,33 @@ plot.dna_backbone <- function(x, ma = 500, ...) {
   } else { # create hclust object
     # define merging pattern: negative numbers are leaves, positive are merged clusters
     merges_clust <- matrix(nrow = nrow(x) - 1, ncol = 2)
-    
+
     merges_clust[1,1] <- -nrow(x)
     merges_clust[1,2] <- -(nrow(x) - 1)
-    
+
     for (i in 2:(nrow(x) - 1)) {
       merges_clust[i, 1] <- -(nrow(x) - i)
       merges_clust[i, 2] <- i - 1
     }
-    
+
     # Initialize empty object
     a <- list()
-    
+
     # Add merges
     a$merge <- merges_clust
-    
+
     # Define merge heights
     a$height <- x$backboneLoss[1:nrow(x) - 1]
-    
+
     # Order of leaves
     a$order <- 1:nrow(x)
-    
+
     # Labels of leaves
     a$labels <- rev(x$entity)
-    
+
     # Define hclust class
     class(a) <- "hclust"
-    
+
     plot(a, ylab = "")
   }
 }
@@ -527,7 +527,7 @@ autoplot.dna_backbone <- function(object, ..., ma = 500) {
     bd$current_size_ma <- stats::filter(bd$current_backbone_size, rep(1 / ma, ma), sides = 1)
     bd$optimal_size_ma <- stats::filter(bd$optimal_backbone_size, rep(1 / ma, ma), sides = 1)
     bd$accept_ratio <- stats::filter(bd$acceptance, rep(1 / ma, ma), sides = 1)
-    
+
     # temperature and acceptance probability
     g_accept <- ggplot2::ggplot(bd, ggplot2::aes(y = .data[["temperature"]], x = .data[["iteration"]])) +
       ggplot2::geom_line(color = "#a50f15") +
@@ -537,7 +537,7 @@ autoplot.dna_backbone <- function(object, ..., ma = 500) {
       ggplot2::xlab("Iteration") +
       ggplot2::ggtitle("Temperature and acceptance probability") +
       ggplot2::theme_bw()
-    
+
     # spectral distance between full network and backbone network per iteration
     if (attributes(object)$method == "penalty") {
       yl <- "Penalized backbone loss"
@@ -552,7 +552,7 @@ autoplot.dna_backbone <- function(object, ..., ma = 500) {
       ggplot2::xlab("Iteration") +
       ggplot2::ggtitle(ti) +
       ggplot2::theme_bw()
-    
+
     # number of concepts in the backbone solution per iteration
     d <- data.frame(iteration = rep(bd$iteration, 2),
                     size = c(bd$current_size_ma, bd$optimal_size_ma),
@@ -565,7 +565,7 @@ autoplot.dna_backbone <- function(object, ..., ma = 500) {
       ggplot2::ggtitle("Backbone size") +
       ggplot2::theme_bw() +
       ggplot2::theme(legend.position = "bottom")
-    
+
     # ratio of recent acceptances
     g_ar <- ggplot2::ggplot(bd, ggplot2::aes(y = .data[["accept_ratio"]], x = .data[["iteration"]])) +
       ggplot2::geom_line() +
@@ -573,46 +573,46 @@ autoplot.dna_backbone <- function(object, ..., ma = 500) {
       ggplot2::xlab("Iteration") +
       ggplot2::ggtitle("Acceptance ratio") +
       ggplot2::theme_bw()
-    
+
     # wrap in list
     plots <- list(g_accept, g_loss, g_size, g_ar)
     return(plots)
   } else { # create hclust object
     # define merging pattern: negative numbers are leaves, positive are merged clusters
     merges_clust <- matrix(nrow = nrow(object) - 1, ncol = 2)
-    
+
     merges_clust[1,1] <- -nrow(object)
     merges_clust[1,2] <- -(nrow(object) - 1)
-    
+
     for (i in 2:(nrow(object) - 1)) {
       merges_clust[i, 1] <- -(nrow(object) - i)
       merges_clust[i, 2] <- i - 1
     }
-    
+
     # Initialize empty object
     a <- list()
-    
+
     # Add merges
     a$merge <- merges_clust
-    
+
     # Define merge heights
     a$height <- object$backboneLoss[1:nrow(object) - 1]
     height <- a$height
-    
+
     # Order of leaves
     a$order <- 1:nrow(object)
-    
+
     # Labels of leaves
     a$labels <- rev(object$entity)
-    
+
     # Define hclust class
     class(a) <- "hclust"
-    
+
     # ensure ggraph is installed, otherwise throw error (better than importing it to avoid hard dependency)
     if (!requireNamespace("ggraph", quietly = TRUE)) {
       stop("The 'ggraph' package is required for plotting nested backbone dendrograms with 'ggplot2' but was not found. Consider installing it.")
     }
-    
+
     g_clust <- ggraph::ggraph(graph = a,
                               layout = "dendrogram",
                               circular = FALSE,
@@ -631,7 +631,7 @@ autoplot.dna_backbone <- function(object, ..., ma = 500) {
                                   labels = rev(object$entity)) +
       ggplot2::scale_y_continuous(expand = c(0, 0.01)) +
       ggplot2::coord_flip()
-    
+
     return(g_clust)
   }
 }
@@ -688,13 +688,13 @@ dna_evaluateBackboneSolution <- function(backboneEntities,
                                          invertSources = FALSE,
                                          invertSections = FALSE,
                                          invertTypes = FALSE) {
-  
+
   # wrap the vectors of exclude values for document variables into Java arrays
   excludeAuthors <- .jarray(excludeAuthors)
   excludeSources <- .jarray(excludeSources)
   excludeSections <- .jarray(excludeSections)
   excludeTypes <- .jarray(excludeTypes)
-  
+
   # compile exclude variables and values vectors
   dat <- matrix("", nrow = length(unlist(excludeValues)), ncol = 2)
   count <- 0
@@ -716,12 +716,12 @@ dna_evaluateBackboneSolution <- function(backboneEntities,
   }
   var <- .jarray(var) # array of variable names of each excluded value
   val <- .jarray(val) # array of values to be excluded
-  
+
   # encode R NULL as Java null value if necessary
   if (is.null(qualifier) || is.na(qualifier)) {
     qualifier <- .jnull(class = "java/lang/String")
   }
-  
+
   # call rBackbone function to compute results
   result <- .jcall(dnaEnvironment[["dna"]]$headlessDna,
                    "[D",
