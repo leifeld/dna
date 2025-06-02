@@ -88,7 +88,7 @@ jobs:
         extra-packages: |
           any::roxygen2
 
-    - uses: gradle/wrapper-validation-action@v1
+    - uses: gradle/actions/wrapper-validation@v4
 
     - name: Setup Gradle
       uses: gradle/gradle-build-action@v2.4.2
