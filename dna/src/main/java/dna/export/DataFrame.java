@@ -16,7 +16,7 @@ public class DataFrame {
     String[] variableNames;
 
     /**
-     * The data types held in each column. Valid data types are {@code "int"} (for integer numbers) and {@code String}.
+     * The data types held in each column. Valid data types are {@code "int"} (for integer numbers) and {@code "String"}.
      * Other data types can be used if they are understood by all classes. The vector must have the same length as the
      * second dimension of {@link #data}.
      */

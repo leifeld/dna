@@ -1206,6 +1206,66 @@ public class HeadlessDna implements Logger.LogListener {
 	}
 
 	/**
+	 * Retrieve statements for a given statement type ID, possibly filtered by statement IDs.
+	 *
+	 * @param statementTypeId Statement type ID.
+	 * @param statementIds    Array of statement IDs to filter by. If empty, all statements of the type are returned.
+	 * @return Data frame with entities and attributes, as defined in {@link sql.DataExchange#getStatements(int, int[])}.
+	 */
+	public DataFrame getStatements(int statementTypeId, int[] statementIds) {
+		DataFrame df = sql.DataExchange.getStatements(statementTypeId, statementIds);
+		if (df == null) {
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"Statements could not be retrieved.",
+					"The statements for Statement Type ID " + statementTypeId + " could not be retrieved from the database. Perhaps the ID is invalid or the database connection failed.");
+			Dna.logger.log(l);
+			return null;
+		}
+		if (df.nrow() == 0) {
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"No statements found.",
+					"The statements for Statement Type ID " + statementTypeId + " were retrieved from the database, but no statements were found. Perhaps the ID is invalid or the database is empty.");
+			Dna.logger.log(l);
+		} else {
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"Statements have been queried.",
+					"The statements for Statement Type ID " + statementTypeId + " have been successfully retrieved from the database.");
+			Dna.logger.log(l);
+		}
+		return df;
+	}
+
+	/**
+	 * Retrieve statements for a given statement type label, possibly filtered by statement IDs.
+	 *
+	 * @param statementType	Statement type label.
+	 * @param statementIds  Array of statement IDs to filter by. If empty, all statements of the type are returned.
+	 * @return Data frame with entities and attributes, as defined in {@link sql.DataExchange#getStatements(String, int[])}.
+	 */
+	public DataFrame getStatements(String statementType, int[] statementIds) {
+		DataFrame df = sql.DataExchange.getStatements(statementType, statementIds);
+		if (df == null) {
+			LogEvent l = new LogEvent(Logger.ERROR,
+					"Statements could not be retrieved.",
+					"The statements for Statement Type " + statementType + " could not be retrieved from the database. Perhaps the statement type label is invalid or the database connection failed.");
+			Dna.logger.log(l);
+			return null;
+		}
+		if (df.nrow() == 0) {
+			LogEvent l = new LogEvent(Logger.WARNING,
+					"No statements found.",
+					"The statements for Statement Type " + statementType + " were retrieved from the database, but no statements were found. Perhaps the statement type label is invalid or the database is empty.");
+			Dna.logger.log(l);
+		} else {
+			LogEvent l = new LogEvent(Logger.MESSAGE,
+					"Statements have been queried.",
+					"The statements for Statement Type " + statementType + " have been successfully retrieved from the database.");
+			Dna.logger.log(l);
+		}
+		return df;
+	}
+
+	/**
 	 * Get the {@link Exporter} object that contains the results.
 	 *
 	 * @return {@link Exporter} object with results.

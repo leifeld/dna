@@ -7,6 +7,7 @@ import logger.Logger;
 import me.tongfei.progressbar.ProgressBar;
 import model.Color;
 import model.Entity;
+import model.Statement;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -594,5 +595,92 @@ public class DataExchange {
                 Dna.logger.log(l);
             }
         }
+    }
+
+    /**
+     * Get a data frame with all statements of a specific type (based on the statement type ID) and with specific statement IDs.
+     * 
+     * @param statementTypeId The ID of the statement type to retrieve statements for.
+     * @param statementIds An array of statement IDs to retrieve. If this array is empty, all statements of the statement type are retrieved.
+     * @return A data frame with the following columns: ID, Document ID, Start, Stop, Coder, and all variables of the statement type.
+     */
+    static public DataFrame getStatements(int statementTypeId, int[] statementIds) {
+        ArrayList<Statement> statements = Dna.sql.getStatements(statementIds, statementTypeId, null, null, null, false, null, false, null, false, null, false);
+        Object[][] data = new Object[statements.size()][statements.get(0).getValues().size() + 5];
+
+        String[] columnNames = new String[statements.get(0).getValues().size() + 5];
+        columnNames[0] = "ID";
+        columnNames[1] = "document_id";
+        columnNames[2] = "start";
+        columnNames[3] = "stop";
+        columnNames[4] = "coder_id";
+
+        String[] dataTypes = new String[statements.get(0).getValues().size() + 5];
+        dataTypes[0] = "int";
+        dataTypes[1] = "int";
+        dataTypes[2] = "int";
+        dataTypes[3] = "int";
+        dataTypes[4] = "int";
+
+        for (int i = 0; i < statements.get(0).getValues().size(); i++) {
+            columnNames[i + 5] = statements.get(0).getValues().get(i).getKey();
+            String dataType = statements.get(0).getValues().get(i).getDataType();
+            if (dataType.equals("short text")) {
+                dataType = "String";
+            } else if (dataType.equals("long text")) {
+                dataType = "String";
+            } else if (dataType.equals("integer")) {
+                dataType = "int";
+            } else if (dataType.equals("boolean")) {
+                dataType = "int";
+            }
+            dataTypes[i + 5] = dataType;
+        }
+
+        for (int i = 0; i < statements.size(); i++) {
+            Statement s = statements.get(i);
+            data[i][0] = s.getId();
+            data[i][1] = s.getDocumentId();
+            data[i][2] = s.getStart();
+            data[i][3] = s.getStop();
+            data[i][4] = s.getCoderId();
+            for (int j = 0; j < s.getValues().size(); j++) {
+                if (s.getValues().get(j).getDataType().equals("short text")) {
+                    data[i][j + 5] = ((Entity) s.getValues().get(j).getValue()).getValue();
+                } else {
+                    data[i][j + 5] = s.getValues().get(j).getValue();
+                }
+            }
+        }
+
+        DataFrame dataFrame = new DataFrame(data, columnNames, dataTypes);
+
+        return dataFrame;
+    }
+
+    /**
+     * Get a data frame with all statements of a specific type (based on the statement type label) and with specific statement IDs.
+     * 
+     * @param statementType The label of the statement type to retrieve statements for.
+     * @param statementIds An array of statement IDs to retrieve. If this array is empty, all statements of the statement type are retrieved.
+     * @return A data frame with the following columns: ID, Document ID, Start, Stop, Coder, and all variables of the statement type.
+     */
+    static public DataFrame getStatements(String statementType, int[] statementIds) {
+        int statementTypeId = -1;
+        try (Connection conn = Dna.sql.getDataSource().getConnection();
+             PreparedStatement s = conn.prepareStatement("SELECT ID FROM STATEMENTTYPES WHERE Label = ?;")) {
+            s.setString(1, statementType);
+            ResultSet r = s.executeQuery();
+            while (r.next()) {
+                statementTypeId = r.getInt(1);
+            }
+        } catch (SQLException ex) {
+            LogEvent l = new LogEvent(Logger.ERROR,
+                    "Could not retrieve statement type ID for statement type \"" + statementType + ".",
+                    "Could not retrieve the statement type ID for statement type \"" + statementType + "\" while trying to retrieve statements. Check if the statement type is valid.",
+                    ex);
+            Dna.logger.log(l);
+        }
+        return getStatements(statementTypeId, statementIds);
     }
 }

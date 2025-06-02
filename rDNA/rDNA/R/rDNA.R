@@ -797,3 +797,98 @@ dna_getAttributes <- function(statementType = NULL,
   class(dat) <- c("dna_attributes", class(dat))
   return(dat)
 }
+
+# Statements -------------------------------------------------------------------
+
+#' Retrieve statements for a given statement type
+#'
+#' Retrieve statements for a given statement type.
+#'
+#' This function retrieves statements from the DNA database for a given
+#' statement type and returns them as a data frame. The statement type can be
+#' specified by its ID or by its name. If no statement IDs are specified, all
+#' statements of the given type are returned. If statement IDs are specified,
+#' only those statements are returned. The function returns a data frame with
+#' one row per statement and columns for the statement ID, document ID, start
+#' and end positions, coder ID, and the values of the variables defined in the
+#' statement type.
+#'
+#' @param statementType The statement type for which statements should be
+#   retrieved. The statement type can be supplied as an integer or character
+#   string, for example \code{1} or \code{"DNA Statement"}.
+#' @param statementIds A vector of statement IDs to retrieve. If this argument
+#   is not supplied or is an empty vector, all statements of the given type are
+#   returned. If this argument is supplied, only the statements with the given
+#   IDs are returned.
+#'
+#' @return A data frame with the statements of the given type. The data frame
+#'   has one row per statement and columns for the statement ID, document ID,
+#'   start and end positions, coder ID, and the values of the variables defined
+#'   in the statement type.
+#'
+#' @examples
+#' \dontrun{
+#' dna_init()
+#' dna_sample()
+#' dna_openDatabase(coderId = 1,
+#'                  coderPassword = "sample",
+#'                  db_url = "sample.dna")
+#' statements <- dna_getStatements(statementType = "DNA Statement")
+#' statements
+#' statements <- dna_getStatements(statementType = 1, statementIds = c(1, 2))
+#' statements
+#' }
+#' @author Philip Leifeld
+#'
+#' @family statements
+#' @importFrom rJava .jcall .jarray
+#' @export
+dna_getStatements <- function(statementType = 1, statementIds = integer()) {
+  
+  if (is.numeric(statementType) && !is.integer(statementType) && length(statementType) == 1) {
+    statementType <- as.integer(statementType)
+  }
+  if (is.null(statementType) || (!is.integer(statementType) && !is.character(statementType)) || length(statementType) != 1 || is.na(statementType)) {
+    statementType <- 1
+    warning("'statementType' must be an integer or character object of length 1. Using default value of 1.")
+  }
+  if (is.null(statementIds) || !is.numeric(statementIds)) {
+    statementIds <- integer(0)
+    warning("'statementIds' must be an integer vector. Using default value of integer(0) to include all statements.")
+  } else if (is.numeric(statementIds) && !is.integer(statementIds)) {
+    statementIds <- as.integer(statementIds)
+  }
+  
+  # get the statements from the DNA database using rJava
+  s <- .jcall(dna_api(),
+              "Ldna/export/DataFrame;",
+              "getStatements",
+              statementType,
+              .jarray(statementIds))
+  
+  var_names <- .jcall(s, "[S", "getVariableNames")
+  data_types <- .jcall(s, "[S", "getDataTypes")
+  nr <- .jcall(s, "I", "nrow")
+  
+  l <- list()
+  for (j in seq_along(var_names)) {
+    if (data_types[j] == "int") {
+      v <- integer(nr)
+      for (i in 0:(nr - 1)) {
+        v[i + 1] <- J(s, "getValue", as.integer(i), as.integer(j - 1))
+      }
+      l[[var_names[j]]] <- v
+    } else if (data_types[j] == "String") {
+      v <- character(nr)
+      for (i in 0:(nr - 1)) {
+        v[i + 1] <- J(s, "getValue", as.integer(i), as.integer(j - 1))
+      }
+      l[[var_names[j]]] <- v
+    }
+  }
+  dat <- as.data.frame(l, stringsAsFactors = FALSE)
+  rownames(dat) <- NULL
+  colnames(dat) <- var_names
+  class(dat) <- c("dna_statements", class(dat))
+  return(dat)
+}
