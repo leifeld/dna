@@ -35,7 +35,9 @@ test_that("dna_sample works", {
 })
 
 test_that("attribute management works", {
-  samp <- dna_sample()
+  testthat::skip_on_cran()
+  testthat::skip_on_ci()
+  samp <- dna_sample(overwrite = TRUE)
   dna_init()
   dna_openDatabase(samp, coderId = 1, coderPassword = "sample")
   expect_error(dna_getAttributes(), "Please supply")
@@ -52,7 +54,9 @@ test_that("attribute management works", {
 })
 
 test_that("statement management works", {
-  samp <- dna_sample()
+  testthat::skip_on_cran()
+  testthat::skip_on_ci()
+  samp <- dna_sample(overwrite = TRUE)
   dna_init()
   dna_openDatabase(samp, coderId = 1, coderPassword = "sample")
   expect_no_error(st <- dna_getStatements())
