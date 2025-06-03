@@ -758,18 +758,18 @@ dna_getAttributes <- function(statementType = NULL,
 
   # get the data from the DNA database using rJava
   if (variableIdValid) {
-    a <- .jcall(dnaEnvironment[["dna"]]$headlessDna,
+    a <- .jcall(dna_api(),
                 "Ldna/export/DataFrame;",
                 "getAttributes",
                 as.integer(variableId))
   } else if (variableValid && statementTypeIdValid) {
-    a <- .jcall(dnaEnvironment[["dna"]]$headlessDna,
+    a <- .jcall(dna_api(),
                 "Ldna/export/DataFrame;",
                 "getAttributes",
                 as.integer(statementTypeId),
                 variable)
   } else if (variableValid && statementTypeValid) {
-    a <- .jcall(dnaEnvironment[["dna"]]$headlessDna,
+    a <- .jcall(dna_api(),
                 "Ldna/export/DataFrame;",
                 "getAttributes",
                 statementType,
@@ -779,7 +779,7 @@ dna_getAttributes <- function(statementType = NULL,
   }
 
   # extract the relevant information from the Java reference
-  varNames <- .jcall(a, "[S", "getVariableNames")
+  varNames <- .jcall(a, "[S", "getVariableNamesArray")
   nr <- .jcall(a, "I", "nrow")
   nc <- .jcall(a, "I", "ncol")
 
@@ -844,7 +844,7 @@ dna_getAttributes <- function(statementType = NULL,
 #' @importFrom rJava .jcall .jarray
 #' @export
 dna_getStatements <- function(statementType = 1, statementIds = integer()) {
-  
+
   if (is.numeric(statementType) && !is.integer(statementType) && length(statementType) == 1) {
     statementType <- as.integer(statementType)
   }
@@ -854,22 +854,30 @@ dna_getStatements <- function(statementType = 1, statementIds = integer()) {
   }
   if (is.null(statementIds) || !is.numeric(statementIds)) {
     statementIds <- integer(0)
-    warning("'statementIds' must be an integer vector. Using default value of integer(0) to include all statements.")
+    warning("'statementIds' must be an integer vector. Using default value of integer(0) to include all statements.") # nolint: line_length_linter.
   } else if (is.numeric(statementIds) && !is.integer(statementIds)) {
     statementIds <- as.integer(statementIds)
   }
-  
+
   # get the statements from the DNA database using rJava
   s <- .jcall(dna_api(),
               "Ldna/export/DataFrame;",
               "getStatements",
               statementType,
               .jarray(statementIds))
-  
-  var_names <- .jcall(s, "[S", "getVariableNames")
-  data_types <- .jcall(s, "[S", "getDataTypes")
+  if (is.jnull(s)) {
+    warning("No statements were returned from the DNA database.")
+    return(data.frame())
+  }
+
+  var_names <- .jcall(s, "[S", "getVariableNamesArray")
+  data_types <- .jcall(s, "[S", "getDataTypesArray")
+
   nr <- .jcall(s, "I", "nrow")
-  
+  if (nr == 0) {
+    return(data.frame())
+  }
+
   l <- list()
   for (j in seq_along(var_names)) {
     if (data_types[j] == "int") {
@@ -886,6 +894,7 @@ dna_getStatements <- function(statementType = 1, statementIds = integer()) {
       l[[var_names[j]]] <- v
     }
   }
+
   dat <- as.data.frame(l, stringsAsFactors = FALSE)
   rownames(dat) <- NULL
   colnames(dat) <- var_names

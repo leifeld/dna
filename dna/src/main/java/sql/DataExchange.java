@@ -232,7 +232,7 @@ public class DataExchange {
                 // remove attribute variables from database that were removed from the data frame
                 pb.stepTo(4);
                 pb.setExtraMessage("Removing attribute variables...");
-                ArrayList<String> dfVarNames = Stream.of(df.getVariableNames()).collect(Collectors.toCollection(ArrayList::new));
+                ArrayList<String> dfVarNames = df.getVariableNames();
                 s1.setInt(1,  variableId);
                 r1 = s1.executeQuery();
                 ArrayList<String> attributeVariableNames = new ArrayList<String>();
@@ -598,64 +598,81 @@ public class DataExchange {
     }
 
     /**
-     * Get a data frame with all statements of a specific type (based on the statement type ID) and with specific statement IDs.
-     * 
-     * @param statementTypeId The ID of the statement type to retrieve statements for.
-     * @param statementIds An array of statement IDs to retrieve. If this array is empty, all statements of the statement type are retrieved.
-     * @return A data frame with the following columns: ID, Document ID, Start, Stop, Coder, and all variables of the statement type.
+     * Get a data frame with all statements of a specific type (based on the
+     * statement type ID) and with specific statement IDs.
+     *
+     * @param statementTypeId The ID of the statement type to retrieve statements
+     *                        for.
+     * @param statementIds    An array of statement IDs to retrieve. If this array
+     *                        is empty, all statements of the statement type are
+     *                        retrieved.
+     * @return A data frame with the following columns: ID, Document ID, Start,
+     *         Stop, Coder, and all variables of the statement type.
      */
-    static public DataFrame getStatements(int statementTypeId, int[] statementIds) {
-        ArrayList<Statement> statements = Dna.sql.getStatements(statementIds, statementTypeId, null, null, null, false, null, false, null, false, null, false);
-        Object[][] data = new Object[statements.size()][statements.get(0).getValues().size() + 5];
+    public static DataFrame getStatements(int statementTypeId, int[] statementIds) {
+        ArrayList<Statement> statements = Dna.sql.getStatements(statementIds, statementTypeId, null, null, null, false,
+                null, false, null, false, null, false);
 
-        String[] columnNames = new String[statements.get(0).getValues().size() + 5];
-        columnNames[0] = "ID";
-        columnNames[1] = "document_id";
-        columnNames[2] = "start";
-        columnNames[3] = "stop";
-        columnNames[4] = "coder_id";
+        if (statements.isEmpty())
+            return new DataFrame();
 
-        String[] dataTypes = new String[statements.get(0).getValues().size() + 5];
-        dataTypes[0] = "int";
-        dataTypes[1] = "int";
-        dataTypes[2] = "int";
-        dataTypes[3] = "int";
-        dataTypes[4] = "int";
+        DataFrame df = new DataFrame();
 
-        for (int i = 0; i < statements.get(0).getValues().size(); i++) {
-            columnNames[i + 5] = statements.get(0).getValues().get(i).getKey();
-            String dataType = statements.get(0).getValues().get(i).getDataType();
-            if (dataType.equals("short text")) {
-                dataType = "String";
-            } else if (dataType.equals("long text")) {
-                dataType = "String";
-            } else if (dataType.equals("integer")) {
-                dataType = "int";
-            } else if (dataType.equals("boolean")) {
-                dataType = "int";
+        // Standard columns
+        ArrayList<Object> ids = new ArrayList<>();
+        ArrayList<Object> docIds = new ArrayList<>();
+        ArrayList<Object> starts = new ArrayList<>();
+        ArrayList<Object> stops = new ArrayList<>();
+        ArrayList<Object> coders = new ArrayList<>();
+
+        // Add variable name -> values map for dynamic columns
+        ArrayList<String> variableNames = new ArrayList<>();
+        ArrayList<String> dataTypes = new ArrayList<>();
+        ArrayList<ArrayList<Object>> variableColumns = new ArrayList<>();
+
+        Statement first = statements.get(0);
+        for (int i = 0; i < first.getValues().size(); i++) {
+            String name = first.getValues().get(i).getKey();
+            String type = first.getValues().get(i).getDataType();
+            if (type.equals("short text") || type.equals("long text")) {
+                type = "String";
+            } else if (type.equals("integer") || type.equals("boolean")) {
+                type = "int";
             }
-            dataTypes[i + 5] = dataType;
+            variableNames.add(name);
+            dataTypes.add(type);
+            variableColumns.add(new ArrayList<>());
         }
 
-        for (int i = 0; i < statements.size(); i++) {
-            Statement s = statements.get(i);
-            data[i][0] = s.getId();
-            data[i][1] = s.getDocumentId();
-            data[i][2] = s.getStart();
-            data[i][3] = s.getStop();
-            data[i][4] = s.getCoderId();
+        for (Statement s : statements) {
+            ids.add(s.getId());
+            docIds.add(s.getDocumentId());
+            starts.add(s.getStart());
+            stops.add(s.getStop());
+            coders.add(s.getCoderId());
+
             for (int j = 0; j < s.getValues().size(); j++) {
-                if (s.getValues().get(j).getDataType().equals("short text")) {
-                    data[i][j + 5] = ((Entity) s.getValues().get(j).getValue()).getValue();
-                } else {
-                    data[i][j + 5] = s.getValues().get(j).getValue();
+                Object value = s.getValues().get(j).getValue();
+                if ("short text".equals(s.getValues().get(j).getDataType())) {
+                    value = ((Entity) value).getValue();
                 }
+                variableColumns.get(j).add(value);
             }
         }
 
-        DataFrame dataFrame = new DataFrame(data, columnNames, dataTypes);
+        // Add standard columns
+        df.addColumn("ID", "int", ids);
+        df.addColumn("document_id", "int", docIds);
+        df.addColumn("start", "int", starts);
+        df.addColumn("stop", "int", stops);
+        df.addColumn("coder_id", "int", coders);
 
-        return dataFrame;
+        // Add variable columns
+        for (int i = 0; i < variableNames.size(); i++) {
+            df.addColumn(variableNames.get(i), dataTypes.get(i), variableColumns.get(i));
+        }
+
+        return df;
     }
 
     /**
