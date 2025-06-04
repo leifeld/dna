@@ -1,11 +1,10 @@
 context("backbone")
 
-dna_init()
-
 test_that("Penalized backbone works", {
   testthat::skip_on_cran()
   testthat::skip_on_ci()
   samp <- dna_sample(overwrite = TRUE)
+  dna_init()
   dna_openDatabase(samp, coderId = 1, coderPassword = "sample")
   b <- dna_backbone(method = "penalty",
                     penalty = 3.5,
