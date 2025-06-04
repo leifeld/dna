@@ -1,5 +1,7 @@
 context("backbone")
 
+dna_init()
+
 test_that("Penalized backbone works", {
   testthat::skip_on_cran()
   testthat::skip_on_ci()
