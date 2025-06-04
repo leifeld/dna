@@ -23,11 +23,12 @@ the jar file in the package installation directory sub-directory and
 returns its file name with its absolute path. If it cannot be found in the
 installation directory, the function looks in the current working
 directory. The function is also called by \code{\link{dna_init}} if the
-location of the jar file is not provided explicitly.
+location of the jar file is not provided explicitly. Users do not normally
+need to use the \code{dna_jar} function and are instead asked to use
+\code{\link{dna_init}}.
 }
 \seealso{
 Other startup: 
-\code{\link{dna_getHeadlessDna}()},
 \code{\link{dna_init}()},
 \code{\link{dna_sample}()}
 }

@@ -36,7 +36,6 @@ dna_init()
 }
 \seealso{
 Other startup: 
-\code{\link{dna_getHeadlessDna}()},
 \code{\link{dna_jar}()},
 \code{\link{dna_sample}()}
 }

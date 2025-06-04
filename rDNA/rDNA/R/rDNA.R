@@ -73,34 +73,6 @@ dna_init <- function(jarfile = dna_jar(), memory = 1024, returnString = FALSE) {
   }
 }
 
-#' Get headless DNA
-#'
-#' Get headless DNA.
-#'
-#' This function returns a reference to the Java class that represents the
-#' R interface of DNA, i.e., the headless API. Headless means that no graphical
-#' user interface is necessary to use the functions in DNA. This is the raw API
-#' interface and should only be used by expert users or to debug other rDNA
-#' functions. You can save the headless DNA object to an object in R and access
-#' its Java functions directly as slots using the "$" operator, for example
-#' \code{dna_getHeadlessDna()$getExport()} will return a reference to the
-#' \code{Exporter} class, which does all the network computations, and
-#' \code{dna_getHeadlessDna()$getAttributes()} will return attributes etc. You
-#' can view the different functions that are available by using the tab key to
-#' auto-complete function access after typing the "$" if the headless reference
-#' has been saved to an object in the workspace.
-#'
-#' @return Headless DNA reference.
-#'
-#' @author Philip Leifeld
-#'
-#' @family startup
-#'
-#' @export
-dna_getHeadlessDna <- function() {
-  dnaEnvironment[["dna"]]$headlessDna
-}
-
 #' Find the DNA jar file
 #'
 #' Find the DNA jar file in the library path or working directory.
@@ -114,7 +86,9 @@ dna_getHeadlessDna <- function() {
 #' returns its file name with its absolute path. If it cannot be found in the
 #' installation directory, the function looks in the current working
 #' directory. The function is also called by \code{\link{dna_init}} if the
-#' location of the jar file is not provided explicitly.
+#' location of the jar file is not provided explicitly. Users do not normally
+#' need to use the \code{dna_jar} function and are instead asked to use
+#' \code{\link{dna_init}}.
 #'
 #' @return The file name of the jar file that matches the installed \pkg{rDNA}
 #'   version, including full path.
@@ -294,7 +268,7 @@ dna_openDatabase <- function(db_url,
   if (is.null(coderPassword) || length(coderPassword) == 0) {
     coderPassword <- ""
   }
-  q <- .jcall(dnaEnvironment[["dna"]]$headlessDna,
+  q <- .jcall(dna_api(),
               "Z",
               "openDatabase",
               as.integer(coderId),
@@ -331,7 +305,7 @@ dna_openDatabase <- function(db_url,
 #' @export
 #' @importFrom rJava .jcall
 dna_closeDatabase <- function() {
-  .jcall(dnaEnvironment[["dna"]]$headlessDna, "V", "closeDatabase")
+  .jcall(dna_api(), "V", "closeDatabase")
 }
 
 #' Open a connection profile
@@ -394,7 +368,7 @@ dna_openConnectionProfile <- function(file, coderPassword = "") {
   if (is.null(coderPassword) || length(coderPassword) == 0) {
     coderPassword <- ""
   }
-  s <- .jcall(dnaEnvironment[["dna"]]$headlessDna,
+  s <- .jcall(dna_api(),
               "Z",
               "openConnectionProfile",
               file,
@@ -454,7 +428,7 @@ dna_saveConnectionProfile <- function(file, coderPassword = "") {
   if (is.null(coderPassword) || length(coderPassword) == 0) {
     coderPassword <- ""
   }
-  s <- .jcall(dnaEnvironment[["dna"]]$headlessDna,
+  s <- .jcall(dna_api(),
               "Z",
               "saveConnectionProfile",
               file,
@@ -486,7 +460,7 @@ dna_saveConnectionProfile <- function(file, coderPassword = "") {
 #' @export
 #' @importFrom rJava .jcall
 dna_printDetails <- function() {
-  .jcall(dnaEnvironment[["dna"]]$headlessDna, "V", "printDatabaseDetails")
+  .jcall(dna_api(), "V", "printDatabaseDetails")
 }
 
 #' Get a reference to the headless Java class for R (API)
@@ -586,7 +560,7 @@ dna_queryCoders <- function(db_url,
   } else {
     db_port <- as.integer(db_port)
   }
-  q <- .jcall(dnaEnvironment[["dna"]]$headlessDna,
+  q <- .jcall(dna_api(),
               "[Ljava/lang/Object;",
               "queryCoders",
               db_type,
@@ -639,7 +613,7 @@ dna_getVariables <- function(statementType) {
     stop("'statementType' must be an integer or character object of length 1.")
   }
 
-  v <- J(dnaEnvironment[["dna"]]$headlessDna, "getVariables", statementType) # get an array list of Value objects representing the variables
+  v <- J(dna_api(), "getVariables", statementType) # get an array list of Value objects representing the variables
   l <- list()
   for (i in seq(.jcall(v, "I", "size")) - 1) { # iterate through array list of Value objects
     vi <- v$get(as.integer(i)) # save current Value as vi

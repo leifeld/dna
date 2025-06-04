@@ -27,7 +27,6 @@ dna_openDatabase(s)
 }
 \seealso{
 Other startup: 
-\code{\link{dna_getHeadlessDna}()},
 \code{\link{dna_init}()},
 \code{\link{dna_jar}()}
 }

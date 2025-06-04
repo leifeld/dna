@@ -145,7 +145,7 @@ dna_polarization <- function(statementType = "DNA Statement",
   }
 
   # call rNetwork function to compute results
-  polarizationObject <- .jcall(dna_getHeadlessDna(),
+  polarizationObject <- .jcall(dna_api(),
                                "Ldna/export/PolarizationResultTimeSeries;",
                                "rPolarization",
                                statementType,

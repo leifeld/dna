@@ -189,6 +189,7 @@
 #'
 #' @rdname dna_multiclust
 #' @importFrom stats as.dist cor hclust cutree kmeans
+#' @importFrom utils packageVersion
 #' @export
 dna_multiclust <- function(statementType = "DNA Statement",
                            variable1 = "organization",
@@ -233,7 +234,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
                            infomap = TRUE,
                            label_prop = TRUE,
                            spinglass = FALSE) {
-  
+
   # check dependencies
   if (!requireNamespace("igraph", quietly = TRUE)) { # version 0.8.1 required for edge betweenness to work fine.
     stop("The 'dna_multiclust' function requires the 'igraph' package to be installed.\n",
@@ -249,7 +250,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
     equivalence <- FALSE
     warning("Argument 'equivalence = TRUE' requires the 'sna' package, which is not installed.\nSetting 'equivalence = FALSE'. Consider installing the 'sna' package.")
   }
-  
+
   # check argument validity
   if (is.null(k) || is.na(k) || !is.numeric(k) || length(k) > 1 || is.infinite(k) || k < 0) {
     stop("'k' must be a non-negative integer number. Can be 0 for flexible numbers of clusters.")
@@ -261,7 +262,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
     k <- 0
     warning("'k' must be 0 (for arbitrary numbers of clusters) or larger than 1 (to constrain number of clusters). Using 'k = 0'.")
   }
-  
+
   # determine what kind of two-mode network to create
   if (is.null(qualifier) || is.na(qualifier) || !is.character(qualifier)) {
     qualifierAggregation <- "ignore"
@@ -273,7 +274,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
       qualifierAggregation <- "subtract"
     }
   }
-  
+
   nw_aff <- dna_network(networkType = "twomode",
                         statementType = statementType,
                         variable1 = variable1,
@@ -326,7 +327,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
                         invertSources = invertSources,
                         invertSections = invertSections,
                         invertTypes = invertTypes)
-  
+
   if (timeWindow == "no") {
     dta <- list()
     dta$networks <- list(nw_sub)
@@ -335,7 +336,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
     dta$networks <- list(nw_aff)
     nw_aff <- dta
   }
-  
+
   obj <- list()
   if (isTRUE(saveObjects)) {
     obj$cl <- list()
@@ -350,7 +351,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
     num_networks <- 1
   }
   for (i in 1:num_networks) {
-    
+
     # prepare dates
     if (timeWindow == "no") {
       dta_dat[[i]] <- data.frame(i = i,
@@ -362,7 +363,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
                                  middle.date = attributes(nw_sub[[i]])$middle,
                                  stop.date = attributes(nw_sub[[i]])$stop)
     }
-    
+
     # prepare two-mode network
     if ("dna_network_onemode_timewindows" %in% class(nw_sub)) {
       x <- nw_aff[[i]]
@@ -377,7 +378,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
     }
     combined <- combined[rowSums(combined) > 0, , drop = FALSE]
     rn <- rownames(combined)
-    
+
     # Jaccard distances for two-mode network (could be done using vegdist function in vegan package, but saving the dependency)
     combined <- matrix(as.integer(combined > 0), nrow = nrow(combined)) # probably not necessary, but ensure it's an integer matrix
     intersections <- tcrossprod(combined) # compute intersections using cross-product
@@ -388,7 +389,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
     jaccard_distances <- 1 - jaccard_similarities # convert to Jaccard distances
     rownames(jaccard_distances) <- rn # re-attach the row names
     jac <- stats::as.dist(jaccard_distances) # convert to dist object
-    
+
     # prepare one-mode network
     if ("dna_network_onemode_timewindows" %in% class(nw_sub)) {
       y <- nw_sub[[i]]
@@ -398,12 +399,12 @@ dna_multiclust <- function(statementType = "DNA Statement",
     y[y < 0] <- 0
     class(y) <- "matrix"
     g <- igraph::graph_from_adjacency_matrix(y, mode = "undirected", weighted = TRUE)
-    
+
     if (nrow(combined) > 1) {
       counter_current <- 1
       current_cl <- list()
       current_mod <- numeric()
-      
+
       # Hierarchical clustering with single linkage
       if (isTRUE(single) && k > 1) {
         try({
@@ -427,7 +428,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
           counter <- counter + 1
         }, silent = TRUE)
       }
-      
+
       # Hierarchical clustering with single linkage with optimal k
       if (isTRUE(single) && k < 2) {
         try({
@@ -459,7 +460,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
           counter <- counter + 1
         }, silent = TRUE)
       }
-      
+
       # Hierarchical clustering with average linkage
       if (isTRUE(average) && k > 1) {
         try({
@@ -483,7 +484,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
           counter <- counter + 1
         }, silent = TRUE)
       }
-      
+
       # Hierarchical clustering with average linkage with optimal k
       if (isTRUE(average) && k < 2) {
         try({
@@ -515,7 +516,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
           counter <- counter + 1
         }, silent = TRUE)
       }
-      
+
       # Hierarchical clustering with complete linkage
       if (isTRUE(complete) && k > 1) {
         try({
@@ -539,7 +540,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
           counter <- counter + 1
         }, silent = TRUE)
       }
-      
+
       # Hierarchical clustering with complete linkage with optimal k
       if (isTRUE(complete) && k < 2) {
         try({
@@ -571,7 +572,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
           counter <- counter + 1
         }, silent = TRUE)
       }
-      
+
       # Hierarchical clustering with the Ward algorithm
       if (isTRUE(ward) && k > 1) {
         try({
@@ -595,7 +596,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
           counter <- counter + 1
         }, silent = TRUE)
       }
-      
+
       # Hierarchical clustering with the Ward algorithm with optimal k
       if (isTRUE(ward) && k < 2) {
         try({
@@ -627,7 +628,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
           counter <- counter + 1
         }, silent = TRUE)
       }
-      
+
       # k-means
       if (isTRUE(kmeans) && k > 1) {
         try({
@@ -651,7 +652,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
           counter <- counter + 1
         }, silent = TRUE)
       }
-      
+
       # k-means with optimal k
       if (isTRUE(kmeans) && k < 2) {
         try({
@@ -684,7 +685,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
           counter <- counter + 1
         }, silent = TRUE)
       }
-      
+
       # pam
       if (isTRUE(pam) && k > 1) {
         try({
@@ -708,7 +709,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
           counter <- counter + 1
         }, silent = TRUE)
       }
-      
+
       # pam with optimal k
       if (isTRUE(pam) && k < 2) {
         try({
@@ -741,7 +742,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
           counter <- counter + 1
         }, silent = TRUE)
       }
-      
+
       # Equivalence clustering
       if (isTRUE(equivalence) && k > 1) {
         try({
@@ -765,7 +766,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
           counter <- counter + 1
         }, silent = TRUE)
       }
-      
+
       # Equivalence clustering with optimal k
       if (isTRUE(equivalence) && k < 2) {
         try({
@@ -797,7 +798,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
           counter <- counter + 1
         }, silent = TRUE)
       }
-      
+
       # CONCOR based on the positive subtract network
       if (isTRUE(concor_one) && k %in% c(0, 2)) {
         try({
@@ -827,7 +828,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
           counter <- counter + 1
         }, silent = TRUE)
       }
-      
+
       # CONCOR based on the combined affiliation network
       if (isTRUE(concor_two) && k %in% c(0, 2)) {
         try({
@@ -857,7 +858,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
           counter <- counter + 1
         }, silent = TRUE)
       }
-      
+
       # Louvain clustering
       if (isTRUE(louvain) && k < 2) {
         try({
@@ -881,7 +882,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
           counter <- counter + 1
         }, silent = TRUE)
       }
-      
+
       # Fast & Greedy community detection (with or without cut)
       if (isTRUE(fastgreedy)) {
         try({
@@ -912,7 +913,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
           counter <- counter + 1
         }, silent = TRUE)
       }
-      
+
       # Walktrap community detection (with or without cut)
       if (isTRUE(walktrap)) {
         try({
@@ -943,7 +944,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
           counter <- counter + 1
         }, silent = TRUE)
       }
-      
+
       # Leading Eigenvector community detection (only without cut)
       if (isTRUE(leading_eigen) && k < 2) { # it *should* work with cut_at because is.hierarchical(cl) returns TRUE, but it never works...
         try({
@@ -967,7 +968,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
           counter <- counter + 1
         }, silent = TRUE)
       }
-      
+
       # Edge Betweenness community detection (with or without cut)
       if (isTRUE(edge_betweenness)) {
         try({
@@ -998,7 +999,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
           counter <- counter + 1
         }, silent = TRUE)
       }
-      
+
       # Infomap community detection
       if (isTRUE(infomap) && k < 2) {
         try({
@@ -1022,7 +1023,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
           counter <- counter + 1
         }, silent = TRUE)
       }
-      
+
       # Label Propagation community detection
       if (isTRUE(label_prop) && k < 2) {
         try({
@@ -1046,7 +1047,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
           counter <- counter + 1
         }, silent = TRUE)
       }
-      
+
       # Spinglass community detection
       if (isTRUE(spinglass) && k < 2) {
         try({
@@ -1070,7 +1071,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
           counter <- counter + 1
         }, silent = TRUE)
       }
-      
+
       # retain cluster object where modularity was maximal
       if (isTRUE(saveObjects) && length(current_cl) > 0) {
         obj$cl[[i]] <- current_cl[[which.max(current_mod)]]
@@ -1094,7 +1095,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
                                    function(x) obj$modularity$method[obj$modularity$i == x & obj$modularity$modularity == max(obj$modularity$modularity[obj$modularity$i == x], na.rm = TRUE)][1])
   # attach k to max_mod
   obj$max_mod$k <- sapply(obj$max_mod$i, function(x) max(obj$modularity$k[obj$modularity$i == x], na.rm = TRUE))
-  
+
   # diagnostics
   if (isTRUE(single) && !"Hierarchical (Single)" %in% obj$modularity$method && k > 1) {
     warning("'single' omitted due to an unknown problem.")
@@ -1147,7 +1148,7 @@ dna_multiclust <- function(statementType = "DNA Statement",
   if (isTRUE(spinglass) && !"Spinglass" %in% obj$modularity$method && k < 2) {
     warning("'spinglass' omitted due to an unknown problem.")
   }
-  
+
   class(obj) <- "dna_multiclust"
   return(obj)
 }

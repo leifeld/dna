@@ -7,8 +7,7 @@ test_that("Example 1 produces expected output", {
   skip_if_not_installed("igraph", minimum_version = "0.8.1")
   skip_if_not_installed("sna", minimum_version = "2.4")
   skip_if_not_installed("cluster", minimum_version = "1.12.0")
-  samp <- dna_sample()
-  dna_init()
+  samp <- dna_sample(overwrite = TRUE)
   dna_openDatabase(samp, coderId = 1, coderPassword = "sample")
   mc1 <- dna_multiclust(variable1 = "organization",
                         variable2 = "concept",
@@ -31,8 +30,7 @@ test_that("Example 2 produces expected output", {
   testthat::skip_on_cran()
   testthat::skip_on_ci()
   skip_if_not_installed("igraph", minimum_version = "0.8.1")
-  samp <- dna_sample()
-  dna_init()
+  samp <- dna_sample(overwrite = TRUE)
   dna_openDatabase(samp, coderId = 1, coderPassword = "sample")
   set.seed(12345)
   mc2 <- dna_multiclust(k = 2,
@@ -68,8 +66,7 @@ test_that("Example 3 produces expected output", {
   skip_if_not_installed("igraph", minimum_version = "0.8.1")
   skip_if_not_installed("sna", minimum_version = "2.4")
   skip_if_not_installed("cluster", minimum_version = "1.12.0")
-  samp <- dna_sample()
-  dna_init()
+  samp <- dna_sample(overwrite = TRUE)
   dna_openDatabase(samp, coderId = 1, coderPassword = "sample")
   mc3 <- dna_multiclust(k = 2,
                         timeWindow = "events",

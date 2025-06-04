@@ -295,7 +295,7 @@ dna_network <- function(networkType = "twomode",
   }
 
   # call rNetwork function to compute results
-  .jcall(dna_getHeadlessDna(),
+  .jcall(dna_api(),
          "V",
          "rNetwork",
          networkType,
@@ -332,7 +332,7 @@ dna_network <- function(networkType = "twomode",
          fileFormat
   )
 
-  exporter <- .jcall(dna_getHeadlessDna(), "Ldna/export/Exporter;", "getExporter") # get a reference to the Exporter object, in which results are stored
+  exporter <- .jcall(dna_api(), "Ldna/export/Exporter;", "getExporter") # get a reference to the Exporter object, in which results are stored
 
   if (networkType == "eventlist") { # assemble an event list in the form of a data frame of filtered statements
     f <- J(exporter, "getFilteredStatements", simplify = TRUE) # array list of filtered export statements; use J because array list return type not recognized using .jcall

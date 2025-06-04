@@ -288,7 +288,7 @@ dna_phaseTransitions <- function(distanceMethod = "absdiff",
   }
 
   # call rNetwork function to compute results
-  .jcall(dna_getHeadlessDna(),
+  .jcall(dna_api(),
          "V",
          "rTimeWindow",
          networkType,
@@ -324,7 +324,7 @@ dna_phaseTransitions <- function(distanceMethod = "absdiff",
          invertSections,
          invertTypes
   )
-  exporter <- dna_getHeadlessDna()$getExporter() # save Java object reference to exporter class
+  exporter <- dna_api()$getExporter() # save Java object reference to exporter class
 
   # compute distance matrix
   if (distanceMethod == "modularity") {
